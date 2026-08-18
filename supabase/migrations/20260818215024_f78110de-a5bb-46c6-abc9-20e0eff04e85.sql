@@ -1,0 +1,1 @@
+ALTER TABLE public.attempt_task_results ADD CONSTRAINT attempt_task_results_attempt_task_unique UNIQUE (attempt_id, task_id);
