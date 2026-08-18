@@ -42,7 +42,9 @@ function SettingsPage() {
 
   async function toggle(field: "profile_visible" | "email_notifications", value: boolean) {
     if (!user) return;
-    const { error } = await supabase.from("profiles").update({ [field]: value }).eq("id", user.id);
+    const patch =
+      field === "profile_visible" ? { profile_visible: value } : { email_notifications: value };
+    const { error } = await supabase.from("profiles").update(patch).eq("id", user.id);
     if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["profile", user.id] });
   }
