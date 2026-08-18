@@ -14,7 +14,264 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attempt_task_results: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          feedback: string | null
+          id: string
+          max_score: number
+          response: Json
+          score: number | null
+          task_id: string
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          max_score?: number
+          response?: Json
+          score?: number | null
+          task_id: string
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          max_score?: number
+          response?: Json
+          score?: number | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attempt_task_results_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attempt_task_results_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credentials: {
+        Row: {
+          created_at: string
+          id: string
+          issuer: string
+          status: string
+          title: string
+          user_id: string
+          year: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          issuer: string
+          status?: string
+          title: string
+          user_id: string
+          year?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          issuer?: string
+          status?: string
+          title?: string
+          user_id?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          email_notifications: boolean
+          github_url: string | null
+          headline: string | null
+          id: string
+          linkedin_url: string | null
+          location: string | null
+          name: string | null
+          portfolio_url: string | null
+          profile_visible: boolean
+          target_role: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          email_notifications?: boolean
+          github_url?: string | null
+          headline?: string | null
+          id: string
+          linkedin_url?: string | null
+          location?: string | null
+          name?: string | null
+          portfolio_url?: string | null
+          profile_visible?: boolean
+          target_role?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          email_notifications?: boolean
+          github_url?: string | null
+          headline?: string | null
+          id?: string
+          linkedin_url?: string | null
+          location?: string | null
+          name?: string | null
+          portfolio_url?: string | null
+          profile_visible?: boolean
+          target_role?: string | null
+        }
+        Relationships: []
+      }
+      roles: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      simulation_attempts: {
+        Row: {
+          completed_at: string | null
+          id: string
+          overall_score: number | null
+          simulation_id: string
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          overall_score?: number | null
+          simulation_id: string
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          overall_score?: number | null
+          simulation_id?: string
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_attempts_simulation_id_fkey"
+            columns: ["simulation_id"]
+            isOneToOne: false
+            referencedRelation: "simulations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulation_tasks: {
+        Row: {
+          brief: string
+          id: string
+          order: number
+          rubric_criteria: Json
+          simulation_id: string
+          task_type: string
+          title: string
+        }
+        Insert: {
+          brief: string
+          id?: string
+          order: number
+          rubric_criteria?: Json
+          simulation_id: string
+          task_type: string
+          title: string
+        }
+        Update: {
+          brief?: string
+          id?: string
+          order?: number
+          rubric_criteria?: Json
+          simulation_id?: string
+          task_type?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulation_tasks_simulation_id_fkey"
+            columns: ["simulation_id"]
+            isOneToOne: false
+            referencedRelation: "simulations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulations: {
+        Row: {
+          created_at: string
+          description: string
+          estimated_minutes: number
+          id: string
+          role_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          estimated_minutes?: number
+          id?: string
+          role_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          estimated_minutes?: number
+          id?: string
+          role_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulations_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
