@@ -115,10 +115,10 @@ function Dashboard() {
 
           <div className="space-y-6">
             <section>
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-display text-xl font-semibold">Available simulations</h2>
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/roles">Browse all roles</Link>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/roles">Browse all roles →</Link>
                 </Button>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
