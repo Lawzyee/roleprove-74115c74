@@ -70,10 +70,6 @@ function Dashboard() {
 
   async function onStart(simulationId: string) {
     if (!user) return;
-    if (completedCount >= FREE_ATTEMPT_LIMIT) {
-      router.navigate({ to: "/subscribe" });
-      return;
-    }
     try {
       const attemptId = await startAttempt(user.id, simulationId);
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId } });
