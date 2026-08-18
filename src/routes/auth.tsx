@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,9 +34,13 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [form, setForm] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
     name: "",
     target_role: "",
     location: "",
@@ -45,10 +50,17 @@ function AuthPage() {
     if (!loading && user) router.navigate({ to: "/dashboard" });
   }, [loading, user, router]);
 
-  const update = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const update = (key: keyof typeof form, value: string) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    if (key === "password" || key === "confirmPassword") setPasswordError(null);
+  };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (mode === "signup" && form.password !== form.confirmPassword) {
+      setPasswordError("Passwords don't match.");
+      return;
+    }
     setSubmitting(true);
     try {
       if (mode === "signup") {
@@ -147,16 +159,54 @@ function AuthPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                minLength={6}
-                value={form.password}
-                onChange={(e) => update("password", e.target.value)}
-                placeholder="At least 6 characters"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  className="pr-10"
+                  value={form.password}
+                  onChange={(e) => update("password", e.target.value)}
+                  placeholder="At least 6 characters"
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm password</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirm ? "text" : "password"}
+                    required
+                    minLength={6}
+                    className="pr-10"
+                    aria-invalid={!!passwordError}
+                    value={form.confirmPassword}
+                    onChange={(e) => update("confirmPassword", e.target.value)}
+                    placeholder="Re-enter your password"
+                  />
+                  <button
+                    type="button"
+                    aria-label={showConfirm ? "Hide password" : "Show password"}
+                    onClick={() => setShowConfirm((v) => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
+              </div>
+            )}
             <Button type="submit" className="w-full" disabled={submitting}>
               {submitting ? "Please wait…" : mode === "signup" ? "Create account" : "Log in"}
             </Button>

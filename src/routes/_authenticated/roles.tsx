@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,8 @@ export const Route = createFileRoute("/_authenticated/roles")({
 function RolesPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const [startingId, setStartingId] = useState<string | null>(null);
+
 
   const rolesQuery = useQuery({
     queryKey: ["roles-with-sims"],
@@ -55,12 +58,18 @@ function RolesPage() {
   const completedCount = (attemptsQuery.data ?? []).filter((a) => a.status === "completed").length;
 
   async function onStart(simulationId: string) {
-    if (!user) return;
+    if (!user) {
+      toast.error("Please log in again to start a simulation.");
+      return;
+    }
+    setStartingId(simulationId);
     try {
       const attemptId = await startAttempt(user.id, simulationId);
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start the simulation");
+    } finally {
+      setStartingId(null);
     }
   }
 
@@ -91,8 +100,8 @@ function RolesPage() {
                     {sim ? `~${sim.estimated_minutes} min` : "In authoring"}
                   </span>
                   {sim ? (
-                    <Button size="sm" onClick={() => onStart(sim.id)}>
-                      Start simulation
+                    <Button size="sm" onClick={() => onStart(sim.id)} disabled={startingId === sim.id}>
+                      {startingId === sim.id ? "Starting…" : "Start simulation"}
                     </Button>
                   ) : (
                     <Button size="sm" variant="outline" disabled>

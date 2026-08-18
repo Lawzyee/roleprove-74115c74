@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +28,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const { user } = useAuth();
   const router = useRouter();
+  const [startingId, setStartingId] = useState<string | null>(null);
+
 
   const profileQuery = useQuery({
     queryKey: ["profile", user?.id],
@@ -69,12 +72,18 @@ function Dashboard() {
   const completedCount = attempts.filter((a) => a.status === "completed").length;
 
   async function onStart(simulationId: string) {
-    if (!user) return;
+    if (!user) {
+      toast.error("Please log in again to start a simulation.");
+      return;
+    }
+    setStartingId(simulationId);
     try {
       const attemptId = await startAttempt(user.id, simulationId);
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start the simulation");
+    } finally {
+      setStartingId(null);
     }
   }
 
@@ -115,10 +124,10 @@ function Dashboard() {
 
           <div className="space-y-6">
             <section>
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-display text-xl font-semibold">Available simulations</h2>
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/roles">Browse all roles</Link>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/roles">Browse all roles →</Link>
                 </Button>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -133,8 +142,8 @@ function Dashboard() {
                     </CardHeader>
                     <CardContent className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">~{sim.estimated_minutes} min</span>
-                      <Button size="sm" onClick={() => onStart(sim.id)}>
-                        Start simulation
+                      <Button size="sm" onClick={() => onStart(sim.id)} disabled={startingId === sim.id}>
+                        {startingId === sim.id ? "Starting…" : "Start simulation"}
                       </Button>
                     </CardContent>
                   </Card>
