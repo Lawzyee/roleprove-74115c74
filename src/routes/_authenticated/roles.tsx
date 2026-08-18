@@ -27,6 +27,8 @@ export const Route = createFileRoute("/_authenticated/roles")({
 function RolesPage() {
   const { user } = useAuth();
   const router = useRouter();
+  const [startingId, setStartingId] = useState<string | null>(null);
+
 
   const rolesQuery = useQuery({
     queryKey: ["roles-with-sims"],
