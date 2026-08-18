@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedSimulateAttemptIdRouteImport } from './routes/_authenticated/simulate.$attemptId'
+import { Route as AuthenticatedResultsAttemptIdRouteImport } from './routes/_authenticated/results.$attemptId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -46,12 +47,19 @@ const AuthenticatedSimulateAttemptIdRoute =
     path: '/simulate/$attemptId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedResultsAttemptIdRoute =
+  AuthenticatedResultsAttemptIdRouteImport.update({
+    id: '/results/$attemptId',
+    path: '/results/$attemptId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/roles': typeof AuthenticatedRolesRoute
+  '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
 }
 export interface FileRoutesByTo {
@@ -59,6 +67,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/roles': typeof AuthenticatedRolesRoute
+  '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
 }
 export interface FileRoutesById {
@@ -68,13 +77,26 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
+  '/_authenticated/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/_authenticated/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/roles' | '/simulate/$attemptId'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/roles'
+    | '/results/$attemptId'
+    | '/simulate/$attemptId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/roles' | '/simulate/$attemptId'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/roles'
+    | '/results/$attemptId'
+    | '/simulate/$attemptId'
   id:
     | '__root__'
     | '/'
@@ -82,6 +104,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/roles'
+    | '/_authenticated/results/$attemptId'
     | '/_authenticated/simulate/$attemptId'
   fileRoutesById: FileRoutesById
 }
@@ -135,18 +158,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSimulateAttemptIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/results/$attemptId': {
+      id: '/_authenticated/results/$attemptId'
+      path: '/results/$attemptId'
+      fullPath: '/results/$attemptId'
+      preLoaderRoute: typeof AuthenticatedResultsAttemptIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
+  AuthenticatedResultsAttemptIdRoute: typeof AuthenticatedResultsAttemptIdRoute
   AuthenticatedSimulateAttemptIdRoute: typeof AuthenticatedSimulateAttemptIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
+  AuthenticatedResultsAttemptIdRoute: AuthenticatedResultsAttemptIdRoute,
   AuthenticatedSimulateAttemptIdRoute: AuthenticatedSimulateAttemptIdRoute,
 }
 
