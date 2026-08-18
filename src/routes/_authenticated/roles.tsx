@@ -100,8 +100,8 @@ function RolesPage() {
                     {sim ? `~${sim.estimated_minutes} min` : "In authoring"}
                   </span>
                   {sim ? (
-                    <Button size="sm" onClick={() => onStart(sim.id)}>
-                      Start simulation
+                    <Button size="sm" onClick={() => onStart(sim.id)} disabled={startingId === sim.id}>
+                      {startingId === sim.id ? "Starting…" : "Start simulation"}
                     </Button>
                   ) : (
                     <Button size="sm" variant="outline" disabled>
