@@ -34,9 +34,13 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("signup");
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [form, setForm] = useState({
     email: "",
     password: "",
+    confirmPassword: "",
     name: "",
     target_role: "",
     location: "",
@@ -46,10 +50,17 @@ function AuthPage() {
     if (!loading && user) router.navigate({ to: "/dashboard" });
   }, [loading, user, router]);
 
-  const update = (key: keyof typeof form, value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const update = (key: keyof typeof form, value: string) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    if (key === "password" || key === "confirmPassword") setPasswordError(null);
+  };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (mode === "signup" && form.password !== form.confirmPassword) {
+      setPasswordError("Passwords don't match.");
+      return;
+    }
     setSubmitting(true);
     try {
       if (mode === "signup") {
