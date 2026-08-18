@@ -55,12 +55,18 @@ function RolesPage() {
   const completedCount = (attemptsQuery.data ?? []).filter((a) => a.status === "completed").length;
 
   async function onStart(simulationId: string) {
-    if (!user) return;
+    if (!user) {
+      toast.error("Please log in again to start a simulation.");
+      return;
+    }
+    setStartingId(simulationId);
     try {
       const attemptId = await startAttempt(user.id, simulationId);
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start the simulation");
+    } finally {
+      setStartingId(null);
     }
   }
 
