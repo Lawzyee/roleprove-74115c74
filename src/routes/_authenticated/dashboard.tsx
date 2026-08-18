@@ -27,6 +27,8 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const { user } = useAuth();
   const router = useRouter();
+  const [startingId, setStartingId] = useState<string | null>(null);
+
 
   const profileQuery = useQuery({
     queryKey: ["profile", user?.id],
