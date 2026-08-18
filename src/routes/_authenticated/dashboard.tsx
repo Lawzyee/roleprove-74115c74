@@ -142,8 +142,8 @@ function Dashboard() {
                     </CardHeader>
                     <CardContent className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">~{sim.estimated_minutes} min</span>
-                      <Button size="sm" onClick={() => onStart(sim.id)}>
-                        Start simulation
+                      <Button size="sm" onClick={() => onStart(sim.id)} disabled={startingId === sim.id}>
+                        {startingId === sim.id ? "Starting…" : "Start simulation"}
                       </Button>
                     </CardContent>
                   </Card>
