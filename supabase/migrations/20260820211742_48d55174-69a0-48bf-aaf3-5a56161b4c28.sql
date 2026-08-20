@@ -1,0 +1,1 @@
+UPDATE public.profiles SET headline = btrim(regexp_replace(headline, '^\s*Aspiring\s+', '', 'i')) WHERE headline ILIKE 'Aspiring %';
