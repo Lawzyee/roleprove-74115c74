@@ -125,7 +125,15 @@ function Dashboard() {
           </Card>
 
           <div className="space-y-6">
+            <JobDescriptionPaste
+              onStartGeneric={() => {
+                const first = (simsQuery.data ?? [])[0] as any;
+                if (first) onStart(first.id);
+              }}
+            />
+
             <section>
+
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-display text-xl font-semibold">Available simulations</h2>
                 <Button asChild variant="outline" size="sm">
