@@ -199,7 +199,7 @@ function renderTable(columns: Record<keyof GenRow, string>, rows: GenRow[]) {
   return [line(order.map((k) => columns[k])), ...rows.map((r) => line(order.map((k) => String(r[k] ?? ""))))].join("\n");
 }
 
-async function generateThemedTasks(extracted: Extracted): Promise<GeneratedTasks> {
+export async function generateThemedTasks(extracted: Extracted): Promise<GeneratedTasks> {
   const themes = extracted.emphasis_themes.length
     ? extracted.emphasis_themes
     : extracted.skills.slice(0, 5);
