@@ -39,7 +39,15 @@ function ProfilePage() {
     github_url: "",
     portfolio_url: "",
   });
-  const [cred, setCred] = useState({ title: "", issuer: "", year: "" });
+  const [cred, setCred] = useState({
+    title: "",
+    issuer: "",
+    year: "",
+    credential_type: "certification",
+    verification_url: "",
+  });
+  const [credFile, setCredFile] = useState<File | null>(null);
+  const [addingCred, setAddingCred] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const profileQuery = useQuery({
@@ -108,15 +116,42 @@ function ProfilePage() {
 
   async function addCredential() {
     if (!user || !cred.title.trim() || !cred.issuer.trim()) return;
-    const { error } = await supabase.from("credentials").insert({
-      user_id: user.id,
-      title: cred.title.trim(),
-      issuer: cred.issuer.trim(),
-      year: cred.year ? Number(cred.year) : null,
-    });
-    if (error) return toast.error(error.message);
-    setCred({ title: "", issuer: "", year: "" });
-    qc.invalidateQueries({ queryKey: ["credentials", user.id] });
+    setAddingCred(true);
+    try {
+      let filePath: string | null = null;
+      if (credFile) {
+        const path = `${user.id}/${crypto.randomUUID()}-${credFile.name}`;
+        const { error: upErr } = await supabase.storage.from("credentials").upload(path, credFile);
+        if (upErr) throw upErr;
+        filePath = path;
+      }
+      const hasEvidence = !!filePath || !!cred.verification_url.trim();
+      const { error } = await supabase.from("credentials").insert({
+        user_id: user.id,
+        title: cred.title.trim(),
+        issuer: cred.issuer.trim(),
+        year: cred.year ? Number(cred.year) : null,
+        credential_type: cred.credential_type,
+        verification_url: cred.verification_url.trim() || null,
+        file_path: filePath,
+        status: hasEvidence ? "pending_review" : "self_reported",
+      });
+      if (error) throw error;
+      setCred({ title: "", issuer: "", year: "", credential_type: "certification", verification_url: "" });
+      setCredFile(null);
+      qc.invalidateQueries({ queryKey: ["credentials", user.id] });
+      toast.success("Credential added");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add credential");
+    } finally {
+      setAddingCred(false);
+    }
+  }
+
+  async function openCredentialFile(path: string) {
+    const { data, error } = await supabase.storage.from("credentials").createSignedUrl(path, 60);
+    if (error || !data) return toast.error(error?.message ?? "Could not open file");
+    window.open(data.signedUrl, "_blank", "noopener");
   }
 
   async function removeCredential(id: string) {
