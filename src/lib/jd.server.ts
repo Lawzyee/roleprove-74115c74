@@ -266,7 +266,10 @@ export async function generateThemedTasks(extracted: Extracted): Promise<Generat
     Number(claimed.invalid_amounts) === computed.invalid_amounts &&
     Number(claimed.bad_dates) === computed.bad_dates &&
     Math.abs(Number(claimed.total_amount) - computed.total_amount) <= 1;
-  if (!consistent) throw new Error("Generated answer key did not match the generated dataset.");
+  if (!consistent) {
+    console.warn("[jd] answer key mismatch", { claimed, computed });
+    throw new Error("Generated answer key did not match the generated dataset.");
+  }
   if (computed.duplicates < 1 || computed.invalid_amounts < 1 || computed.bad_dates < 1) {
     throw new Error("Generated dataset did not contain the required data-quality issues.");
   }
