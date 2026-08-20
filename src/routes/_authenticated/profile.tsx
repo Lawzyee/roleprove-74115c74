@@ -184,16 +184,17 @@ function ProfilePage() {
             <CardContent className="space-y-4">
               {(
                 [
-                  ["name", "Full name"],
-                  ["headline", "Headline"],
-                  ["target_role", "Target role"],
-                  ["location", "Location"],
+                  ["name", "Full name", "Ada Okafor"],
+                  ["headline", "Headline", "e.g. Senior Marketing Manager moving into Data"],
+                  ["target_role", "Target role", "e.g. Data Analyst"],
+                  ["location", "Location", "Manchester, UK"],
                 ] as const
-              ).map(([key, label]) => (
+              ).map(([key, label, placeholder]) => (
                 <div key={key} className="space-y-2">
                   <Label htmlFor={key}>{label}</Label>
                   <Input
                     id={key}
+                    placeholder={placeholder}
                     value={form[key]}
                     onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                   />
