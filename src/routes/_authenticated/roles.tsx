@@ -85,7 +85,7 @@ function RolesPage() {
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {(rolesQuery.data ?? []).map((role: any) => {
-            const sim = role.simulations?.[0];
+            const sim = (role.simulations ?? []).find((s: any) => !s.is_personalized);
             return (
               <Card key={role.id} className="flex flex-col border-border shadow-none">
                 <CardHeader className="pb-3">
