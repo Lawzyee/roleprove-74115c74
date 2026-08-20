@@ -35,7 +35,7 @@ function RolesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("roles")
-        .select("id, name, description, category, simulations(id, title, estimated_minutes)")
+        .select("id, name, description, category, simulations(id, title, estimated_minutes, is_personalized)")
         .order("created_at");
       if (error) throw error;
       return data;

@@ -176,7 +176,11 @@ function Dashboard() {
                   {attempts.map((attempt: any) => (
                     <div key={attempt.id} className="flex items-center justify-between gap-4 p-4">
                       <div>
-                        <p className="font-medium">{attempt.simulations?.title}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{attempt.simulations?.title}</p>
+                          <AttemptTypeBadge type={attempt.simulation_type} />
+                        </div>
+
                         <p className="text-xs text-muted-foreground">
                           Started {new Date(attempt.started_at).toLocaleDateString()}
                         </p>

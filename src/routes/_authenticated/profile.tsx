@@ -99,7 +99,7 @@ function ProfilePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, started_at, simulations(title)")
+        .select("id, status, overall_score, started_at, simulation_type, simulations(title)")
         .eq("user_id", user!.id)
         .order("started_at", { ascending: false });
       if (error) throw error;
@@ -370,7 +370,10 @@ function ProfilePage() {
               {(attemptsQuery.data ?? []).map((a: any) => (
                 <div key={a.id} className="flex items-center justify-between gap-3 py-3">
                   <div>
-                    <p className="text-sm font-medium">{a.simulations?.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{a.simulations?.title}</p>
+                      <AttemptTypeBadge type={a.simulation_type} />
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {a.status === "completed" ? "Completed" : "In progress"} ·{" "}
                       {new Date(a.started_at).toLocaleDateString()}
