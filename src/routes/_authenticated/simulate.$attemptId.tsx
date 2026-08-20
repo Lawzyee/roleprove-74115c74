@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Clock } from "lucide-react";
+import { Clock, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDuration, type Rubric } from "@/lib/simulations";
+import { downloadDatasetCsv, formatDuration, type Rubric } from "@/lib/simulations";
 import { gradeAttemptFn } from "@/lib/grading.functions";
 
 export const Route = createFileRoute("/_authenticated/simulate/$attemptId")({
@@ -172,18 +172,62 @@ function SimulationRunner() {
           </CardContent>
         </Card>
 
+        {rubric.dataset && rubric.dataset.rows.length > 0 && (
+          <Card className="mt-5 border-border shadow-none">
+            <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
+              <CardTitle className="font-display text-base">
+                Dataset — {rubric.dataset.name}.csv
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={() => downloadDatasetCsv(rubric.dataset!)}>
+                <Download className="mr-2 h-4 w-4" />
+                Download dataset
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto rounded-xl border border-border">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      {rubric.dataset.columns.map((col) => (
+                        <th key={col.key} className="whitespace-nowrap px-3 py-2 font-medium">
+                          {col.key}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rubric.dataset.rows.map((row, i) => (
+                      <tr key={i} className="border-t border-border">
+                        {rubric.dataset!.columns.map((col) => (
+                          <td key={col.key} className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                            {row[col.key]}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="mt-5 border-border shadow-none">
           <CardHeader>
             <CardTitle className="font-display text-base">Your answer</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {task.task_type === "text" && (
-              <Textarea
-                rows={10}
-                value={String(current["text"] ?? "")}
-                onChange={(e) => setValue("text", e.target.value)}
-                placeholder="Write your response here…"
-              />
+              <div className="space-y-2">
+                {rubric.prompt_label && <Label htmlFor="answer-text">{rubric.prompt_label}</Label>}
+                <Textarea
+                  id="answer-text"
+                  rows={10}
+                  value={String(current["text"] ?? "")}
+                  onChange={(e) => setValue("text", e.target.value)}
+                  placeholder="Write your response here…"
+                />
+              </div>
             )}
 
             {task.task_type === "structured" && (
@@ -193,7 +237,7 @@ function SimulationRunner() {
                     <Label htmlFor={field.key}>{field.label}</Label>
                     <Input
                       id={field.key}
-                      type="number"
+                      type={field.type === "text" ? "text" : "number"}
                       step="0.01"
                       value={String(current[field.key] ?? "")}
                       onChange={(e) => setValue(field.key, e.target.value)}
