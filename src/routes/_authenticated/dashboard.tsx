@@ -47,6 +47,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("simulations")
         .select("id, title, description, estimated_minutes, roles(name)")
+        .eq("is_personalized", false)
         .order("created_at");
       if (error) throw error;
       return data;
@@ -59,13 +60,14 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, started_at, completed_at, simulations(title)")
+        .select("id, status, overall_score, started_at, completed_at, simulation_type, simulations(title)")
         .eq("user_id", user!.id)
         .order("started_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
+
 
   const attempts = attemptsQuery.data ?? [];
   const score = compositeScore(attempts);
