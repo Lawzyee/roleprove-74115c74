@@ -418,7 +418,7 @@ export async function generateThemedTasks(extracted: Extracted): Promise<Generat
     tasks: [
       {
         title: String(c.title ?? "Data cleaning").trim(),
-        brief: [String(c.brief_intro ?? "").trim(), "", renderTable(dataset), "", questionText].join("\n").trim(),
+        brief: [String(c.brief_intro ?? "").trim(), "", questionText].join("\n").trim(),
         task_type: "structured",
         rubric_criteria: {
           max_score: 10,
