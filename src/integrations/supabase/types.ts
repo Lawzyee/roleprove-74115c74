@@ -101,6 +101,48 @@ export type Database = {
         }
         Relationships: []
       }
+      job_postings: {
+        Row: {
+          company_context: string | null
+          created_at: string
+          extracted_responsibilities: Json
+          extracted_role_type: string | null
+          extracted_seniority: string | null
+          extracted_skills: Json
+          id: string
+          matched: boolean
+          raw_text: string
+          source_url: string | null
+          user_id: string
+        }
+        Insert: {
+          company_context?: string | null
+          created_at?: string
+          extracted_responsibilities?: Json
+          extracted_role_type?: string | null
+          extracted_seniority?: string | null
+          extracted_skills?: Json
+          id?: string
+          matched?: boolean
+          raw_text: string
+          source_url?: string | null
+          user_id: string
+        }
+        Update: {
+          company_context?: string | null
+          created_at?: string
+          extracted_responsibilities?: Json
+          extracted_role_type?: string | null
+          extracted_seniority?: string | null
+          extracted_skills?: Json
+          id?: string
+          matched?: boolean
+          raw_text?: string
+          source_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -174,8 +216,10 @@ export type Database = {
         Row: {
           completed_at: string | null
           id: string
+          job_posting_id: string | null
           overall_score: number | null
           simulation_id: string
+          simulation_type: string
           started_at: string
           status: string
           user_id: string
@@ -183,8 +227,10 @@ export type Database = {
         Insert: {
           completed_at?: string | null
           id?: string
+          job_posting_id?: string | null
           overall_score?: number | null
           simulation_id: string
+          simulation_type?: string
           started_at?: string
           status?: string
           user_id: string
@@ -192,13 +238,22 @@ export type Database = {
         Update: {
           completed_at?: string | null
           id?: string
+          job_posting_id?: string | null
           overall_score?: number | null
           simulation_id?: string
+          simulation_type?: string
           started_at?: string
           status?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "simulation_attempts_job_posting_id_fkey"
+            columns: ["job_posting_id"]
+            isOneToOne: false
+            referencedRelation: "job_postings"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "simulation_attempts_simulation_id_fkey"
             columns: ["simulation_id"]
@@ -252,7 +307,10 @@ export type Database = {
           description: string
           estimated_minutes: number
           id: string
+          is_personalized: boolean
+          owner_user_id: string | null
           role_id: string
+          source_simulation_id: string | null
           title: string
         }
         Insert: {
@@ -260,7 +318,10 @@ export type Database = {
           description: string
           estimated_minutes?: number
           id?: string
+          is_personalized?: boolean
+          owner_user_id?: string | null
           role_id: string
+          source_simulation_id?: string | null
           title: string
         }
         Update: {
@@ -268,7 +329,10 @@ export type Database = {
           description?: string
           estimated_minutes?: number
           id?: string
+          is_personalized?: boolean
+          owner_user_id?: string | null
           role_id?: string
+          source_simulation_id?: string | null
           title?: string
         }
         Relationships: [
@@ -277,6 +341,13 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "simulations_source_simulation_id_fkey"
+            columns: ["source_simulation_id"]
+            isOneToOne: false
+            referencedRelation: "simulations"
             referencedColumns: ["id"]
           },
         ]

@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ScoreRing } from "@/components/ScoreRing";
+import { JobDescriptionPaste } from "@/components/JobDescriptionPaste";
+import { AttemptTypeBadge } from "@/components/AttemptTypeBadge";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +50,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("simulations")
         .select("id, title, description, estimated_minutes, roles(name)")
+        .eq("is_personalized", false)
         .order("created_at");
       if (error) throw error;
       return data;
@@ -59,13 +63,14 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, started_at, completed_at, simulations(title)")
+        .select("id, status, overall_score, started_at, completed_at, simulation_type, simulations(title)")
         .eq("user_id", user!.id)
         .order("started_at", { ascending: false });
       if (error) throw error;
       return data;
     },
   });
+
 
   const attempts = attemptsQuery.data ?? [];
   const score = compositeScore(attempts);
@@ -123,7 +128,15 @@ function Dashboard() {
           </Card>
 
           <div className="space-y-6">
+            <JobDescriptionPaste
+              onStartGeneric={() => {
+                const first = (simsQuery.data ?? [])[0] as any;
+                if (first) onStart(first.id);
+              }}
+            />
+
             <section>
+
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-display text-xl font-semibold">Available simulations</h2>
                 <Button asChild variant="outline" size="sm">
@@ -163,7 +176,11 @@ function Dashboard() {
                   {attempts.map((attempt: any) => (
                     <div key={attempt.id} className="flex items-center justify-between gap-4 p-4">
                       <div>
-                        <p className="font-medium">{attempt.simulations?.title}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{attempt.simulations?.title}</p>
+                          <AttemptTypeBadge type={attempt.simulation_type} />
+                        </div>
+
                         <p className="text-xs text-muted-foreground">
                           Started {new Date(attempt.started_at).toLocaleDateString()}
                         </p>
