@@ -65,29 +65,38 @@ export type Database = {
       credentials: {
         Row: {
           created_at: string
+          credential_type: string
+          file_path: string | null
           id: string
           issuer: string
           status: string
           title: string
           user_id: string
+          verification_url: string | null
           year: number | null
         }
         Insert: {
           created_at?: string
+          credential_type?: string
+          file_path?: string | null
           id?: string
           issuer: string
           status?: string
           title: string
           user_id: string
+          verification_url?: string | null
           year?: number | null
         }
         Update: {
           created_at?: string
+          credential_type?: string
+          file_path?: string | null
           id?: string
           issuer?: string
           status?: string
           title?: string
           user_id?: string
+          verification_url?: string | null
           year?: number | null
         }
         Relationships: []
