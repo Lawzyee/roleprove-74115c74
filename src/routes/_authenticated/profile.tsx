@@ -235,10 +235,12 @@ function ProfilePage() {
           <Card className="border-border shadow-none">
             <CardHeader>
               <CardTitle className="font-display text-lg">Credentials</CardTitle>
-              <CardDescription>Self-reported for now — verification comes later.</CardDescription>
+              <CardDescription>
+                Add a verification link or certificate file to move a credential to review.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <Input
                   placeholder="Title"
                   value={cred.title}
@@ -249,6 +251,19 @@ function ProfilePage() {
                   value={cred.issuer}
                   onChange={(e) => setCred({ ...cred, issuer: e.target.value })}
                 />
+                <Select
+                  value={cred.credential_type}
+                  onValueChange={(v) => setCred({ ...cred, credential_type: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="degree">Degree</SelectItem>
+                    <SelectItem value="certification">Certification</SelectItem>
+                    <SelectItem value="prior_role">Prior role experience</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Input
                   placeholder="Year"
                   type="number"
@@ -256,21 +271,65 @@ function ProfilePage() {
                   onChange={(e) => setCred({ ...cred, year: e.target.value })}
                 />
               </div>
-              <Button variant="outline" onClick={addCredential}>
-                Add credential
+              <div className="space-y-2">
+                <Label htmlFor="verification_url">Verification link (optional)</Label>
+                <Input
+                  id="verification_url"
+                  placeholder="https://credly.com/badges/..."
+                  value={cred.verification_url}
+                  onChange={(e) => setCred({ ...cred, verification_url: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="cred_file">Certificate file (optional)</Label>
+                <Input
+                  id="cred_file"
+                  type="file"
+                  accept="image/*,application/pdf"
+                  onChange={(e) => setCredFile(e.target.files?.[0] ?? null)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Stored privately — only you can view it.
+                </p>
+              </div>
+              <Button variant="outline" onClick={addCredential} disabled={addingCred}>
+                {addingCred ? "Adding…" : "Add credential"}
               </Button>
               <div className="divide-y divide-border">
-                {(credsQuery.data ?? []).map((c) => (
+                {(credsQuery.data ?? []).map((c: any) => (
                   <div key={c.id} className="flex items-center justify-between gap-3 py-3">
                     <div>
                       <p className="text-sm font-medium">{c.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {c.issuer}
+                        {CREDENTIAL_TYPE_LABELS[c.credential_type] ?? "Credential"} · {c.issuer}
                         {c.year ? ` · ${c.year}` : ""}
                       </p>
+                      <div className="mt-1 flex gap-3 text-xs">
+                        {c.verification_url && (
+                          <a
+                            href={c.verification_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline-offset-4 hover:underline"
+                          >
+                            Verification link
+                          </a>
+                        )}
+                        {c.file_path && (
+                          <button
+                            type="button"
+                            className="text-primary underline-offset-4 hover:underline"
+                            onClick={() => openCredentialFile(c.file_path)}
+                          >
+                            View certificate
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary">Self-reported</Badge>
+                      <Badge variant={c.status === "verified" ? "default" : "secondary"}>
+                        {STATUS_LABELS[c.status] ?? "Self-reported"}
+                      </Badge>
                       <Button size="sm" variant="ghost" onClick={() => removeCredential(c.id)}>
                         Remove
                       </Button>
