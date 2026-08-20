@@ -36,7 +36,7 @@ function ResultsPage() {
     queryFn: async () => {
       const { data: attempt, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, completed_at, simulation_id, simulations(title, description)")
+        .select("id, status, overall_score, completed_at, simulation_id, simulation_type, simulations(title, description)")
         .eq("id", attemptId)
         .single();
       if (error) throw error;
@@ -71,7 +71,10 @@ function ResultsPage() {
 
         {attempt && (
           <>
-            <Badge variant="secondary">Practice attempt</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">Practice attempt</Badge>
+              <AttemptTypeBadge type={attempt.simulation_type} />
+            </div>
             <h1 className="mt-3 font-display text-3xl font-semibold">{attempt.simulations?.title}</h1>
             <p className="mt-2 text-muted-foreground">{attempt.simulations?.description}</p>
 
