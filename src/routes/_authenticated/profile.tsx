@@ -11,7 +11,26 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { compositeScore } from "@/lib/simulations";
+
+const CREDENTIAL_TYPE_LABELS: Record<string, string> = {
+  degree: "Degree",
+  certification: "Certification",
+  prior_role: "Prior role experience",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  self_reported: "Self-reported",
+  pending_review: "Pending review",
+  verified: "Verified",
+};
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({
