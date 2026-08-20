@@ -405,15 +405,7 @@ export async function generatePersonalisedSimulation(
   if (baseError) throw new Error(baseError.message);
   if (!baseSim) throw new Error("The base Data Analyst simulation is unavailable.");
 
-  const { data: baseTasks, error: taskError } = await supabaseAdmin
-    .from("simulation_tasks")
-    .select("id, title, brief, task_type, rubric_criteria, order")
-    .eq("simulation_id", baseSim.id)
-    .order("order");
-  if (taskError) throw new Error(taskError.message);
-  if (!baseTasks?.length) throw new Error("The base simulation has no tasks.");
-
-  const personalised = await personaliseBriefs(extracted, baseTasks as any);
+  const personalised = await generateThemedTasksWithRetry(extracted);
 
   const { data: newSim, error: simError } = await supabaseAdmin
     .from("simulations")
@@ -422,7 +414,7 @@ export async function generatePersonalisedSimulation(
       title: personalised.title || `${extracted.role_type} — tailored simulation`,
       description:
         personalised.description ||
-        `A Data Analyst simulation reframed around the job description you pasted for ${extracted.role_type}.`,
+        `A Data Analyst simulation generated around the job description you pasted for ${extracted.role_type}.`,
       estimated_minutes: baseSim.estimated_minutes,
       is_personalized: true,
       owner_user_id: userId,
@@ -433,14 +425,14 @@ export async function generatePersonalisedSimulation(
   if (simError) throw new Error(simError.message);
 
   const { error: insertTasksError } = await supabaseAdmin.from("simulation_tasks").insert(
-    (baseTasks as any[]).map((t) => ({
+    personalised.tasks.map((t, i) => ({
       simulation_id: newSim.id,
       title: t.title,
-      brief: personalised.briefs.get(t.id) ?? t.brief,
+      brief: t.brief,
       task_type: t.task_type,
       rubric_criteria: t.rubric_criteria,
-      order: t.order,
-    })),
+      order: i + 1,
+    })) as any,
   );
   if (insertTasksError) throw new Error(insertTasksError.message);
 
