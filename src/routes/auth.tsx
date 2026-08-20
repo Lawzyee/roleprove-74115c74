@@ -71,7 +71,7 @@ function AuthPage() {
             emailRedirectTo: `${window.location.origin}/dashboard`,
             data: {
               name: form.name,
-              headline: form.target_role ? `Aspiring ${form.target_role}` : "",
+              headline: form.target_role,
               target_role: form.target_role,
               location: form.location,
             },
@@ -132,7 +132,7 @@ function AuthPage() {
                     required
                     value={form.target_role}
                     onChange={(e) => update("target_role", e.target.value)}
-                    placeholder="Data Analyst"
+                    placeholder="e.g. Senior Marketing Manager moving into Data"
                   />
                 </div>
                 <div className="space-y-2">
