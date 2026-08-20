@@ -110,7 +110,7 @@ export async function extractJobPosting(text: string): Promise<Extracted> {
     "You extract structured data from job descriptions. Always reply with JSON only.",
     [
       "Extract the following from this job description and reply as JSON:",
-      '{"role_type": "<canonical job role, e.g. Data Analyst>", "seniority": "<intern|junior|mid|senior|lead|unclear>", "skills": ["..."], "responsibilities": ["..."], "company_context": "<1-2 sentences on the company/team/domain, or empty string>", "confidence": <0-1 how confident you are in role_type>}',
+      '{"role_type": "<canonical job role, e.g. Data Analyst>", "seniority": "<intern|junior|mid|senior|lead|unclear>", "skills": ["..."], "responsibilities": ["..."], "emphasis_themes": ["<3-5 specific domains this posting emphasises, e.g. membership and retention metrics, EPOS data validation, Power BI dashboards, statistical reasoning, non-technical stakeholder communication>"], "company_context": "<1-2 sentences on the company/team/domain, or empty string>", "confidence": <0-1 how confident you are in role_type>}',
       "",
       "JOB DESCRIPTION:",
       text.slice(0, 12000),
@@ -122,6 +122,7 @@ export async function extractJobPosting(text: string): Promise<Extracted> {
     seniority: String(parsed.seniority ?? "unclear").trim(),
     skills: Array.isArray(parsed.skills) ? parsed.skills.map(String).slice(0, 20) : [],
     responsibilities: Array.isArray(parsed.responsibilities) ? parsed.responsibilities.map(String).slice(0, 20) : [],
+    emphasis_themes: Array.isArray(parsed.emphasis_themes) ? parsed.emphasis_themes.map(String).slice(0, 5) : [],
     company_context: String(parsed.company_context ?? ""),
     confidence: Number(parsed.confidence ?? 0),
   };
