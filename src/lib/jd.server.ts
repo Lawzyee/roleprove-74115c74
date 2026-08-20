@@ -56,17 +56,15 @@ async function callAi(system: string, user: string) {
   }
 }
 
-export async function fetchJobPostingText(url: string) {
-  let res: Response;
-  try {
-    res = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; RoleProveBot/1.0)" } });
-  } catch {
-    throw new Error("We couldn't open that URL. Paste the job description text instead.");
-  }
-  if (!res.ok) throw new Error("We couldn't read that URL. Paste the job description text instead.");
+const BROWSER_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language": "en-GB,en;q=0.9",
+};
 
-  const html = await res.text();
-  const text = html
+function htmlToText(html: string) {
+  return html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<[^>]+>/g, " ")
@@ -74,9 +72,33 @@ export async function fetchJobPostingText(url: string) {
     .replace(/&amp;/g, "&")
     .replace(/\s+/g, " ")
     .trim();
-
-  return text.slice(0, 12000);
 }
+
+async function tryFetchText(target: string, headers: Record<string, string>) {
+  try {
+    const res = await fetch(target, { headers, redirect: "follow" });
+    if (!res.ok) return null;
+    const body = await res.text();
+    const text = target.includes("r.jina.ai") ? body.replace(/\s+/g, " ").trim() : htmlToText(body);
+    return wordCount(text) >= 50 ? text.slice(0, 12000) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchJobPostingText(url: string) {
+  // Direct fetch first; many job boards block bots, so fall back to a reader proxy.
+  const direct = await tryFetchText(url, BROWSER_HEADERS);
+  if (direct) return direct;
+
+  const proxied = await tryFetchText(`https://r.jina.ai/${url}`, { "User-Agent": BROWSER_HEADERS["User-Agent"] });
+  if (proxied) return proxied;
+
+  throw new Error(
+    "That job site blocked us from reading the posting (LinkedIn, Indeed and similar often do). Please copy the job description text and paste it here instead.",
+  );
+}
+
 
 export function wordCount(text: string) {
   return text.trim().split(/\s+/).filter(Boolean).length;
