@@ -5,6 +5,7 @@ type Extracted = {
   seniority: string;
   skills: string[];
   responsibilities: string[];
+  emphasis_themes: string[];
   company_context: string;
   confidence: number;
 };
