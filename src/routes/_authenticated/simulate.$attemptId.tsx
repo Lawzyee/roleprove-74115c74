@@ -178,12 +178,16 @@ function SimulationRunner() {
           </CardHeader>
           <CardContent className="space-y-4">
             {task.task_type === "text" && (
-              <Textarea
-                rows={10}
-                value={String(current["text"] ?? "")}
-                onChange={(e) => setValue("text", e.target.value)}
-                placeholder="Write your response here…"
-              />
+              <div className="space-y-2">
+                {rubric.prompt_label && <Label htmlFor="answer-text">{rubric.prompt_label}</Label>}
+                <Textarea
+                  id="answer-text"
+                  rows={10}
+                  value={String(current["text"] ?? "")}
+                  onChange={(e) => setValue("text", e.target.value)}
+                  placeholder="Write your response here…"
+                />
+              </div>
             )}
 
             {task.task_type === "structured" && (
@@ -193,7 +197,7 @@ function SimulationRunner() {
                     <Label htmlFor={field.key}>{field.label}</Label>
                     <Input
                       id={field.key}
-                      type="number"
+                      type={field.type === "text" ? "text" : "number"}
                       step="0.01"
                       value={String(current[field.key] ?? "")}
                       onChange={(e) => setValue(field.key, e.target.value)}
