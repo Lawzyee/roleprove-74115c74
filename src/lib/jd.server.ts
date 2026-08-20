@@ -134,7 +134,28 @@ export function matchesDataAnalyst(extracted: Extracted) {
   return keywordHit && extracted.confidence >= 0.5;
 }
 
-type GenRow = { ref: string; entity: string; category: string; amount: string; date: string };
+export type DatasetColumn = { key: string; label: string };
+export type DatasetRow = Record<string, string>;
+export type Dataset = { name: string; columns: DatasetColumn[]; rows: DatasetRow[] };
+
+type Metric =
+  | { kind: "duplicate_rows" }
+  | { kind: "invalid_number"; column: string }
+  | { kind: "bad_date_format"; column: string }
+  | { kind: "missing_values"; column: string }
+  | { kind: "inconsistent_labels"; column: string; allowed_values: string[] }
+  | { kind: "sum_valid"; column: string }
+  | { kind: "distinct_count"; column: string };
+
+type AnswerField = {
+  key: string;
+  label: string;
+  type: "number";
+  metric: Metric;
+  points: number;
+  tolerance?: number;
+  answer: number;
+};
 
 type GeneratedTasks = {
   title: string;
@@ -149,75 +170,129 @@ type GeneratedTasks = {
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-function isBlank(value: string) {
-  const v = (value ?? "").trim().toLowerCase();
+function isBlank(value: unknown) {
+  const v = String(value ?? "").trim().toLowerCase();
   return !v || v === "(blank)" || v === "n/a" || v === "null" || v === "-";
 }
 
-function parseAmount(value: string) {
+function parseAmount(value: unknown) {
   const raw = String(value ?? "").trim();
   if (!raw || !/\d/.test(raw)) return NaN;
   const n = Number(raw.replace(/[^0-9.\-]/g, ""));
   return Number.isFinite(n) ? n : NaN;
 }
 
-/** Recomputes the answer key directly from the generated table. */
-export function computeAnswerKey(rows: GenRow[]) {
+function fingerprint(columns: DatasetColumn[], row: DatasetRow) {
+  return columns.map((c) => String(row[c.key] ?? "").trim().toLowerCase()).join("|");
+}
+
+function uniqueRows(dataset: Dataset) {
   const seen = new Set<string>();
-  let duplicates = 0;
-  let invalidAmounts = 0;
-  let badDates = 0;
-  let total = 0;
+  const out: DatasetRow[] = [];
+  for (const row of dataset.rows) {
+    const fp = fingerprint(dataset.columns, row);
+    if (seen.has(fp)) continue;
+    seen.add(fp);
+    out.push(row);
+  }
+  return out;
+}
 
-  for (const row of rows) {
-    const fingerprint = [row.ref, row.entity, row.category, row.amount, row.date].map((v) => String(v ?? "").trim()).join("|");
-    if (seen.has(fingerprint)) {
-      duplicates += 1;
-      continue;
-    }
-    seen.add(fingerprint);
-
-    const amount = parseAmount(row.amount);
-    const amountInvalid = !Number.isFinite(amount) || amount < 0;
-    if (amountInvalid) invalidAmounts += 1;
-    if (!ISO_DATE.test(String(row.date ?? "").trim())) badDates += 1;
-    if (!amountInvalid && !isBlank(row.entity)) total += amount;
+/** Recomputes a single metric server-side, directly from the generated dataset. */
+export function computeMetric(dataset: Dataset, metric: Metric): number {
+  const unique = uniqueRows(dataset);
+  const columnKeys = new Set(dataset.columns.map((c) => c.key));
+  const col = (metric as { column?: string }).column;
+  if (metric.kind !== "duplicate_rows") {
+    if (!col || !columnKeys.has(col)) throw new Error(`Metric references unknown column "${col}".`);
   }
 
-  return {
-    duplicates,
-    invalid_amounts: invalidAmounts,
-    bad_dates: badDates,
-    total_amount: Math.round(total * 100) / 100,
-  };
+  switch (metric.kind) {
+    case "duplicate_rows":
+      return dataset.rows.length - unique.length;
+    case "invalid_number":
+      return unique.filter((r) => {
+        const n = parseAmount(r[col!]);
+        return !Number.isFinite(n) || n < 0;
+      }).length;
+    case "bad_date_format":
+      return unique.filter((r) => !ISO_DATE.test(String(r[col!] ?? "").trim())).length;
+    case "missing_values":
+      return unique.filter((r) => isBlank(r[col!])).length;
+    case "inconsistent_labels": {
+      const allowed = (metric.allowed_values ?? []).map((v) => String(v).trim().toLowerCase());
+      if (allowed.length < 2) throw new Error("inconsistent_labels needs at least two allowed values.");
+      return unique.filter((r) => {
+        const v = String(r[col!] ?? "").trim().toLowerCase();
+        return !!v && !allowed.includes(v);
+      }).length;
+    }
+    case "sum_valid": {
+      const total = unique.reduce((sum, r) => {
+        const n = parseAmount(r[col!]);
+        return Number.isFinite(n) && n >= 0 ? sum + n : sum;
+      }, 0);
+      return Math.round(total * 100) / 100;
+    }
+    case "distinct_count": {
+      const values = new Set(
+        unique.map((r) => String(r[col!] ?? "").trim().toLowerCase()).filter((v) => v && !isBlank(v)),
+      );
+      return values.size;
+    }
+    default:
+      throw new Error("Unsupported metric kind.");
+  }
 }
 
-function renderTable(columns: Record<keyof GenRow, string>, rows: GenRow[]) {
-  const order: Array<keyof GenRow> = ["ref", "entity", "category", "amount", "date"];
-  const widths = order.map((k) =>
-    Math.max(columns[k].length, ...rows.map((r) => String(r[k] ?? "").length)),
+export function datasetToCsv(dataset: Dataset) {
+  const esc = (v: unknown) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const header = dataset.columns.map((c) => esc(c.key)).join(",");
+  const body = dataset.rows.map((r) => dataset.columns.map((c) => esc(r[c.key])).join(","));
+  return [header, ...body].join("\n");
+}
+
+function renderTable(dataset: Dataset) {
+  const widths = dataset.columns.map((c) =>
+    Math.max(c.key.length, ...dataset.rows.map((r) => String(r[c.key] ?? "").length)),
   );
   const line = (cells: string[]) => cells.map((c, i) => c.padEnd(widths[i]!)).join(" | ").trimEnd();
-  return [line(order.map((k) => columns[k])), ...rows.map((r) => line(order.map((k) => String(r[k] ?? ""))))].join("\n");
+  return [
+    line(dataset.columns.map((c) => c.key)),
+    ...dataset.rows.map((r) => line(dataset.columns.map((c) => String(r[c.key] ?? "")))),
+  ].join("\n");
 }
 
+const METRIC_KINDS = [
+  "duplicate_rows",
+  "invalid_number",
+  "bad_date_format",
+  "missing_values",
+  "inconsistent_labels",
+  "sum_valid",
+  "distinct_count",
+];
+
 export async function generateThemedTasks(extracted: Extracted): Promise<GeneratedTasks> {
-  const themes = extracted.emphasis_themes.length
-    ? extracted.emphasis_themes
-    : extracted.skills.slice(0, 5);
+  const themes = extracted.emphasis_themes.length ? extracted.emphasis_themes : extracted.skills.slice(0, 5);
 
   const parsed = await callAi(
-    "You design hands-on job-simulation content for a Data Analyst assessment. Every generation must be original: new company/entity names, new row values, new dates and new numbers. Reply with JSON only.",
+    "You design hands-on job-simulation content for a Data Analyst assessment. Every generation must be original: a freshly designed table structure, new company/entity names, new row values, new dates and new numbers. Reply with JSON only.",
     [
-      `JOB POSTING CONTEXT:\nRole: ${extracted.role_type}\nSeniority: ${extracted.seniority}\nCompany context: ${extracted.company_context}\nSkills/tools: ${extracted.skills.join(", ")}\nResponsibilities: ${extracted.responsibilities.join("; ")}\nEMPHASIS THEMES (must visibly shape the task content): ${themes.join("; ")}`,
+      `JOB POSTING CONTEXT:\nRole: ${extracted.role_type}\nSeniority: ${extracted.seniority}\nCompany context: ${extracted.company_context}\nSkills/tools: ${extracted.skills.join(", ")}\nResponsibilities: ${extracted.responsibilities.join("; ")}\nEMPHASIS THEMES (must visibly shape the dataset itself, not just the wording): ${themes.join("; ")}`,
       "",
       `Randomisation seed (make the data unique to this seed): ${Math.random().toString(36).slice(2)}-${Date.now()}`,
       "",
-      "Design a 4-task simulation themed to the emphasis themes above:",
-      "1. A data-cleaning task over a small messy export (10-14 rows) drawn from the domain the posting emphasises (e.g. membership/retention feeds, EPOS transactions). Deliberately include: 1-3 exact duplicate rows, 1-2 rows with a negative or non-numeric amount, 1-3 rows with a date that is NOT in YYYY-MM-DD format, and 1 row with a missing/blank entity value.",
-      "2. A SQL task whose question reflects the emphasis themes (e.g. churn/retention cohorts) rather than generic revenue aggregation.",
-      "3. A multiple-choice chart-interpretation task presenting a trend from the emphasised domain, with 4 plausible options and exactly one best answer.",
-      "4. A stakeholder-summary writing task naming the actual audiences from the posting.",
+      "CRITICAL: Do not reuse or lightly modify any generic template table (id / customer / plan / amount / date). Design the dataset from scratch as if it were an actual export from the systems this job description names, for the business problem it describes. Choose the number of columns (4-7), the column names, the grain of a row, and which data-quality problems are realistic in that specific feed.",
+      "",
+      "Design a 4-task simulation:",
+      "1. DATA CLEANING over a messy export of 10-16 rows in the domain the posting emphasises. Introduce 2-4 different categories of data-quality problem chosen to fit this domain (not always the same three).",
+      "2. SQL task whose question reflects the emphasis themes and queries the SAME table you designed (reference its real column names).",
+      "3. Multiple-choice chart-interpretation task from the emphasised domain, 4 plausible options, exactly one best answer.",
+      "4. Stakeholder-summary writing task naming the real audiences from the posting.",
       "",
       "Reply as JSON exactly in this shape:",
       JSON.stringify({
@@ -226,55 +301,99 @@ export async function generateThemedTasks(extracted: Extracted): Promise<Generat
         cleaning: {
           title: "<task title>",
           brief_intro: "<scenario framing, 2-4 sentences, no table>",
-          question: "<what to count and total, referencing the column labels>",
-          columns: { ref: "record_id", entity: "member", category: "plan", amount: "amount", date: "joined_date" },
-          rows: [{ ref: "1001", entity: "…", category: "…", amount: "240.00", date: "2025-03-04" }],
-          amount_label: "Total valid revenue (GBP)",
-          answer_key: { duplicates: 0, invalid_amounts: 0, bad_dates: 0, total_amount: 0 },
+          question_text: "<the question, referencing your real column names>",
+          dataset: {
+            name: "<snake_case file/table name>",
+            columns: [{ key: "<snake_case column>", label: "<human label>" }],
+            rows: [{ "<column key>": "<value as string>" }],
+          },
+          answer_fields: [
+            {
+              key: "<snake_case answer key>",
+              label: "<what the candidate must enter>",
+              type: "number",
+              metric: { kind: `<one of ${METRIC_KINDS.join(" | ")}>`, column: "<column key, omit for duplicate_rows>", allowed_values: ["<only for inconsistent_labels>"] },
+              expected: 0,
+            },
+          ],
         },
-        sql: { title: "<task title>", brief: "<brief incl. table schema>", criteria: ["…", "…", "…", "…", "…"] },
+        sql: {
+          title: "<task title>",
+          brief: "<brief including the schema of the dataset table you designed>",
+          prompt_label: "<label for the answer box, e.g. Your SQL query>",
+          criteria: ["…", "…", "…", "…", "…"],
+        },
         chart: { title: "<task title>", brief: "<chart figures + question>", options: ["…", "…", "…", "…"], answer: 1 },
-        summary: { title: "<task title>", brief: "<brief naming the real stakeholders>", criteria: ["…", "…", "…", "…", "…"] },
+        summary: {
+          title: "<task title>",
+          brief: "<brief naming the real stakeholders>",
+          prompt_label: "<label for the answer box>",
+          criteria: ["…", "…", "…", "…", "…"],
+        },
       }),
       "",
-      "answer_key MUST be computed from the rows you generated: duplicates = number of extra exact-duplicate rows, invalid_amounts = unique rows with a negative or non-numeric amount, bad_dates = unique rows whose date is not YYYY-MM-DD, total_amount = sum of amounts over unique rows excluding negative/invalid amounts and rows with a blank entity.",
+      "Rules for answer_fields: 3 to 5 fields, every field must be answerable purely by inspecting the dataset, and 'expected' must be the exact value computed from the rows you generated. Metric semantics (all computed over rows after removing exact duplicates): duplicate_rows = number of extra exact-duplicate rows; invalid_number = rows whose value in that column is negative or non-numeric; bad_date_format = rows whose date is not YYYY-MM-DD; missing_values = rows with a blank value; inconsistent_labels = rows whose value is not in allowed_values; sum_valid = sum of that numeric column over rows with a valid non-negative value; distinct_count = number of distinct non-blank values.",
+      "Use at least 3 different metric kinds, including at least one counting metric whose expected value is greater than zero and at least one sum_valid or distinct_count metric.",
     ].join("\n"),
   );
 
   const c = parsed.cleaning ?? {};
-  const rows: GenRow[] = (Array.isArray(c.rows) ? c.rows : []).map((r: any) => ({
-    ref: String(r?.ref ?? ""),
-    entity: String(r?.entity ?? ""),
-    category: String(r?.category ?? ""),
-    amount: String(r?.amount ?? ""),
-    date: String(r?.date ?? ""),
-  }));
-  if (rows.length < 6) throw new Error("Generated dataset was too small.");
+  const rawDataset = c.dataset ?? {};
+  const columns: DatasetColumn[] = (Array.isArray(rawDataset.columns) ? rawDataset.columns : [])
+    .map((col: any) => ({ key: String(col?.key ?? "").trim(), label: String(col?.label ?? col?.key ?? "").trim() }))
+    .filter((col: DatasetColumn) => !!col.key);
+  const rows: DatasetRow[] = (Array.isArray(rawDataset.rows) ? rawDataset.rows : []).map((r: any) => {
+    const row: DatasetRow = {};
+    for (const col of columns) row[col.key] = r?.[col.key] === undefined || r?.[col.key] === null ? "" : String(r[col.key]);
+    return row;
+  });
 
-  const columns = {
-    ref: String(c.columns?.ref ?? "record_id"),
-    entity: String(c.columns?.entity ?? "entity"),
-    category: String(c.columns?.category ?? "category"),
-    amount: String(c.columns?.amount ?? "amount"),
-    date: String(c.columns?.date ?? "date"),
+  if (columns.length < 4) throw new Error("Generated dataset had too few columns.");
+  if (rows.length < 8) throw new Error("Generated dataset was too small.");
+
+  const dataset: Dataset = {
+    name: String(rawDataset.name ?? "dataset").trim().replace(/[^a-z0-9_\-]/gi, "_").toLowerCase() || "dataset",
+    columns,
+    rows,
   };
 
-  const computed = computeAnswerKey(rows);
-  const claimed = c.answer_key ?? {};
+  const rawFields = Array.isArray(c.answer_fields) ? c.answer_fields : [];
+  if (rawFields.length < 3 || rawFields.length > 6) throw new Error("Generated answer fields were invalid.");
 
-  // Sanity check: the AI's key must agree with the dataset it just produced.
-  const consistent =
-    Number(claimed.duplicates) === computed.duplicates &&
-    Number(claimed.invalid_amounts) === computed.invalid_amounts &&
-    Number(claimed.bad_dates) === computed.bad_dates &&
-    Math.abs(Number(claimed.total_amount) - computed.total_amount) <= 1;
-  if (!consistent) {
-    console.warn("[jd] answer key mismatch", { claimed, computed });
-    throw new Error("Generated answer key did not match the generated dataset.");
+  const fields: AnswerField[] = [];
+  const kinds = new Set<string>();
+  let positiveCount = 0;
+
+  for (const raw of rawFields) {
+    const key = String(raw?.key ?? "").trim();
+    const label = String(raw?.label ?? "").trim();
+    const kind = String(raw?.metric?.kind ?? "").trim();
+    if (!key || !label || !METRIC_KINDS.includes(kind)) throw new Error("Generated answer field was malformed.");
+    const metric = {
+      kind,
+      column: raw?.metric?.column ? String(raw.metric.column) : undefined,
+      allowed_values: Array.isArray(raw?.metric?.allowed_values) ? raw.metric.allowed_values.map(String) : undefined,
+    } as Metric;
+
+    const computed = computeMetric(dataset, metric);
+    const claimed = Number(raw?.expected);
+    const tolerance = kind === "sum_valid" ? 1 : 0;
+    if (!Number.isFinite(claimed) || Math.abs(claimed - computed) > tolerance) {
+      throw new Error(`Answer key for "${key}" did not match the generated dataset.`);
+    }
+    kinds.add(kind);
+    if (kind !== "sum_valid" && kind !== "distinct_count" && computed > 0) positiveCount += 1;
+
+    fields.push({ key, label, type: "number", metric, points: 0, tolerance, answer: computed });
   }
-  if (computed.duplicates < 1 || computed.invalid_amounts < 1 || computed.bad_dates < 1) {
-    throw new Error("Generated dataset did not contain the required data-quality issues.");
-  }
+
+  if (kinds.size < 3) throw new Error("Generated dataset did not contain varied data-quality issues.");
+  if (positiveCount < 2) throw new Error("Generated dataset did not contain enough real data-quality issues.");
+
+  const base = Math.floor(10 / fields.length);
+  fields.forEach((f, i) => {
+    f.points = i === fields.length - 1 ? 10 - base * (fields.length - 1) : base;
+  });
 
   const chart = parsed.chart ?? {};
   const chartOptions = (Array.isArray(chart.options) ? chart.options : []).map(String).slice(0, 4);
@@ -290,42 +409,41 @@ export async function generateThemedTasks(extracted: Extracted): Promise<Generat
     throw new Error("Generated task briefs were incomplete.");
   }
 
+  const questionText = String(c.question_text ?? "").trim();
+  if (!questionText) throw new Error("Generated cleaning question was empty.");
+
   return {
     title: String(parsed.title ?? "").trim(),
     description: String(parsed.description ?? "").trim(),
     tasks: [
       {
         title: String(c.title ?? "Data cleaning").trim(),
-        brief: [String(c.brief_intro ?? "").trim(), "", renderTable(columns, rows), "", String(c.question ?? "").trim()]
-          .join("\n")
-          .trim(),
+        brief: [String(c.brief_intro ?? "").trim(), "", renderTable(dataset), "", questionText].join("\n").trim(),
         task_type: "structured",
         rubric_criteria: {
           max_score: 10,
-          fields: [
-            { key: "duplicates", label: "Duplicate rows to remove", answer: computed.duplicates, points: 2 },
-            {
-              key: "invalid_amounts",
-              label: "Rows with an invalid/negative amount",
-              answer: computed.invalid_amounts,
-              points: 2,
-            },
-            { key: "bad_dates", label: "Rows with a non-ISO date format", answer: computed.bad_dates, points: 2 },
-            {
-              key: "total_amount",
-              label: String(c.amount_label ?? "Total valid amount"),
-              answer: computed.total_amount,
-              points: 4,
-              tolerance: 1,
-            },
-          ],
+          dataset,
+          question_text: questionText,
+          fields: fields.map((f) => ({
+            key: f.key,
+            label: f.label,
+            type: f.type,
+            answer: f.answer,
+            points: f.points,
+            tolerance: f.tolerance,
+          })),
         },
       },
       {
         title: String(parsed.sql?.title ?? "SQL query").trim(),
         brief: String(parsed.sql.brief).trim(),
         task_type: "text",
-        rubric_criteria: { max_score: 10, criteria: sqlCriteria.slice(0, 6) },
+        rubric_criteria: {
+          max_score: 10,
+          prompt_label: String(parsed.sql?.prompt_label ?? "Your SQL query"),
+          dataset_schema: dataset.columns,
+          criteria: sqlCriteria.slice(0, 6),
+        },
       },
       {
         title: String(chart.title ?? "Chart interpretation").trim(),
@@ -337,7 +455,11 @@ export async function generateThemedTasks(extracted: Extracted): Promise<Generat
         title: String(parsed.summary?.title ?? "Stakeholder summary").trim(),
         brief: String(parsed.summary.brief).trim(),
         task_type: "text",
-        rubric_criteria: { max_score: 10, criteria: summaryCriteria.slice(0, 6) },
+        rubric_criteria: {
+          max_score: 10,
+          prompt_label: String(parsed.summary?.prompt_label ?? "Your summary"),
+          criteria: summaryCriteria.slice(0, 6),
+        },
       },
     ],
   };
