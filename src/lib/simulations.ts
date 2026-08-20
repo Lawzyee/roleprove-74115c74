@@ -2,14 +2,43 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const FREE_ATTEMPT_LIMIT = 3;
 
+export type DatasetColumn = { key: string; label: string };
+export type Dataset = { name: string; columns: DatasetColumn[]; rows: Array<Record<string, string>> };
+
 export type Rubric = {
   max_score?: number;
-  fields?: Array<{ key: string; label: string; answer: number; tolerance?: number; points: number }>;
+  fields?: Array<{ key: string; label: string; type?: string; answer: number; tolerance?: number; points: number }>;
+  dataset?: Dataset;
+  question_text?: string;
+  prompt_label?: string;
   options?: string[];
   answer?: number;
   points?: number;
   criteria?: string[];
 };
+
+export function datasetToCsv(dataset: Dataset) {
+  const esc = (v: unknown) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [
+    dataset.columns.map((c) => esc(c.key)).join(","),
+    ...dataset.rows.map((r) => dataset.columns.map((c) => esc(r[c.key])).join(",")),
+  ].join("\n");
+}
+
+export function downloadDatasetCsv(dataset: Dataset) {
+  const blob = new Blob([datasetToCsv(dataset)], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${dataset.name || "dataset"}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
 export async function startAttempt(userId: string, simulationId: string) {
   const { data: existing } = await supabase
