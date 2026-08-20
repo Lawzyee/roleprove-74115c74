@@ -255,16 +255,6 @@ export function datasetToCsv(dataset: Dataset) {
   return [header, ...body].join("\n");
 }
 
-function renderTable(dataset: Dataset) {
-  const widths = dataset.columns.map((c) =>
-    Math.max(c.key.length, ...dataset.rows.map((r) => String(r[c.key] ?? "").length)),
-  );
-  const line = (cells: string[]) => cells.map((c, i) => c.padEnd(widths[i]!)).join(" | ").trimEnd();
-  return [
-    line(dataset.columns.map((c) => c.key)),
-    ...dataset.rows.map((r) => line(dataset.columns.map((c) => String(r[c.key] ?? "")))),
-  ].join("\n");
-}
 
 const METRIC_KINDS = [
   "duplicate_rows",
