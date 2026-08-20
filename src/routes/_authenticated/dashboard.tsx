@@ -6,6 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ScoreRing } from "@/components/ScoreRing";
+import { JobDescriptionPaste } from "@/components/JobDescriptionPaste";
+import { AttemptTypeBadge } from "@/components/AttemptTypeBadge";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
