@@ -172,6 +172,46 @@ function SimulationRunner() {
           </CardContent>
         </Card>
 
+        {rubric.dataset && rubric.dataset.rows.length > 0 && (
+          <Card className="mt-5 border-border shadow-none">
+            <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
+              <CardTitle className="font-display text-base">
+                Dataset — {rubric.dataset.name}.csv
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={() => downloadDatasetCsv(rubric.dataset!)}>
+                <Download className="mr-2 h-4 w-4" />
+                Download dataset
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto rounded-xl border border-border">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-muted/60">
+                    <tr>
+                      {rubric.dataset.columns.map((col) => (
+                        <th key={col.key} className="whitespace-nowrap px-3 py-2 font-medium">
+                          {col.key}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rubric.dataset.rows.map((row, i) => (
+                      <tr key={i} className="border-t border-border">
+                        {rubric.dataset!.columns.map((col) => (
+                          <td key={col.key} className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                            {row[col.key]}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="mt-5 border-border shadow-none">
           <CardHeader>
             <CardTitle className="font-display text-base">Your answer</CardTitle>
