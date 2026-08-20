@@ -155,7 +155,9 @@ function isBlank(value: string) {
 }
 
 function parseAmount(value: string) {
-  const n = Number(String(value ?? "").replace(/[^0-9.\-]/g, ""));
+  const raw = String(value ?? "").trim();
+  if (!raw || !/\d/.test(raw)) return NaN;
+  const n = Number(raw.replace(/[^0-9.\-]/g, ""));
   return Number.isFinite(n) ? n : NaN;
 }
 
