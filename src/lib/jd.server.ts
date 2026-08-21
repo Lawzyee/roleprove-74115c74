@@ -1,4 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { buildMonthlyTrendTable, buildSegmentTable, summariseTable } from "./jd-aggregates";
+
 
 type Extracted = {
   role_type: string;
