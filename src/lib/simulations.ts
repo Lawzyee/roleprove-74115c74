@@ -4,11 +4,25 @@ export const FREE_ATTEMPT_LIMIT = 3;
 
 export type DatasetColumn = { key: string; label: string };
 export type Dataset = { name: string; columns: DatasetColumn[]; rows: Array<Record<string, string>> };
+export type SummaryTable = { title: string; columns: DatasetColumn[]; rows: Array<Record<string, string>> };
+export type WrittenQuestion = {
+  key: string;
+  label: string;
+  prompt: string;
+  criteria?: string[];
+  points: number;
+  input?: "sql" | "prose";
+};
 
 export type Rubric = {
   max_score?: number;
+  stage_kind?: string;
   fields?: Array<{ key: string; label: string; type?: string; answer: number; tolerance?: number; points: number }>;
   dataset?: Dataset;
+  datasets?: Dataset[];
+  tables?: SummaryTable[];
+  written?: WrittenQuestion[];
+  deliverable?: { label: string; hint: string; accept: string[] };
   question_text?: string;
   prompt_label?: string;
   options?: string[];
@@ -16,6 +30,16 @@ export type Rubric = {
   points?: number;
   criteria?: string[];
 };
+
+export const STAGE_LABELS: Record<string, string> = {
+  data_quality: "Data quality & validation",
+  sql_reasoning: "SQL & analytical reasoning",
+  commercial_interpretation: "Commercial interpretation",
+  segmentation: "Segmentation & trade-offs",
+  discrepancy: "Discrepancy investigation",
+  final_recommendation: "Final recommendation",
+};
+
 
 export function datasetToCsv(dataset: Dataset) {
   const esc = (v: unknown) => {
