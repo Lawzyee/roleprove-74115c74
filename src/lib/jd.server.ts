@@ -673,7 +673,13 @@ async function generateNarrativeStages(
 
 async function generateCaseStudy(extracted: Extracted): Promise<GeneratedSimulation> {
   const foundation = await generateFoundation(extracted);
-  const narrative = await generateNarrativeStages(extracted, foundation.datasets, foundation.optional);
+  const narrative = await generateNarrativeStages(
+    extracted,
+    foundation.datasets,
+    foundation.optional,
+    foundation.computedTables,
+  );
+
   return {
     title: foundation.title,
     description: foundation.description,
