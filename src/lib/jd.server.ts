@@ -578,16 +578,15 @@ async function generateNarrativeStages(
         },
         commercial_interpretation: {
           title: "<stage title>",
-          brief: "<framing sentence>",
-          table: { title: "<table title>", columns: [{ key: "month", label: "Month" }], rows: [{ month: "2026-01" }] },
+          brief: "<framing sentence introducing the already-computed monthly table; no numbers of your own>",
           question: { key: "concerns", label: "<label>", prompt: "<what concerns you about this data and why>", criteria: ["…", "…", "…", "…"] },
         },
         segmentation: {
           title: "<stage title>",
-          brief: "<framing sentence>",
-          table: { title: "<segment breakdown title>", columns: [{ key: "segment", label: "Segment" }], rows: [{ segment: "…" }] },
+          brief: "<framing sentence introducing the already-computed segment table; no numbers of your own>",
           question: { key: "priority_segment", label: "<label>", prompt: "<which segment would you prioritise and why>", criteria: ["…", "…", "…", "…"] },
         },
+
         discrepancy: {
           title: "<stage title>",
           brief: "<short scenario where finance's figure disagrees with the dashboard figure, with both numbers>",
