@@ -459,8 +459,10 @@ async function generateFoundation(extracted: Extracted) {
 
   }
 
+  if (fields.length < 3) throw new Error("Generated answer fields were invalid.");
   if (kinds.size < 3) throw new Error("Generated datasets did not contain varied data-quality issues.");
   if (positiveCount < 2) throw new Error("Generated datasets did not contain enough real data-quality issues.");
+
 
   // 6 points across the rule-graded fields, 4 for the written triage question.
   const fieldPoints = distributePoints(fields.length, 6);
