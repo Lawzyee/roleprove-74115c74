@@ -442,16 +442,21 @@ async function generateFoundation(extracted: Extracted) {
       parent_column: raw?.metric?.parent_column ? String(raw.metric.parent_column) : undefined,
     } as Metric;
 
-    const computed = computeMetric(datasets, metric);
-    const claimed = Number(raw?.expected);
-    const tolerance = kind === "sum_valid" ? 1 : 0;
-    if (!Number.isFinite(claimed) || Math.abs(claimed - computed) > tolerance) {
-      throw new Error(`Answer key for "${key}" did not match the generated dataset.`);
+    // The answer key is always recomputed from the generated rows — the model's
+    // claimed value is only a sanity signal, never what the candidate is graded on.
+    let computed: number;
+    try {
+      computed = computeMetric(datasets, metric);
+    } catch {
+      continue;
     }
+    if (!Number.isFinite(computed)) continue;
+    const tolerance = kind === "sum_valid" ? 1 : 0;
     kinds.add(kind);
     if (kind !== "sum_valid" && kind !== "distinct_count" && computed > 0) positiveCount += 1;
 
     fields.push({ key, label, type: "number", metric, points: 0, tolerance, answer: computed });
+
   }
 
   if (kinds.size < 3) throw new Error("Generated datasets did not contain varied data-quality issues.");
