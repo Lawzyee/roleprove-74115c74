@@ -1,4 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { buildMonthlyTrendTable, buildSegmentTable, summariseTable } from "./jd-aggregates";
+
 
 type Extracted = {
   role_type: string;
@@ -320,19 +322,8 @@ function normaliseDataset(raw: any): Dataset {
   };
 }
 
-function normaliseTable(raw: any): SummaryTable | null {
-  const columns: DatasetColumn[] = (Array.isArray(raw?.columns) ? raw.columns : [])
-    .map((col: any) => ({ key: String(col?.key ?? "").trim(), label: String(col?.label ?? col?.key ?? "").trim() }))
-    .filter((col: DatasetColumn) => !!col.key);
-  if (columns.length < 2) return null;
-  const rows: DatasetRow[] = (Array.isArray(raw?.rows) ? raw.rows : []).map((r: any) => {
-    const row: DatasetRow = {};
-    for (const col of columns) row[col.key] = String(r?.[col.key] ?? "");
-    return row;
-  });
-  if (rows.length < 2) return null;
-  return { title: String(raw?.title ?? "Summary").trim(), columns, rows };
-}
+
+
 
 function normaliseWritten(raw: any, points: number, input: "sql" | "prose"): WrittenQuestion {
   const key = String(raw?.key ?? "").trim();
@@ -475,10 +466,24 @@ async function generateFoundation(extracted: Extracted) {
   const briefIntro = String(dq.brief_intro ?? "").trim();
   if (!questionText || !briefIntro) throw new Error("Generated data-quality stage was incomplete.");
 
-  const optional = (Array.isArray(parsed.optional_stages) ? parsed.optional_stages : [])
+  // Stage 3/4 tables are computed in code from the real rows. A stage is only
+  // offered when its table can genuinely be derived from the dataset.
+  const monthlyTable = buildMonthlyTrendTable(datasets);
+  const segmentTable = buildSegmentTable(datasets);
+  const supports: Record<string, boolean> = {
+    commercial_interpretation: !!monthlyTable,
+    segmentation: !!segmentTable,
+    discrepancy: true,
+  };
+
+  let optional = (Array.isArray(parsed.optional_stages) ? parsed.optional_stages : [])
     .map(String)
-    .filter((s: string) => (OPTIONAL_STAGES as readonly string[]).includes(s))
+    .filter((s: string) => (OPTIONAL_STAGES as readonly string[]).includes(s) && supports[s])
     .slice(0, 3);
+  if (!optional.length) {
+    optional = monthlyTable ? ["commercial_interpretation"] : segmentTable ? ["segmentation"] : ["discrepancy"];
+  }
+
 
   const stage: GeneratedStage = {
     title: String(dq.title ?? "Data quality and validation").trim(),
@@ -510,7 +515,8 @@ async function generateFoundation(extracted: Extracted) {
     title: String(parsed.title ?? "").trim(),
     description: String(parsed.description ?? "").trim(),
     datasets,
-    optional: optional.length ? optional : ["commercial_interpretation"],
+    optional,
+    computedTables: { commercial_interpretation: monthlyTable, segmentation: segmentTable },
     stage,
     fields,
   };
@@ -521,7 +527,9 @@ async function generateNarrativeStages(
   extracted: Extracted,
   datasets: Dataset[],
   optional: string[],
+  computedTables: Record<string, SummaryTable | null>,
 ): Promise<GeneratedStage[]> {
+
   const themes = extracted.emphasis_themes.length ? extracted.emphasis_themes : extracted.skills.slice(0, 5);
 
   const parsed = await callAi(
@@ -531,7 +539,17 @@ async function generateNarrativeStages(
       "",
       `THE CANDIDATE ALREADY HAS THESE TABLES (use their real names and columns everywhere):\n${datasetSchemaSummary(datasets)}`,
       "",
-      `Generate these stages: sql_reasoning, ${optional.join(", ")}, final_recommendation. Every number you invent must be plausible against the tables above and consistent between stages.`,
+      ...(Object.entries(computedTables)
+        .filter(([kind, table]) => table && optional.includes(kind))
+        .map(
+          ([kind, table]) =>
+            `ALREADY-COMPUTED SUMMARY TABLE FOR ${kind} (derived in code from the real rows above — treat these numbers as fact, write your brief and question around them, and DO NOT restate, alter, round or invent alternative figures):\n${summariseTable(
+              table as SummaryTable,
+            )}`,
+        )),
+      "",
+      `Generate these stages: sql_reasoning, ${optional.join(", ")}, final_recommendation. Do not invent summary numbers: for stages that were given a computed table, the table is inserted verbatim and you only write narrative, question wording and rubric criteria.`,
+
       "",
       "Reply as JSON exactly in this shape (omit the optional stages that were not requested):",
       JSON.stringify({
@@ -549,16 +567,15 @@ async function generateNarrativeStages(
         },
         commercial_interpretation: {
           title: "<stage title>",
-          brief: "<framing sentence>",
-          table: { title: "<table title>", columns: [{ key: "month", label: "Month" }], rows: [{ month: "2026-01" }] },
+          brief: "<framing sentence introducing the already-computed monthly table; no numbers of your own>",
           question: { key: "concerns", label: "<label>", prompt: "<what concerns you about this data and why>", criteria: ["…", "…", "…", "…"] },
         },
         segmentation: {
           title: "<stage title>",
-          brief: "<framing sentence>",
-          table: { title: "<segment breakdown title>", columns: [{ key: "segment", label: "Segment" }], rows: [{ segment: "…" }] },
+          brief: "<framing sentence introducing the already-computed segment table; no numbers of your own>",
           question: { key: "priority_segment", label: "<label>", prompt: "<which segment would you prioritise and why>", criteria: ["…", "…", "…", "…"] },
         },
+
         discrepancy: {
           title: "<stage title>",
           brief: "<short scenario where finance's figure disagrees with the dashboard figure, with both numbers>",
@@ -577,7 +594,7 @@ async function generateNarrativeStages(
       }),
       "",
       "sql_reasoning must contain 2-3 sub_questions, each answered as free-text SQL, and its criteria must describe correct approach/logic (joins, filters, denominator choice) so that reasonable equivalent queries score well — never exact string matching.",
-      "commercial_interpretation and segmentation tables need 4-8 rows and 3-5 columns of real numbers.",
+      "Do not output a 'table' field for any stage: the computed tables supplied above are inserted verbatim.",
       "Every criteria array must contain 4-5 concrete statements that separate a weak answer from a strong one.",
       "final_recommendation criteria must explicitly reward a Finding -> Evidence -> Impact -> Recommendation -> Measurement structure.",
     ].join("\n"),
@@ -605,7 +622,8 @@ async function generateNarrativeStages(
     const raw = parsed[kind];
     if (!raw) continue;
     const question = normaliseWritten(raw.question, 10, "prose");
-    const table = raw.table ? normaliseTable(raw.table) : null;
+    // Numbers always come from the code-computed table, never from the model.
+    const table = computedTables[kind] ?? null;
     if ((kind === "commercial_interpretation" || kind === "segmentation") && !table) continue;
     stages.push({
       title: String(raw.title ?? kind.replace(/_/g, " ")).trim(),
@@ -619,6 +637,7 @@ async function generateNarrativeStages(
       },
     });
   }
+
 
   const final = parsed.final_recommendation ?? {};
   const finalQuestion = normaliseWritten(final.question, 10, "prose");
@@ -643,7 +662,13 @@ async function generateNarrativeStages(
 
 async function generateCaseStudy(extracted: Extracted): Promise<GeneratedSimulation> {
   const foundation = await generateFoundation(extracted);
-  const narrative = await generateNarrativeStages(extracted, foundation.datasets, foundation.optional);
+  const narrative = await generateNarrativeStages(
+    extracted,
+    foundation.datasets,
+    foundation.optional,
+    foundation.computedTables,
+  );
+
   return {
     title: foundation.title,
     description: foundation.description,
