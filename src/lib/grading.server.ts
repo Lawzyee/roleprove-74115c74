@@ -2,14 +2,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type AnyClient = SupabaseClient<any, any, any>;
 
+type WrittenQuestion = { key: string; label: string; prompt: string; criteria: string[]; points: number };
+
 type Rubric = {
   max_score?: number;
+  stage_kind?: string;
   fields?: Array<{ key: string; label: string; answer: number; tolerance?: number; points: number }>;
+  written?: WrittenQuestion[];
   options?: string[];
   answer?: number;
   points?: number;
   criteria?: string[];
 };
+
 
 function gradeStructured(rubric: Rubric, response: Record<string, unknown>) {
   const fields = rubric.fields ?? [];
