@@ -61,6 +61,7 @@ function toMonth(value: unknown): string | null {
     const month = Number(dmy[2]);
     if (month >= 1 && month <= 12) return `${dmy[3]}-${String(month).padStart(2, "0")}`;
   }
+  if (!/[a-z]/i.test(raw) && !/[\/.-]/.test(raw)) return null;
   const parsed = Date.parse(raw);
   if (!Number.isNaN(parsed)) {
     const d = new Date(parsed);
