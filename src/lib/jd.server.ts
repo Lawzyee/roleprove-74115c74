@@ -605,7 +605,7 @@ async function generateNarrativeStages(
       }),
       "",
       "sql_reasoning must contain 2-3 sub_questions, each answered as free-text SQL, and its criteria must describe correct approach/logic (joins, filters, denominator choice) so that reasonable equivalent queries score well — never exact string matching.",
-      "commercial_interpretation and segmentation tables need 4-8 rows and 3-5 columns of real numbers.",
+      "Do not output a 'table' field for any stage: the computed tables supplied above are inserted verbatim.",
       "Every criteria array must contain 4-5 concrete statements that separate a weak answer from a strong one.",
       "final_recommendation criteria must explicitly reward a Finding -> Evidence -> Impact -> Recommendation -> Measurement structure.",
     ].join("\n"),
