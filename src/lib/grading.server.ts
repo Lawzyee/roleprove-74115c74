@@ -122,6 +122,34 @@ async function gradeWritten(
   return { score, feedback: parsed.feedback ?? "Graded against the rubric." };
 }
 
+/** Multi-stage case study stage: rule-graded numeric fields plus AI-graded written sub-answers. */
+async function gradeCase(rubric: Rubric, brief: string, response: Record<string, unknown>) {
+  let score = 0;
+  const parts: string[] = [];
+
+  if ((rubric.fields ?? []).length) {
+    const structured = gradeStructured(rubric, response);
+    score += structured.score;
+    parts.push(structured.feedback);
+  }
+
+  for (const question of rubric.written ?? []) {
+    const answer = String(response[question.key] ?? "");
+    const graded = await gradeWritten(
+      question.criteria ?? [],
+      question.points,
+      [brief, "", `QUESTION: ${question.prompt}`].join("\n"),
+      answer,
+    );
+    score += graded.score;
+    parts.push(`${question.label} (${graded.score}/${question.points}): ${graded.feedback}`);
+  }
+
+  return { score, feedback: parts.join("\n\n") || "No response was submitted for this stage." };
+}
+
+
+
 export async function gradeAttempt(supabase: AnyClient, userId: string, attemptId: string) {
   const { data: attempt, error: attemptError } = await supabase
     .from("simulation_attempts")
