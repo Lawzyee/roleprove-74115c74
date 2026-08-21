@@ -164,13 +164,16 @@ export async function gradeAttempt(supabase: AnyClient, userId: string, attemptI
     const response = (result.response ?? {}) as Record<string, unknown>;
     let graded: { score: number; feedback: string };
 
-    if (task.task_type === "structured") {
+    if (task.task_type === "case") {
+      graded = await gradeCase(rubric, task.brief, response);
+    } else if (task.task_type === "structured") {
       graded = gradeStructured(rubric, response);
     } else if (task.task_type === "multiple_choice") {
       graded = gradeMultipleChoice(rubric, response);
     } else {
-      graded = await gradeText(rubric, task.brief, String(response["text"] ?? ""));
+      graded = await gradeWritten(rubric.criteria ?? [], max, task.brief, String(response["text"] ?? ""));
     }
+
 
     totalScore += graded.score;
 
