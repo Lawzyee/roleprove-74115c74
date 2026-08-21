@@ -100,7 +100,6 @@ export async function fetchJobPostingText(url: string) {
   );
 }
 
-
 export function wordCount(text: string) {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
@@ -139,13 +138,14 @@ export type DatasetRow = Record<string, string>;
 export type Dataset = { name: string; columns: DatasetColumn[]; rows: DatasetRow[] };
 
 type Metric =
-  | { kind: "duplicate_rows" }
-  | { kind: "invalid_number"; column: string }
-  | { kind: "bad_date_format"; column: string }
-  | { kind: "missing_values"; column: string }
-  | { kind: "inconsistent_labels"; column: string; allowed_values: string[] }
-  | { kind: "sum_valid"; column: string }
-  | { kind: "distinct_count"; column: string };
+  | { kind: "duplicate_rows"; dataset?: string }
+  | { kind: "invalid_number"; column: string; dataset?: string }
+  | { kind: "bad_date_format"; column: string; dataset?: string }
+  | { kind: "missing_values"; column: string; dataset?: string }
+  | { kind: "inconsistent_labels"; column: string; allowed_values: string[]; dataset?: string }
+  | { kind: "sum_valid"; column: string; dataset?: string }
+  | { kind: "distinct_count"; column: string; dataset?: string }
+  | { kind: "orphan_rows"; column: string; dataset?: string; parent_dataset: string; parent_column: string };
 
 type AnswerField = {
   key: string;
@@ -157,16 +157,33 @@ type AnswerField = {
   answer: number;
 };
 
-type GeneratedTasks = {
-  title: string;
-  description: string;
-  tasks: Array<{
-    title: string;
-    brief: string;
-    task_type: "structured" | "text" | "multiple_choice";
-    rubric_criteria: Record<string, unknown>;
-  }>;
+type WrittenQuestion = {
+  key: string;
+  label: string;
+  prompt: string;
+  criteria: string[];
+  points: number;
+  input?: "sql" | "prose";
 };
+
+type SummaryTable = { title: string; columns: DatasetColumn[]; rows: DatasetRow[] };
+
+type Deliverable = { label: string; hint: string; accept: string[] };
+
+export type StageRubric = {
+  max_score: number;
+  stage_kind: string;
+  datasets?: Dataset[];
+  tables?: SummaryTable[];
+  question_text?: string;
+  fields?: Array<{ key: string; label: string; type: "number"; answer: number; points: number; tolerance?: number }>;
+  written?: WrittenQuestion[];
+  deliverable?: Deliverable;
+};
+
+type GeneratedStage = { title: string; brief: string; task_type: "case"; rubric_criteria: StageRubric };
+
+type GeneratedSimulation = { title: string; description: string; tasks: GeneratedStage[] };
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -198,8 +215,11 @@ function uniqueRows(dataset: Dataset) {
   return out;
 }
 
-/** Recomputes a single metric server-side, directly from the generated dataset. */
-export function computeMetric(dataset: Dataset, metric: Metric): number {
+/** Recomputes a single metric server-side, directly from the generated dataset(s). */
+export function computeMetric(datasets: Dataset[], metric: Metric): number {
+  const dataset = metric.dataset ? datasets.find((d) => d.name === metric.dataset) : datasets[0];
+  if (!dataset) throw new Error(`Metric references unknown dataset "${metric.dataset}".`);
+
   const unique = uniqueRows(dataset);
   const columnKeys = new Set(dataset.columns.map((c) => c.key));
   const col = (metric as { column?: string }).column;
@@ -240,6 +260,22 @@ export function computeMetric(dataset: Dataset, metric: Metric): number {
       );
       return values.size;
     }
+    case "orphan_rows": {
+      const parent = datasets.find((d) => d.name === metric.parent_dataset);
+      if (!parent) throw new Error(`orphan_rows references unknown parent dataset "${metric.parent_dataset}".`);
+      if (!parent.columns.some((c) => c.key === metric.parent_column)) {
+        throw new Error(`orphan_rows references unknown parent column "${metric.parent_column}".`);
+      }
+      const keys = new Set(
+        uniqueRows(parent)
+          .map((r) => String(r[metric.parent_column] ?? "").trim().toLowerCase())
+          .filter((v) => v && !isBlank(v)),
+      );
+      return unique.filter((r) => {
+        const v = String(r[col!] ?? "").trim().toLowerCase();
+        return !!v && !isBlank(v) && !keys.has(v);
+      }).length;
+    }
     default:
       throw new Error("Unsupported metric kind.");
   }
@@ -255,7 +291,6 @@ export function datasetToCsv(dataset: Dataset) {
   return [header, ...body].join("\n");
 }
 
-
 const METRIC_KINDS = [
   "duplicate_rows",
   "invalid_number",
@@ -264,90 +299,129 @@ const METRIC_KINDS = [
   "inconsistent_labels",
   "sum_valid",
   "distinct_count",
+  "orphan_rows",
 ];
 
-export async function generateThemedTasks(extracted: Extracted): Promise<GeneratedTasks> {
+const OPTIONAL_STAGES = ["commercial_interpretation", "segmentation", "discrepancy"] as const;
+
+function normaliseDataset(raw: any): Dataset {
+  const columns: DatasetColumn[] = (Array.isArray(raw?.columns) ? raw.columns : [])
+    .map((col: any) => ({ key: String(col?.key ?? "").trim(), label: String(col?.label ?? col?.key ?? "").trim() }))
+    .filter((col: DatasetColumn) => !!col.key);
+  const rows: DatasetRow[] = (Array.isArray(raw?.rows) ? raw.rows : []).map((r: any) => {
+    const row: DatasetRow = {};
+    for (const col of columns) row[col.key] = r?.[col.key] === undefined || r?.[col.key] === null ? "" : String(r[col.key]);
+    return row;
+  });
+  return {
+    name: String(raw?.name ?? "dataset").trim().replace(/[^a-z0-9_\-]/gi, "_").toLowerCase() || "dataset",
+    columns,
+    rows,
+  };
+}
+
+function normaliseTable(raw: any): SummaryTable | null {
+  const columns: DatasetColumn[] = (Array.isArray(raw?.columns) ? raw.columns : [])
+    .map((col: any) => ({ key: String(col?.key ?? "").trim(), label: String(col?.label ?? col?.key ?? "").trim() }))
+    .filter((col: DatasetColumn) => !!col.key);
+  if (columns.length < 2) return null;
+  const rows: DatasetRow[] = (Array.isArray(raw?.rows) ? raw.rows : []).map((r: any) => {
+    const row: DatasetRow = {};
+    for (const col of columns) row[col.key] = String(r?.[col.key] ?? "");
+    return row;
+  });
+  if (rows.length < 2) return null;
+  return { title: String(raw?.title ?? "Summary").trim(), columns, rows };
+}
+
+function normaliseWritten(raw: any, points: number, input: "sql" | "prose"): WrittenQuestion {
+  const key = String(raw?.key ?? "").trim();
+  const prompt = String(raw?.prompt ?? "").trim();
+  const criteria = (Array.isArray(raw?.criteria) ? raw.criteria : []).map(String).filter(Boolean).slice(0, 6);
+  if (!key || !prompt || criteria.length < 3) throw new Error("A written question was generated incompletely.");
+  return { key, label: String(raw?.label ?? "Your answer").trim(), prompt, criteria, points, input };
+}
+
+function distributePoints(count: number, total = 10) {
+  const base = Math.floor(total / count);
+  return Array.from({ length: count }, (_, i) => (i === count - 1 ? total - base * (count - 1) : base));
+}
+
+function datasetSchemaSummary(datasets: Dataset[]) {
+  return datasets
+    .map(
+      (d) =>
+        `${d.name}(${d.columns.map((c) => c.key).join(", ")}) — ${d.rows.length} rows. Sample: ${JSON.stringify(d.rows.slice(0, 3))}`,
+    )
+    .join("\n");
+}
+
+/** Stage 1 + dataset foundation: linked datasets, rule-graded fields and one written triage question. */
+async function generateFoundation(extracted: Extracted) {
   const themes = extracted.emphasis_themes.length ? extracted.emphasis_themes : extracted.skills.slice(0, 5);
 
   const parsed = await callAi(
-    "You design hands-on job-simulation content for a Data Analyst assessment. Every generation must be original: a freshly designed table structure, new company/entity names, new row values, new dates and new numbers. Reply with JSON only.",
+    "You design multi-stage, hands-on Data Analyst case-study assessments. Every generation must be original: freshly designed tables, new entity names, new values and dates. Reply with JSON only.",
     [
-      `JOB POSTING CONTEXT:\nRole: ${extracted.role_type}\nSeniority: ${extracted.seniority}\nCompany context: ${extracted.company_context}\nSkills/tools: ${extracted.skills.join(", ")}\nResponsibilities: ${extracted.responsibilities.join("; ")}\nEMPHASIS THEMES (must visibly shape the dataset itself, not just the wording): ${themes.join("; ")}`,
+      `JOB POSTING CONTEXT:\nRole: ${extracted.role_type}\nSeniority: ${extracted.seniority}\nCompany context: ${extracted.company_context}\nSkills/tools: ${extracted.skills.join(", ")}\nResponsibilities: ${extracted.responsibilities.join("; ")}\nEMPHASIS THEMES (must visibly shape the data itself, not just the wording): ${themes.join("; ")}`,
       "",
       `Randomisation seed (make the data unique to this seed): ${Math.random().toString(36).slice(2)}-${Date.now()}`,
       "",
-      "CRITICAL: Do not reuse or lightly modify any generic template table (id / customer / plan / amount / date). Design the dataset from scratch as if it were an actual export from the systems this job description names, for the business problem it describes. Choose the number of columns (4-7), the column names, the grain of a row, and which data-quality problems are realistic in that specific feed.",
+      "Design the FOUNDATION of a commercial case study for this specific business.",
       "",
-      "Design a 4-task simulation:",
-      "1. DATA CLEANING over a messy export of 10-16 rows in the domain the posting emphasises. Introduce 2-4 different categories of data-quality problem chosen to fit this domain (not always the same three).",
-      "2. SQL task whose question reflects the emphasis themes and queries the SAME table you designed (reference its real column names).",
-      "3. Multiple-choice chart-interpretation task from the emphasised domain, 4 plausible options, exactly one best answer.",
-      "4. Stakeholder-summary writing task naming the real audiences from the posting.",
+      "1. Choose which optional later stages this job description actually justifies. Available optional stages: commercial_interpretation (open reasoning on a monthly trend table), segmentation (which segment to prioritise, value-at-risk reasoning), discrepancy (finance figure vs dashboard figure investigation). Pick 1 to 3 of them — only ones the posting genuinely supports. Stages data_quality, sql_reasoning and final_recommendation are always included and must not be listed.",
+      "2. Design TWO linked datasets that reference each other by an id column (for example an entity table and a transactions table). The child table must contain at least one orphaned reference. Column names, grain and data-quality issues must come from the systems and problems this posting describes — never a generic id/customer/plan/amount/date template.",
+      "3. Design 3-5 rule-graded numeric answer fields plus ONE short written triage question ('which issue would you investigate first, and why?').",
       "",
       "Reply as JSON exactly in this shape:",
       JSON.stringify({
         title: "<short simulation title referencing the role/company>",
         description: "<1-2 sentence description>",
-        cleaning: {
-          title: "<task title>",
-          brief_intro: "<scenario framing, 2-4 sentences, no table>",
-          question_text: "<the question, referencing your real column names>",
-          dataset: {
-            name: "<snake_case file/table name>",
-            columns: [{ key: "<snake_case column>", label: "<human label>" }],
-            rows: [{ "<column key>": "<value as string>" }],
-          },
+        optional_stages: ["commercial_interpretation"],
+        datasets: [
+          { name: "<snake_case parent table>", columns: [{ key: "<snake_case>", label: "<label>" }], rows: [{ "<key>": "<value>" }] },
+          { name: "<snake_case child table>", columns: [{ key: "<snake_case>", label: "<label>" }], rows: [{ "<key>": "<value>" }] },
+        ],
+        data_quality: {
+          title: "<stage title>",
+          brief_intro: "<scenario framing, 3-5 sentences, no tables>",
+          question_text: "<the numeric questions, referencing your real table and column names>",
           answer_fields: [
             {
-              key: "<snake_case answer key>",
+              key: "<snake_case>",
               label: "<what the candidate must enter>",
-              type: "number",
-              metric: { kind: `<one of ${METRIC_KINDS.join(" | ")}>`, column: "<column key, omit for duplicate_rows>", allowed_values: ["<only for inconsistent_labels>"] },
+              metric: {
+                kind: `<one of ${METRIC_KINDS.join(" | ")}>`,
+                dataset: "<which table>",
+                column: "<column key, omit for duplicate_rows>",
+                allowed_values: ["<only for inconsistent_labels>"],
+                parent_dataset: "<only for orphan_rows>",
+                parent_column: "<only for orphan_rows>",
+              },
               expected: 0,
             },
           ],
-        },
-        sql: {
-          title: "<task title>",
-          brief: "<brief including the schema of the dataset table you designed>",
-          prompt_label: "<label for the answer box, e.g. Your SQL query>",
-          criteria: ["…", "…", "…", "…", "…"],
-        },
-        chart: { title: "<task title>", brief: "<chart figures + question>", options: ["…", "…", "…", "…"], answer: 1 },
-        summary: {
-          title: "<task title>",
-          brief: "<brief naming the real stakeholders>",
-          prompt_label: "<label for the answer box>",
-          criteria: ["…", "…", "…", "…", "…"],
+          written: {
+            key: "triage",
+            label: "<label for the text box>",
+            prompt: "<which of these issues would you investigate first and why>",
+            criteria: ["…", "…", "…", "…"],
+          },
         },
       }),
       "",
-      "Rules for answer_fields: 3 to 5 fields, every field must be answerable purely by inspecting the dataset, and 'expected' must be the exact value computed from the rows you generated. Metric semantics (all computed over rows after removing exact duplicates): duplicate_rows = number of extra exact-duplicate rows; invalid_number = rows whose value in that column is negative or non-numeric; bad_date_format = rows whose date is not YYYY-MM-DD; missing_values = rows with a blank value; inconsistent_labels = rows whose value is not in allowed_values; sum_valid = sum of that numeric column over rows with a valid non-negative value; distinct_count = number of distinct non-blank values.",
-      "Use at least 3 different metric kinds, including at least one counting metric whose expected value is greater than zero and at least one sum_valid or distinct_count metric.",
+      "Dataset rules: parent table 8-12 rows, child table 12-16 rows, 4-7 columns each. Introduce 3+ different categories of realistic data-quality problem across the tables.",
+      "Metric semantics (computed after removing exact duplicate rows within a table): duplicate_rows = extra exact-duplicate rows; invalid_number = negative or non-numeric values; bad_date_format = dates not in YYYY-MM-DD; missing_values = blank values; inconsistent_labels = values outside allowed_values; sum_valid = sum of valid non-negative values; distinct_count = distinct non-blank values; orphan_rows = child rows whose column value does not exist in parent_dataset.parent_column.",
+      "'expected' must be the exact value computed from the rows you generated. Use at least 3 different metric kinds, include one orphan_rows field, and at least two counting metrics whose expected value is greater than zero.",
     ].join("\n"),
   );
 
-  const c = parsed.cleaning ?? {};
-  const rawDataset = c.dataset ?? {};
-  const columns: DatasetColumn[] = (Array.isArray(rawDataset.columns) ? rawDataset.columns : [])
-    .map((col: any) => ({ key: String(col?.key ?? "").trim(), label: String(col?.label ?? col?.key ?? "").trim() }))
-    .filter((col: DatasetColumn) => !!col.key);
-  const rows: DatasetRow[] = (Array.isArray(rawDataset.rows) ? rawDataset.rows : []).map((r: any) => {
-    const row: DatasetRow = {};
-    for (const col of columns) row[col.key] = r?.[col.key] === undefined || r?.[col.key] === null ? "" : String(r[col.key]);
-    return row;
-  });
+  const rawDatasets = (Array.isArray(parsed.datasets) ? parsed.datasets : []).map(normaliseDataset);
+  const datasets = rawDatasets.filter((d: Dataset) => d.columns.length >= 3 && d.rows.length >= 6);
+  if (datasets.length < 2) throw new Error("Generated datasets were incomplete.");
 
-  if (columns.length < 4) throw new Error("Generated dataset had too few columns.");
-  if (rows.length < 8) throw new Error("Generated dataset was too small.");
-
-  const dataset: Dataset = {
-    name: String(rawDataset.name ?? "dataset").trim().replace(/[^a-z0-9_\-]/gi, "_").toLowerCase() || "dataset",
-    columns,
-    rows,
-  };
-
-  const rawFields = Array.isArray(c.answer_fields) ? c.answer_fields : [];
+  const dq = parsed.data_quality ?? {};
+  const rawFields = Array.isArray(dq.answer_fields) ? dq.answer_fields : [];
   if (rawFields.length < 3 || rawFields.length > 6) throw new Error("Generated answer fields were invalid.");
 
   const fields: AnswerField[] = [];
@@ -361,11 +435,14 @@ export async function generateThemedTasks(extracted: Extracted): Promise<Generat
     if (!key || !label || !METRIC_KINDS.includes(kind)) throw new Error("Generated answer field was malformed.");
     const metric = {
       kind,
+      dataset: raw?.metric?.dataset ? String(raw.metric.dataset) : undefined,
       column: raw?.metric?.column ? String(raw.metric.column) : undefined,
       allowed_values: Array.isArray(raw?.metric?.allowed_values) ? raw.metric.allowed_values.map(String) : undefined,
+      parent_dataset: raw?.metric?.parent_dataset ? String(raw.metric.parent_dataset) : undefined,
+      parent_column: raw?.metric?.parent_column ? String(raw.metric.parent_column) : undefined,
     } as Metric;
 
-    const computed = computeMetric(dataset, metric);
+    const computed = computeMetric(datasets, metric);
     const claimed = Number(raw?.expected);
     const tolerance = kind === "sum_valid" ? 1 : 0;
     if (!Number.isFinite(claimed) || Math.abs(claimed - computed) > tolerance) {
@@ -377,89 +454,201 @@ export async function generateThemedTasks(extracted: Extracted): Promise<Generat
     fields.push({ key, label, type: "number", metric, points: 0, tolerance, answer: computed });
   }
 
-  if (kinds.size < 3) throw new Error("Generated dataset did not contain varied data-quality issues.");
-  if (positiveCount < 2) throw new Error("Generated dataset did not contain enough real data-quality issues.");
+  if (kinds.size < 3) throw new Error("Generated datasets did not contain varied data-quality issues.");
+  if (positiveCount < 2) throw new Error("Generated datasets did not contain enough real data-quality issues.");
 
-  const base = Math.floor(10 / fields.length);
+  // 6 points across the rule-graded fields, 4 for the written triage question.
+  const fieldPoints = distributePoints(fields.length, 6);
   fields.forEach((f, i) => {
-    f.points = i === fields.length - 1 ? 10 - base * (fields.length - 1) : base;
+    f.points = fieldPoints[i]!;
   });
 
-  const chart = parsed.chart ?? {};
-  const chartOptions = (Array.isArray(chart.options) ? chart.options : []).map(String).slice(0, 4);
-  const chartAnswer = Number(chart.answer);
-  if (chartOptions.length !== 4 || !Number.isInteger(chartAnswer) || chartAnswer < 0 || chartAnswer > 3) {
-    throw new Error("Generated chart-interpretation task was invalid.");
-  }
+  const written = normaliseWritten(dq.written, 4, "prose");
+  const questionText = String(dq.question_text ?? "").trim();
+  const briefIntro = String(dq.brief_intro ?? "").trim();
+  if (!questionText || !briefIntro) throw new Error("Generated data-quality stage was incomplete.");
 
-  const sqlCriteria = (Array.isArray(parsed.sql?.criteria) ? parsed.sql.criteria : []).map(String);
-  const summaryCriteria = (Array.isArray(parsed.summary?.criteria) ? parsed.summary.criteria : []).map(String);
-  if (sqlCriteria.length < 3 || summaryCriteria.length < 3) throw new Error("Generated rubrics were incomplete.");
-  if (!String(parsed.sql?.brief ?? "").trim() || !String(parsed.summary?.brief ?? "").trim()) {
-    throw new Error("Generated task briefs were incomplete.");
-  }
+  const optional = (Array.isArray(parsed.optional_stages) ? parsed.optional_stages : [])
+    .map(String)
+    .filter((s: string) => (OPTIONAL_STAGES as readonly string[]).includes(s))
+    .slice(0, 3);
 
-  const questionText = String(c.question_text ?? "").trim();
-  if (!questionText) throw new Error("Generated cleaning question was empty.");
+  const stage: GeneratedStage = {
+    title: String(dq.title ?? "Data quality and validation").trim(),
+    brief: [briefIntro, "", questionText].join("\n").trim(),
+    task_type: "case",
+    rubric_criteria: {
+      max_score: 10,
+      stage_kind: "data_quality",
+      datasets,
+      question_text: questionText,
+      fields: fields.map((f) => ({
+        key: f.key,
+        label: f.label,
+        type: f.type,
+        answer: f.answer,
+        points: f.points,
+        tolerance: f.tolerance,
+      })),
+      written: [written],
+      deliverable: {
+        label: "Upload your cleaned dataset (optional)",
+        hint: "CSV or XLSX. Stored as a work sample — it does not change your score.",
+        accept: [".csv", ".xlsx"],
+      },
+    },
+  };
 
   return {
     title: String(parsed.title ?? "").trim(),
     description: String(parsed.description ?? "").trim(),
-    tasks: [
-      {
-        title: String(c.title ?? "Data cleaning").trim(),
-        brief: [String(c.brief_intro ?? "").trim(), "", questionText].join("\n").trim(),
-        task_type: "structured",
-        rubric_criteria: {
-          max_score: 10,
-          dataset,
-          question_text: questionText,
-          fields: fields.map((f) => ({
-            key: f.key,
-            label: f.label,
-            type: f.type,
-            answer: f.answer,
-            points: f.points,
-            tolerance: f.tolerance,
-          })),
-        },
-      },
-      {
-        title: String(parsed.sql?.title ?? "SQL query").trim(),
-        brief: String(parsed.sql.brief).trim(),
-        task_type: "text",
-        rubric_criteria: {
-          max_score: 10,
-          prompt_label: String(parsed.sql?.prompt_label ?? "Your SQL query"),
-          dataset_schema: dataset.columns,
-          criteria: sqlCriteria.slice(0, 6),
-        },
-      },
-      {
-        title: String(chart.title ?? "Chart interpretation").trim(),
-        brief: String(chart.brief ?? "").trim(),
-        task_type: "multiple_choice",
-        rubric_criteria: { max_score: 10, points: 10, options: chartOptions, answer: chartAnswer },
-      },
-      {
-        title: String(parsed.summary?.title ?? "Stakeholder summary").trim(),
-        brief: String(parsed.summary.brief).trim(),
-        task_type: "text",
-        rubric_criteria: {
-          max_score: 10,
-          prompt_label: String(parsed.summary?.prompt_label ?? "Your summary"),
-          criteria: summaryCriteria.slice(0, 6),
-        },
-      },
-    ],
+    datasets,
+    optional: optional.length ? optional : ["commercial_interpretation"],
+    stage,
+    fields,
   };
 }
 
-async function generateThemedTasksWithRetry(extracted: Extracted): Promise<GeneratedTasks> {
+/** Stages 2-6: SQL reasoning plus the selected open written stages, consistent with the datasets. */
+async function generateNarrativeStages(
+  extracted: Extracted,
+  datasets: Dataset[],
+  optional: string[],
+): Promise<GeneratedStage[]> {
+  const themes = extracted.emphasis_themes.length ? extracted.emphasis_themes : extracted.skills.slice(0, 5);
+
+  const parsed = await callAi(
+    "You design multi-stage Data Analyst case-study assessments. Reply with JSON only.",
+    [
+      `JOB POSTING CONTEXT:\nRole: ${extracted.role_type}\nSeniority: ${extracted.seniority}\nCompany: ${extracted.company_context}\nEmphasis themes: ${themes.join("; ")}`,
+      "",
+      `THE CANDIDATE ALREADY HAS THESE TABLES (use their real names and columns everywhere):\n${datasetSchemaSummary(datasets)}`,
+      "",
+      `Generate these stages: sql_reasoning, ${optional.join(", ")}, final_recommendation. Every number you invent must be plausible against the tables above and consistent between stages.`,
+      "",
+      "Reply as JSON exactly in this shape (omit the optional stages that were not requested):",
+      JSON.stringify({
+        sql_reasoning: {
+          title: "<stage title>",
+          brief: "<scenario + the schema of the tables, 3-6 sentences>",
+          sub_questions: [
+            {
+              key: "<snake_case>",
+              label: "<label for the SQL box>",
+              prompt: "<business-logic question, e.g. a churn or retention rate where the candidate must decide the correct denominator>",
+              criteria: ["…", "…", "…", "…"],
+            },
+          ],
+        },
+        commercial_interpretation: {
+          title: "<stage title>",
+          brief: "<framing sentence>",
+          table: { title: "<table title>", columns: [{ key: "month", label: "Month" }], rows: [{ month: "2026-01" }] },
+          question: { key: "concerns", label: "<label>", prompt: "<what concerns you about this data and why>", criteria: ["…", "…", "…", "…"] },
+        },
+        segmentation: {
+          title: "<stage title>",
+          brief: "<framing sentence>",
+          table: { title: "<segment breakdown title>", columns: [{ key: "segment", label: "Segment" }], rows: [{ segment: "…" }] },
+          question: { key: "priority_segment", label: "<label>", prompt: "<which segment would you prioritise and why>", criteria: ["…", "…", "…", "…"] },
+        },
+        discrepancy: {
+          title: "<stage title>",
+          brief: "<short scenario where finance's figure disagrees with the dashboard figure, with both numbers>",
+          question: { key: "investigation", label: "<label>", prompt: "<what do you do next>", criteria: ["…", "…", "…", "…"] },
+        },
+        final_recommendation: {
+          title: "<stage title>",
+          brief: "<closing framing referencing the case>",
+          question: {
+            key: "recommendation",
+            label: "<label>",
+            prompt: "<what should the business do next, and how would you measure it>",
+            criteria: ["…", "…", "…", "…", "…"],
+          },
+        },
+      }),
+      "",
+      "sql_reasoning must contain 2-3 sub_questions, each answered as free-text SQL, and its criteria must describe correct approach/logic (joins, filters, denominator choice) so that reasonable equivalent queries score well — never exact string matching.",
+      "commercial_interpretation and segmentation tables need 4-8 rows and 3-5 columns of real numbers.",
+      "Every criteria array must contain 4-5 concrete statements that separate a weak answer from a strong one.",
+      "final_recommendation criteria must explicitly reward a Finding -> Evidence -> Impact -> Recommendation -> Measurement structure.",
+    ].join("\n"),
+  );
+
+  const stages: GeneratedStage[] = [];
+
+  const sql = parsed.sql_reasoning ?? {};
+  const subs = Array.isArray(sql.sub_questions) ? sql.sub_questions.slice(0, 3) : [];
+  if (subs.length < 2 || !String(sql.brief ?? "").trim()) throw new Error("Generated SQL stage was incomplete.");
+  const sqlPoints = distributePoints(subs.length);
+  stages.push({
+    title: String(sql.title ?? "SQL and analytical reasoning").trim(),
+    brief: String(sql.brief).trim(),
+    task_type: "case",
+    rubric_criteria: {
+      max_score: 10,
+      stage_kind: "sql_reasoning",
+      datasets,
+      written: subs.map((s: any, i: number) => normaliseWritten(s, sqlPoints[i]!, "sql")),
+    },
+  });
+
+  for (const kind of optional) {
+    const raw = parsed[kind];
+    if (!raw) continue;
+    const question = normaliseWritten(raw.question, 10, "prose");
+    const table = raw.table ? normaliseTable(raw.table) : null;
+    if ((kind === "commercial_interpretation" || kind === "segmentation") && !table) continue;
+    stages.push({
+      title: String(raw.title ?? kind.replace(/_/g, " ")).trim(),
+      brief: String(raw.brief ?? "").trim(),
+      task_type: "case",
+      rubric_criteria: {
+        max_score: 10,
+        stage_kind: kind,
+        tables: table ? [table] : undefined,
+        written: [question],
+      },
+    });
+  }
+
+  const final = parsed.final_recommendation ?? {};
+  const finalQuestion = normaliseWritten(final.question, 10, "prose");
+  stages.push({
+    title: String(final.title ?? "Final recommendation").trim(),
+    brief: String(final.brief ?? "").trim(),
+    task_type: "case",
+    rubric_criteria: {
+      max_score: 10,
+      stage_kind: "final_recommendation",
+      written: [finalQuestion],
+      deliverable: {
+        label: "Upload your findings deck, summary or dashboard export (optional)",
+        hint: "PDF, PPTX, PNG or JPG. Stored as a work sample; decks and PDFs get written feedback, images are marked pending review.",
+        accept: [".pdf", ".pptx", ".png", ".jpg", ".jpeg"],
+      },
+    },
+  });
+
+  return stages;
+}
+
+async function generateCaseStudy(extracted: Extracted): Promise<GeneratedSimulation> {
+  const foundation = await generateFoundation(extracted);
+  const narrative = await generateNarrativeStages(extracted, foundation.datasets, foundation.optional);
+  return {
+    title: foundation.title,
+    description: foundation.description,
+    tasks: [foundation.stage, ...narrative],
+  };
+}
+
+async function generateCaseStudyWithRetry(extracted: Extracted): Promise<GeneratedSimulation> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      return await generateThemedTasks(extracted);
+      return await generateCaseStudy(extracted);
     } catch (error) {
       lastError = error;
     }
@@ -522,17 +711,17 @@ export async function generatePersonalisedSimulation(
   if (baseError) throw new Error(baseError.message);
   if (!baseSim) throw new Error("The base Data Analyst simulation is unavailable.");
 
-  const personalised = await generateThemedTasksWithRetry(extracted);
+  const personalised = await generateCaseStudyWithRetry(extracted);
 
   const { data: newSim, error: simError } = await supabaseAdmin
     .from("simulations")
     .insert({
       role_id: baseSim.role_id,
-      title: personalised.title || `${extracted.role_type} — tailored simulation`,
+      title: personalised.title || `${extracted.role_type} — tailored case study`,
       description:
         personalised.description ||
-        `A Data Analyst simulation generated around the job description you pasted for ${extracted.role_type}.`,
-      estimated_minutes: baseSim.estimated_minutes,
+        `A multi-stage Data Analyst case study generated around the job description you pasted for ${extracted.role_type}.`,
+      estimated_minutes: Math.max(baseSim.estimated_minutes, personalised.tasks.length * 12),
       is_personalized: true,
       owner_user_id: userId,
       source_simulation_id: baseSim.id,
