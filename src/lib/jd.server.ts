@@ -550,7 +550,17 @@ async function generateNarrativeStages(
       "",
       `THE CANDIDATE ALREADY HAS THESE TABLES (use their real names and columns everywhere):\n${datasetSchemaSummary(datasets)}`,
       "",
-      `Generate these stages: sql_reasoning, ${optional.join(", ")}, final_recommendation. Every number you invent must be plausible against the tables above and consistent between stages.`,
+      ...(Object.entries(computedTables)
+        .filter(([kind, table]) => table && optional.includes(kind))
+        .map(
+          ([kind, table]) =>
+            `ALREADY-COMPUTED SUMMARY TABLE FOR ${kind} (derived in code from the real rows above — treat these numbers as fact, write your brief and question around them, and DO NOT restate, alter, round or invent alternative figures):\n${summariseTable(
+              table as SummaryTable,
+            )}`,
+        )),
+      "",
+      `Generate these stages: sql_reasoning, ${optional.join(", ")}, final_recommendation. Do not invent summary numbers: for stages that were given a computed table, the table is inserted verbatim and you only write narrative, question wording and rubric criteria.`,
+
       "",
       "Reply as JSON exactly in this shape (omit the optional stages that were not requested):",
       JSON.stringify({
