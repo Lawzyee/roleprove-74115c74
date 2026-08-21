@@ -52,12 +52,12 @@ function gradeMultipleChoice(rubric: Rubric, response: Record<string, unknown>) 
   };
 }
 
-async function gradeText(
-  rubric: Rubric,
+async function gradeWritten(
+  criteria: string[],
+  max: number,
   brief: string,
   answer: string,
 ): Promise<{ score: number; feedback: string }> {
-  const max = rubric.max_score ?? 10;
   const trimmed = (answer ?? "").trim();
   if (!trimmed) {
     return { score: 0, feedback: "No response was submitted for this task." };
@@ -73,11 +73,13 @@ async function gradeText(
 
   const prompt = [
     "You are grading a hands-on job simulation task. Grade strictly but fairly against the rubric.",
+    "For SQL answers, judge the approach and logic — accept any reasonable equivalent formulation rather than matching one exact query.",
     "",
     `TASK BRIEF:\n${brief}`,
     "",
-    `RUBRIC CRITERIA (each equally weighted, total ${max} points):\n${(rubric.criteria ?? []).map((c, i) => `${i + 1}. ${c}`).join("\n")}`,
+    `RUBRIC CRITERIA (each equally weighted, total ${max} points):\n${(criteria ?? []).map((c, i) => `${i + 1}. ${c}`).join("\n")}`,
     "",
+
     `CANDIDATE RESPONSE:\n${trimmed}`,
     "",
     `Respond with JSON only: {"score": <integer 0-${max}>, "feedback": "<1-2 sentences of specific, encouraging but honest feedback>"}`,
