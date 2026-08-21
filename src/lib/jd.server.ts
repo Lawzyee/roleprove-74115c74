@@ -526,7 +526,8 @@ async function generateFoundation(extracted: Extracted) {
     title: String(parsed.title ?? "").trim(),
     description: String(parsed.description ?? "").trim(),
     datasets,
-    optional: optional.length ? optional : ["commercial_interpretation"],
+    optional,
+    computedTables: { commercial_interpretation: monthlyTable, segmentation: segmentTable },
     stage,
     fields,
   };
@@ -537,7 +538,9 @@ async function generateNarrativeStages(
   extracted: Extracted,
   datasets: Dataset[],
   optional: string[],
+  computedTables: Record<string, SummaryTable | null>,
 ): Promise<GeneratedStage[]> {
+
   const themes = extracted.emphasis_themes.length ? extracted.emphasis_themes : extracted.skills.slice(0, 5);
 
   const parsed = await callAi(
