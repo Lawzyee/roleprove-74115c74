@@ -5,29 +5,67 @@ import { Clock, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
+import { DeliverableUpload } from "@/components/DeliverableUpload";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { downloadDatasetCsv, formatDuration, type Rubric } from "@/lib/simulations";
+import {
+  downloadDatasetCsv,
+  formatDuration,
+  STAGE_LABELS,
+  type Dataset,
+  type Rubric,
+  type SummaryTable,
+} from "@/lib/simulations";
 import { gradeAttemptFn } from "@/lib/grading.functions";
 
 export const Route = createFileRoute("/_authenticated/simulate/$attemptId")({
   head: () => ({
     meta: [
       { title: "Simulation in progress | RoleProve" },
-      { name: "description", content: "Work through the scenario tasks and submit your answers for scoring." },
+      { name: "description", content: "Work through the scenario stages and submit your answers for scoring." },
       { property: "og:title", content: "Simulation in progress | RoleProve" },
-      { property: "og:description", content: "Work through the scenario tasks and submit your answers for scoring." },
+      { property: "og:description", content: "Work through the scenario stages and submit your answers for scoring." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SimulationRunner,
 });
+
+function DataTable({ columns, rows }: { columns: Array<{ key: string; label: string }>; rows: Array<Record<string, string>> }) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-border">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-muted/60">
+          <tr>
+            {columns.map((col) => (
+              <th key={col.key} className="whitespace-nowrap px-3 py-2 font-medium">
+                {col.label || col.key}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-t border-border">
+              {columns.map((col) => (
+                <td key={col.key} className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                  {row[col.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function SimulationRunner() {
   const { attemptId } = Route.useParams();
@@ -86,6 +124,12 @@ function SimulationRunner() {
   const rubric = useMemo<Rubric>(() => (task?.rubric_criteria ?? {}) as Rubric, [task]);
   const current = task ? (answers[task.id] ?? {}) : {};
 
+  const datasets = useMemo<Dataset[]>(() => {
+    if (rubric.datasets?.length) return rubric.datasets;
+    return rubric.dataset ? [rubric.dataset] : [];
+  }, [rubric]);
+  const tables = useMemo<SummaryTable[]>(() => rubric.tables ?? [], [rubric]);
+
   function setValue(key: string, value: unknown) {
     if (!task) return;
     setAnswers((prev) => ({ ...prev, [task.id]: { ...(prev[task.id] ?? {}), [key]: value } }));
@@ -137,10 +181,17 @@ function SimulationRunner() {
   }
 
   const canSubmit = (() => {
+    if (task.task_type === "case") {
+      const fieldsOk = (rubric.fields ?? []).every((f) => String(current[f.key] ?? "").length > 0);
+      const writtenOk = (rubric.written ?? []).every((w) => String(current[w.key] ?? "").trim().length > 0);
+      return fieldsOk && writtenOk;
+    }
     if (task.task_type === "text") return String(current["text"] ?? "").trim().length > 0;
     if (task.task_type === "multiple_choice") return typeof current["choice"] === "number";
     return (rubric.fields ?? []).every((f) => String(current[f.key] ?? "").length > 0);
   })();
+
+  const stageLabel = rubric.stage_kind ? STAGE_LABELS[rubric.stage_kind] : null;
 
   return (
     <>
@@ -152,8 +203,13 @@ function SimulationRunner() {
               {(query.data?.attempt as any)?.simulations?.title}
             </p>
             <h1 className="font-display text-2xl font-semibold">
-              Task {index + 1} of {tasks.length}: {task.title}
+              Stage {index + 1} of {tasks.length}: {task.title}
             </h1>
+            {stageLabel && (
+              <Badge variant="secondary" className="mt-2">
+                {stageLabel}
+              </Badge>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
@@ -172,65 +228,40 @@ function SimulationRunner() {
           </CardContent>
         </Card>
 
-        {rubric.dataset && rubric.dataset.rows.length > 0 && (
-          <Card className="mt-5 border-border shadow-none">
-            <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
-              <CardTitle className="font-display text-base">
-                Dataset — {rubric.dataset.name}.csv
-              </CardTitle>
-              <Button variant="outline" size="sm" onClick={() => downloadDatasetCsv(rubric.dataset!)}>
-                <Download className="mr-2 h-4 w-4" />
-                Download dataset
-              </Button>
+        {datasets.map((dataset) =>
+          dataset.rows.length ? (
+            <Card key={dataset.name} className="mt-5 border-border shadow-none">
+              <CardHeader className="flex-row items-center justify-between gap-4 space-y-0">
+                <CardTitle className="font-display text-base">Dataset — {dataset.name}.csv</CardTitle>
+                <Button variant="outline" size="sm" onClick={() => downloadDatasetCsv(dataset)}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <DataTable columns={dataset.columns} rows={dataset.rows} />
+              </CardContent>
+            </Card>
+          ) : null,
+        )}
+
+        {tables.map((table, i) => (
+          <Card key={i} className="mt-5 border-border shadow-none">
+            <CardHeader>
+              <CardTitle className="font-display text-base">{table.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto rounded-xl border border-border">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-muted/60">
-                    <tr>
-                      {rubric.dataset.columns.map((col) => (
-                        <th key={col.key} className="whitespace-nowrap px-3 py-2 font-medium">
-                          {col.key}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rubric.dataset.rows.map((row, i) => (
-                      <tr key={i} className="border-t border-border">
-                        {rubric.dataset!.columns.map((col) => (
-                          <td key={col.key} className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                            {row[col.key]}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable columns={table.columns} rows={table.rows} />
             </CardContent>
           </Card>
-        )}
+        ))}
 
         <Card className="mt-5 border-border shadow-none">
           <CardHeader>
             <CardTitle className="font-display text-base">Your answer</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {task.task_type === "text" && (
-              <div className="space-y-2">
-                {rubric.prompt_label && <Label htmlFor="answer-text">{rubric.prompt_label}</Label>}
-                <Textarea
-                  id="answer-text"
-                  rows={10}
-                  value={String(current["text"] ?? "")}
-                  onChange={(e) => setValue("text", e.target.value)}
-                  placeholder="Write your response here…"
-                />
-              </div>
-            )}
-
-            {task.task_type === "structured" && (
+          <CardContent className="space-y-5">
+            {(task.task_type === "case" || task.task_type === "structured") && (rubric.fields ?? []).length > 0 && (
               <div className="grid gap-4 sm:grid-cols-2">
                 {(rubric.fields ?? []).map((field) => (
                   <div key={field.key} className="space-y-2">
@@ -244,6 +275,37 @@ function SimulationRunner() {
                     />
                   </div>
                 ))}
+              </div>
+            )}
+
+            {task.task_type === "case" &&
+              (rubric.written ?? []).map((question) => (
+                <div key={question.key} className="space-y-2">
+                  <Label htmlFor={question.key}>
+                    {question.label} <span className="text-muted-foreground">({question.points} pts)</span>
+                  </Label>
+                  <p className="text-sm text-muted-foreground">{question.prompt}</p>
+                  <Textarea
+                    id={question.key}
+                    rows={question.input === "sql" ? 8 : 7}
+                    className={question.input === "sql" ? "font-mono text-sm" : undefined}
+                    value={String(current[question.key] ?? "")}
+                    onChange={(e) => setValue(question.key, e.target.value)}
+                    placeholder={question.input === "sql" ? "SELECT …" : "Write your response here…"}
+                  />
+                </div>
+              ))}
+
+            {task.task_type === "text" && (
+              <div className="space-y-2">
+                {rubric.prompt_label && <Label htmlFor="answer-text">{rubric.prompt_label}</Label>}
+                <Textarea
+                  id="answer-text"
+                  rows={10}
+                  value={String(current["text"] ?? "")}
+                  onChange={(e) => setValue("text", e.target.value)}
+                  placeholder="Write your response here…"
+                />
               </div>
             )}
 
@@ -263,6 +325,16 @@ function SimulationRunner() {
                   </label>
                 ))}
               </RadioGroup>
+            )}
+
+            {rubric.deliverable && (
+              <DeliverableUpload
+                attemptId={attemptId}
+                taskId={task.id}
+                label={rubric.deliverable.label}
+                hint={rubric.deliverable.hint}
+                accept={rubric.deliverable.accept}
+              />
             )}
 
             <div className="flex items-center justify-between pt-2">

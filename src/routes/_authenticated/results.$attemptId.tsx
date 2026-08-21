@@ -47,7 +47,12 @@ function ResultsPage() {
         .eq("attempt_id", attemptId);
       if (rErr) throw rErr;
 
-      return { attempt, results: (results ?? []).slice().sort((a: any, b: any) => (a.simulation_tasks?.order ?? 0) - (b.simulation_tasks?.order ?? 0)) };
+      const { data: deliverables } = await supabase
+        .from("attempt_deliverables")
+        .select("id, task_id, file_name, file_type, status, feedback, uploaded_at")
+        .eq("attempt_id", attemptId);
+
+      return { attempt, deliverables: deliverables ?? [], results: (results ?? []).slice().sort((a: any, b: any) => (a.simulation_tasks?.order ?? 0) - (b.simulation_tasks?.order ?? 0)) };
     },
   });
 
@@ -82,7 +87,7 @@ function ResultsPage() {
               <ScoreRing value={attempt.overall_score} />
               <p className="text-center text-sm text-muted-foreground">
                 Scored against the role rubric. Written answers are AI-assessed; structured and multiple-choice tasks
-                are rule-graded.
+                are rule-graded. Uploaded work samples are stored as evidence and never change your score.
               </p>
             </div>
 
@@ -98,9 +103,25 @@ function ResultsPage() {
                       </span>
                     </div>
                     <Progress value={((r.score ?? 0) / (r.max_score || 1)) * 100} className="h-2" />
-                    <CardDescription className="pt-2">{r.feedback ?? "No feedback recorded."}</CardDescription>
+                    <CardDescription className="whitespace-pre-wrap pt-2">
+                      {r.feedback ?? "No feedback recorded."}
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="pt-0" />
+                  <CardContent className="space-y-3 pt-0">
+                    {(query.data?.deliverables ?? [])
+                      .filter((d: any) => d.task_id === r.task_id)
+                      .map((d: any) => (
+                        <div key={d.id} className="rounded-xl border border-border bg-muted/50 p-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-medium">{d.file_name}</span>
+                            <Badge variant={d.status === "auto_checked" ? "secondary" : "outline"}>
+                              {d.status === "auto_checked" ? "Work sample checked" : "Submitted — pending review"}
+                            </Badge>
+                          </div>
+                          {d.feedback && <p className="mt-1 text-xs text-muted-foreground">{d.feedback}</p>}
+                        </div>
+                      ))}
+                  </CardContent>
                 </Card>
               ))}
             </div>

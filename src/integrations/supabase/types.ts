@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      attempt_deliverables: {
+        Row: {
+          attempt_id: string
+          feedback: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id: string
+          status: string
+          task_id: string | null
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt_id: string
+          feedback?: string | null
+          file_name: string
+          file_path: string
+          file_type: string
+          id?: string
+          status?: string
+          task_id?: string | null
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          attempt_id?: string
+          feedback?: string | null
+          file_name?: string
+          file_path?: string
+          file_type?: string
+          id?: string
+          status?: string
+          task_id?: string | null
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attempt_deliverables_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attempt_deliverables_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attempt_task_results: {
         Row: {
           attempt_id: string

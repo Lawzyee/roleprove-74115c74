@@ -2,14 +2,19 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 type AnyClient = SupabaseClient<any, any, any>;
 
+type WrittenQuestion = { key: string; label: string; prompt: string; criteria: string[]; points: number };
+
 type Rubric = {
   max_score?: number;
+  stage_kind?: string;
   fields?: Array<{ key: string; label: string; answer: number; tolerance?: number; points: number }>;
+  written?: WrittenQuestion[];
   options?: string[];
   answer?: number;
   points?: number;
   criteria?: string[];
 };
+
 
 function gradeStructured(rubric: Rubric, response: Record<string, unknown>) {
   const fields = rubric.fields ?? [];
@@ -47,12 +52,12 @@ function gradeMultipleChoice(rubric: Rubric, response: Record<string, unknown>) 
   };
 }
 
-async function gradeText(
-  rubric: Rubric,
+async function gradeWritten(
+  criteria: string[],
+  max: number,
   brief: string,
   answer: string,
 ): Promise<{ score: number; feedback: string }> {
-  const max = rubric.max_score ?? 10;
   const trimmed = (answer ?? "").trim();
   if (!trimmed) {
     return { score: 0, feedback: "No response was submitted for this task." };
@@ -68,11 +73,13 @@ async function gradeText(
 
   const prompt = [
     "You are grading a hands-on job simulation task. Grade strictly but fairly against the rubric.",
+    "For SQL answers, judge the approach and logic — accept any reasonable equivalent formulation rather than matching one exact query.",
     "",
     `TASK BRIEF:\n${brief}`,
     "",
-    `RUBRIC CRITERIA (each equally weighted, total ${max} points):\n${(rubric.criteria ?? []).map((c, i) => `${i + 1}. ${c}`).join("\n")}`,
+    `RUBRIC CRITERIA (each equally weighted, total ${max} points):\n${(criteria ?? []).map((c, i) => `${i + 1}. ${c}`).join("\n")}`,
     "",
+
     `CANDIDATE RESPONSE:\n${trimmed}`,
     "",
     `Respond with JSON only: {"score": <integer 0-${max}>, "feedback": "<1-2 sentences of specific, encouraging but honest feedback>"}`,
@@ -114,6 +121,34 @@ async function gradeText(
   const score = Math.max(0, Math.min(max, Math.round(Number(parsed.score ?? 0))));
   return { score, feedback: parsed.feedback ?? "Graded against the rubric." };
 }
+
+/** Multi-stage case study stage: rule-graded numeric fields plus AI-graded written sub-answers. */
+async function gradeCase(rubric: Rubric, brief: string, response: Record<string, unknown>) {
+  let score = 0;
+  const parts: string[] = [];
+
+  if ((rubric.fields ?? []).length) {
+    const structured = gradeStructured(rubric, response);
+    score += structured.score;
+    parts.push(structured.feedback);
+  }
+
+  for (const question of rubric.written ?? []) {
+    const answer = String(response[question.key] ?? "");
+    const graded = await gradeWritten(
+      question.criteria ?? [],
+      question.points,
+      [brief, "", `QUESTION: ${question.prompt}`].join("\n"),
+      answer,
+    );
+    score += graded.score;
+    parts.push(`${question.label} (${graded.score}/${question.points}): ${graded.feedback}`);
+  }
+
+  return { score, feedback: parts.join("\n\n") || "No response was submitted for this stage." };
+}
+
+
 
 export async function gradeAttempt(supabase: AnyClient, userId: string, attemptId: string) {
   const { data: attempt, error: attemptError } = await supabase
@@ -157,13 +192,16 @@ export async function gradeAttempt(supabase: AnyClient, userId: string, attemptI
     const response = (result.response ?? {}) as Record<string, unknown>;
     let graded: { score: number; feedback: string };
 
-    if (task.task_type === "structured") {
+    if (task.task_type === "case") {
+      graded = await gradeCase(rubric, task.brief, response);
+    } else if (task.task_type === "structured") {
       graded = gradeStructured(rubric, response);
     } else if (task.task_type === "multiple_choice") {
       graded = gradeMultipleChoice(rubric, response);
     } else {
-      graded = await gradeText(rubric, task.brief, String(response["text"] ?? ""));
+      graded = await gradeWritten(rubric.criteria ?? [], max, task.brief, String(response["text"] ?? ""));
     }
+
 
     totalScore += graded.score;
 
