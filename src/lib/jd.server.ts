@@ -633,7 +633,8 @@ async function generateNarrativeStages(
     const raw = parsed[kind];
     if (!raw) continue;
     const question = normaliseWritten(raw.question, 10, "prose");
-    const table = raw.table ? normaliseTable(raw.table) : null;
+    // Numbers always come from the code-computed table, never from the model.
+    const table = computedTables[kind] ?? null;
     if ((kind === "commercial_interpretation" || kind === "segmentation") && !table) continue;
     stages.push({
       title: String(raw.title ?? kind.replace(/_/g, " ")).trim(),
@@ -647,6 +648,7 @@ async function generateNarrativeStages(
       },
     });
   }
+
 
   const final = parsed.final_recommendation ?? {};
   const finalQuestion = normaliseWritten(final.question, 10, "prose");
