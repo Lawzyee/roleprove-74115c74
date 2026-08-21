@@ -322,19 +322,8 @@ function normaliseDataset(raw: any): Dataset {
   };
 }
 
-function normaliseTable(raw: any): SummaryTable | null {
-  const columns: DatasetColumn[] = (Array.isArray(raw?.columns) ? raw.columns : [])
-    .map((col: any) => ({ key: String(col?.key ?? "").trim(), label: String(col?.label ?? col?.key ?? "").trim() }))
-    .filter((col: DatasetColumn) => !!col.key);
-  if (columns.length < 2) return null;
-  const rows: DatasetRow[] = (Array.isArray(raw?.rows) ? raw.rows : []).map((r: any) => {
-    const row: DatasetRow = {};
-    for (const col of columns) row[col.key] = String(r?.[col.key] ?? "");
-    return row;
-  });
-  if (rows.length < 2) return null;
-  return { title: String(raw?.title ?? "Summary").trim(), columns, rows };
-}
+
+
 
 function normaliseWritten(raw: any, points: number, input: "sql" | "prose"): WrittenQuestion {
   const key = String(raw?.key ?? "").trim();
