@@ -387,17 +387,17 @@ async function generateFoundation(extracted: Extracted) {
       "",
       `Randomisation seed (make the data unique to this seed): ${Math.random().toString(36).slice(2)}-${Date.now()}`,
       "",
-      "Design the FOUNDATION of a commercial case study for this specific business.",
+      "Design the FOUNDATION of a commercial case study for this specific business: the datasets and the data cleaning stage.",
       "",
-      "1. Choose which optional later stages this job description actually justifies. Available optional stages: commercial_interpretation (open reasoning on a monthly trend table), segmentation (which segment to prioritise, value-at-risk reasoning), discrepancy (finance figure vs dashboard figure investigation). Pick 1 to 3 of them — only ones the posting genuinely supports. Stages data_quality, sql_reasoning and final_recommendation are always included and must not be listed.",
-      "2. Design TWO linked datasets that reference each other by an id column (for example an entity table and a transactions table). The child table must contain at least one orphaned reference. Column names, grain and data-quality issues must come from the systems and problems this posting describes — never a generic id/customer/plan/amount/date template.",
+      "1. Design TWO linked datasets that reference each other by an id column (for example an entity table and a transactions table). The child table must contain at least one orphaned reference. Column names, grain and data-quality issues must come from the systems and problems this posting describes — never a generic id/customer/plan/amount/date template.",
+      "2. At least one table must include a date column (YYYY-MM-DD, spanning 3+ months, some rows deliberately mis-formatted), one money/quantity column, and one low-cardinality categorical column (tier, channel, region, status or similar) — later stages summarise these.",
       "3. Design 3-5 rule-graded numeric answer fields plus ONE short written triage question ('which issue would you investigate first, and why?').",
       "",
       "Reply as JSON exactly in this shape:",
       JSON.stringify({
         title: "<short simulation title referencing the role/company>",
         description: "<1-2 sentence description>",
-        optional_stages: ["commercial_interpretation"],
+
         datasets: [
           { name: "<snake_case parent table>", columns: [{ key: "<snake_case>", label: "<label>" }], rows: [{ "<key>": "<value>" }] },
           { name: "<snake_case child table>", columns: [{ key: "<snake_case>", label: "<label>" }], rows: [{ "<key>": "<value>" }] },
