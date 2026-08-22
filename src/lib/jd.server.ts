@@ -537,38 +537,65 @@ async function generateFoundation(extracted: Extracted) {
 }
 
 
-/** Stages 2-6: SQL reasoning plus the selected open written stages, consistent with the datasets. */
-async function generateNarrativeStages(
+/**
+ * The canonical Data Analyst pipeline is fixed in code: stages 1, 2, 4, 5 and 6
+ * around the code-owned cleaning stage. The AI only fills content.
+ */
+async function generatePipelineStages(
   extracted: Extracted,
   datasets: Dataset[],
-  optional: string[],
-  computedTables: Record<string, SummaryTable | null>,
-): Promise<GeneratedStage[]> {
-
+  insightsTable: SummaryTable | null,
+  bonus: Array<{ kind: string; label: string }>,
+): Promise<{ before: GeneratedStage[]; after: GeneratedStage[] }> {
   const themes = extracted.emphasis_themes.length ? extracted.emphasis_themes : extracted.skills.slice(0, 5);
 
   const parsed = await callAi(
-    "You design multi-stage Data Analyst case-study assessments. Reply with JSON only.",
+    "You write content for a fixed six-stage Data Analyst case-study assessment. The stage list is decided for you — never add, drop or reorder stages. Reply with JSON only.",
     [
       `JOB POSTING CONTEXT:\nRole: ${extracted.role_type}\nSeniority: ${extracted.seniority}\nCompany: ${extracted.company_context}\nEmphasis themes: ${themes.join("; ")}`,
       "",
-      `THE CANDIDATE ALREADY HAS THESE TABLES (use their real names and columns everywhere):\n${datasetSchemaSummary(datasets)}`,
+      `THE CANDIDATE'S DATASETS (use their real names and columns everywhere):\n${datasetSchemaSummary(datasets)}`,
       "",
-      ...(Object.entries(computedTables)
-        .filter(([kind, table]) => table && optional.includes(kind))
-        .map(
-          ([kind, table]) =>
-            `ALREADY-COMPUTED SUMMARY TABLE FOR ${kind} (derived in code from the real rows above — treat these numbers as fact, write your brief and question around them, and DO NOT restate, alter, round or invent alternative figures):\n${summariseTable(
-              table as SummaryTable,
-            )}`,
-        )),
+      insightsTable
+        ? `ALREADY-COMPUTED SUMMARY TABLE FOR STAGE 5 (derived in code from the real rows above — treat these numbers as fact, write your brief and question around them, and DO NOT restate, alter, round or invent alternative figures):\n${summariseTable(insightsTable)}`
+        : "No summary table could be derived, so stage 5 must reference the candidate's own cleaned dataset rather than any specific figures.",
       "",
-      `Generate these stages: sql_reasoning, ${optional.join(", ")}, final_recommendation. Do not invent summary numbers: for stages that were given a computed table, the table is inserted verbatim and you only write narrative, question wording and rubric criteria.`,
-
+      "Write the content for these stages of the fixed pipeline: business_understanding (stage 1), data_acquisition (stage 2), analysis_visualisation (stage 4), insights_recommendations (stage 5), executive_review (stage 6).",
+      bonus.length
+        ? `Also write these bonus stages, because the posting explicitly emphasises them: ${bonus
+            .map((b) => `${b.kind} (${b.label})`)
+            .join(", ")}.`
+        : "No bonus stages are required.",
       "",
-      "Reply as JSON exactly in this shape (omit the optional stages that were not requested):",
+      "Reply as JSON exactly in this shape:",
       JSON.stringify({
-        sql_reasoning: {
+        business_understanding: {
+          title: "<stage title>",
+          brief: "<a vague stakeholder request from a named leader at this company, 3-5 sentences, no data shown yet>",
+          question: {
+            key: "framing",
+            label: "<label>",
+            prompt: "<translate this into 2-3 specific analytical questions, define success/KPIs, and list the data you would need>",
+            criteria: ["…", "…", "…", "…"],
+          },
+        },
+        data_acquisition: {
+          title: "<stage title>",
+          brief: "<describe 2-4 named available data sources (systems/tables) in one line each, realistic for this company>",
+          question: {
+            key: "sources",
+            label: "<label>",
+            prompt: "<which sources would you pull and why, and what would you check before trusting them>",
+            criteria: ["…", "…", "…", "…"],
+          },
+          extraction_query: {
+            key: "extraction_sql",
+            label: "<label for the SQL box>",
+            prompt: "<write the extraction query/approach for the most relevant source, using the real table and column names>",
+            criteria: ["…", "…", "…", "…"],
+          },
+        },
+        analysis_visualisation: {
           title: "<stage title>",
           brief: "<scenario + the schema of the tables, 3-6 sentences>",
           sub_questions: [
@@ -579,117 +606,144 @@ async function generateNarrativeStages(
               criteria: ["…", "…", "…", "…"],
             },
           ],
+          visualisation_question: {
+            key: "chart_choice",
+            label: "<label>",
+            prompt: "<which chart type would best communicate the finding from one of the questions above, and why>",
+            criteria: ["…", "…", "…", "…"],
+          },
         },
-        commercial_interpretation: {
+        insights_recommendations: {
           title: "<stage title>",
-          brief: "<framing sentence introducing the already-computed monthly table; no numbers of your own>",
-          question: { key: "concerns", label: "<label>", prompt: "<what concerns you about this data and why>", criteria: ["…", "…", "…", "…"] },
-        },
-        segmentation: {
-          title: "<stage title>",
-          brief: "<framing sentence introducing the already-computed segment table; no numbers of your own>",
-          question: { key: "priority_segment", label: "<label>", prompt: "<which segment would you prioritise and why>", criteria: ["…", "…", "…", "…"] },
-        },
-
-        discrepancy: {
-          title: "<stage title>",
-          brief: "<short scenario where finance's figure disagrees with the dashboard figure, with both numbers>",
-          question: { key: "investigation", label: "<label>", prompt: "<what do you do next>", criteria: ["…", "…", "…", "…"] },
-        },
-        final_recommendation: {
-          title: "<stage title>",
-          brief: "<closing framing referencing the case>",
+          brief: "<framing sentence introducing the already-computed table; no numbers of your own>",
           question: {
             key: "recommendation",
             label: "<label>",
-            prompt: "<what should the business do next, and how would you measure it>",
+            prompt: "<what is concerning here, and what should the business do next — answer as Finding, Evidence, Impact, Recommendation, Measurement>",
             criteria: ["…", "…", "…", "…", "…"],
           },
         },
+        executive_review: {
+          title: "<stage title>",
+          brief: "<you have 10 minutes with leadership: framing, 2-4 sentences>",
+          question: {
+            key: "executive_summary",
+            label: "<label>",
+            prompt: "<write the short executive summary you would open with — a few sentences, not a full report>",
+            criteria: ["…", "…", "…", "…"],
+          },
+        },
+        bonus_stages: [
+          {
+            kind: "<one of the requested bonus kinds>",
+            title: "<stage title>",
+            brief: "<scenario grounded in this company and the datasets>",
+            question: { key: "<snake_case>", label: "<label>", prompt: "<question>", criteria: ["…", "…", "…", "…"] },
+          },
+        ],
       }),
       "",
-      "sql_reasoning must contain 2-3 sub_questions, each answered as free-text SQL, and its criteria must describe correct approach/logic (joins, filters, denominator choice) so that reasonable equivalent queries score well — never exact string matching.",
-      "Do not output a 'table' field for any stage: the computed tables supplied above are inserted verbatim.",
+      "analysis_visualisation must contain 2-3 sub_questions answered as free-text SQL, and its criteria must describe correct approach/logic (joins, filters, denominator choice) so reasonable equivalent queries score well — never exact string matching. The visualisation question is graded on reasoning about chart choice, not on producing a chart.",
+      "Do not output any 'table' field: the computed table supplied above is inserted verbatim.",
       "Every criteria array must contain 4-5 concrete statements that separate a weak answer from a strong one.",
-      "final_recommendation criteria must explicitly reward a Finding -> Evidence -> Impact -> Recommendation -> Measurement structure.",
-    ].join("\n"),
+      "insights_recommendations criteria must explicitly reward a Finding -> Evidence -> Impact -> Recommendation -> Measurement structure.",
+      bonus.length ? "" : "Return bonus_stages as an empty array.",
+    ]
+      .filter(Boolean)
+      .join("\n"),
   );
 
-  const stages: GeneratedStage[] = [];
-
-  const sql = parsed.sql_reasoning ?? {};
-  const subs = Array.isArray(sql.sub_questions) ? sql.sub_questions.slice(0, 3) : [];
-  if (subs.length < 2 || !String(sql.brief ?? "").trim()) throw new Error("Generated SQL stage was incomplete.");
-  const sqlPoints = distributePoints(subs.length);
-  stages.push({
-    title: String(sql.title ?? "SQL and analytical reasoning").trim(),
-    brief: String(sql.brief).trim(),
-    task_type: "case",
-    rubric_criteria: {
-      max_score: 10,
-      stage_kind: "sql_reasoning",
-      datasets,
-      written: subs.map((s: any, i: number) => normaliseWritten(s, sqlPoints[i]!, "sql")),
-    },
-  });
-
-  for (const kind of optional) {
-    const raw = parsed[kind];
-    if (!raw) continue;
-    const question = normaliseWritten(raw.question, 10, "prose");
-    // Numbers always come from the code-computed table, never from the model.
-    const table = computedTables[kind] ?? null;
-    if ((kind === "commercial_interpretation" || kind === "segmentation") && !table) continue;
-    stages.push({
-      title: String(raw.title ?? kind.replace(/_/g, " ")).trim(),
-      brief: String(raw.brief ?? "").trim(),
+  function simpleStage(raw: any, kind: string, fallbackTitle: string, extra: Partial<StageRubric> = {}): GeneratedStage {
+    const question = normaliseWritten(raw?.question, 10, "prose");
+    return {
+      title: String(raw?.title ?? fallbackTitle).trim() || fallbackTitle,
+      brief: String(raw?.brief ?? "").trim(),
       task_type: "case",
-      rubric_criteria: {
-        max_score: 10,
-        stage_kind: kind,
-        tables: table ? [table] : undefined,
-        written: [question],
-      },
-    });
+      rubric_criteria: { max_score: 10, stage_kind: kind, written: [question], ...extra },
+    };
   }
 
+  // Stage 1
+  const stage1 = simpleStage(parsed.business_understanding, "business_understanding", "Business understanding");
 
-  const final = parsed.final_recommendation ?? {};
-  const finalQuestion = normaliseWritten(final.question, 10, "prose");
-  stages.push({
-    title: String(final.title ?? "Final recommendation").trim(),
-    brief: String(final.brief ?? "").trim(),
+  // Stage 2 — written justification plus an extraction query.
+  const acq = parsed.data_acquisition ?? {};
+  const acqWritten = [normaliseWritten(acq.question, 5, "prose"), normaliseWritten(acq.extraction_query, 5, "sql")];
+  const stage2: GeneratedStage = {
+    title: String(acq.title ?? "Data acquisition").trim() || "Data acquisition",
+    brief: String(acq.brief ?? "").trim(),
+    task_type: "case",
+    rubric_criteria: { max_score: 10, stage_kind: "data_acquisition", written: acqWritten },
+  };
+
+  // Stage 4 — SQL sub-questions plus the visualisation judgement question.
+  const analysis = parsed.analysis_visualisation ?? {};
+  const subs = Array.isArray(analysis.sub_questions) ? analysis.sub_questions.slice(0, 3) : [];
+  if (subs.length < 2 || !String(analysis.brief ?? "").trim()) throw new Error("Generated analysis stage was incomplete.");
+  const sqlPoints = distributePoints(subs.length, 7);
+  const stage4: GeneratedStage = {
+    title: String(analysis.title ?? "Analysis and visualisation").trim(),
+    brief: String(analysis.brief).trim(),
     task_type: "case",
     rubric_criteria: {
       max_score: 10,
-      stage_kind: "final_recommendation",
-      written: [finalQuestion],
-      deliverable: {
-        label: "Upload your findings deck, summary or dashboard export (optional)",
-        hint: "PDF, PPTX, PNG or JPG. Stored as a work sample; decks and PDFs get written feedback, images are marked pending review.",
-        accept: [".pdf", ".pptx", ".png", ".jpg", ".jpeg"],
-      },
+      stage_kind: "analysis_visualisation",
+      datasets,
+      written: [
+        ...subs.map((s: any, i: number) => normaliseWritten(s, sqlPoints[i]!, "sql")),
+        normaliseWritten(analysis.visualisation_question, 3, "prose"),
+      ],
+    },
+  };
+
+  // Stage 5 — grounded summary table plus the Finding→Measurement answer.
+  const stage5 = simpleStage(
+    parsed.insights_recommendations,
+    "insights_recommendations",
+    "Insights and recommendations",
+    insightsTable ? { tables: [insightsTable] } : {},
+  );
+
+  // Stage 6 — executive summary plus the optional deliverable.
+  const stage6 = simpleStage(parsed.executive_review, "executive_review", "Executive review", {
+    deliverable: {
+      label: "Upload your findings deck, summary or dashboard export (optional)",
+      hint: "PDF, PPTX, PNG or JPG. Stored as a work sample; decks and PDFs get written feedback, images are marked pending review.",
+      accept: [".pdf", ".pptx", ".png", ".jpg", ".jpeg"],
     },
   });
 
-  return stages;
+  const bonusKinds = new Set(bonus.map((b) => b.kind));
+  const bonusStages: GeneratedStage[] = (Array.isArray(parsed.bonus_stages) ? parsed.bonus_stages : [])
+    .filter((raw: any) => bonusKinds.has(String(raw?.kind)))
+    .slice(0, 2)
+    .flatMap((raw: any) => {
+      try {
+        return [simpleStage(raw, String(raw.kind), String(raw.kind).replace(/_/g, " "))];
+      } catch {
+        return [];
+      }
+    });
+
+  return { before: [stage1, stage2], after: [stage4, stage5, stage6, ...bonusStages] };
 }
 
 async function generateCaseStudy(extracted: Extracted): Promise<GeneratedSimulation> {
   const foundation = await generateFoundation(extracted);
-  const narrative = await generateNarrativeStages(
+  const { before, after } = await generatePipelineStages(
     extracted,
     foundation.datasets,
-    foundation.optional,
-    foundation.computedTables,
+    foundation.insightsTable,
+    detectBonusStages(extracted),
   );
 
   return {
     title: foundation.title,
     description: foundation.description,
-    tasks: [foundation.stage, ...narrative],
+    tasks: [...before, foundation.stage, ...after],
   };
 }
+
 
 async function generateCaseStudyWithRetry(extracted: Extracted): Promise<GeneratedSimulation> {
   let lastError: unknown;
