@@ -304,7 +304,36 @@ const METRIC_KINDS = [
   "orphan_rows",
 ];
 
-const OPTIONAL_STAGES = ["commercial_interpretation", "segmentation", "discrepancy"] as const;
+/**
+ * Bonus stages are only added on top of the fixed pipeline when the job
+ * description explicitly emphasises that skill.
+ */
+const BONUS_STAGES: Array<{ kind: string; label: string; test: RegExp }> = [
+  { kind: "ab_testing", label: "A/B testing", test: /\ba\/?b test|experiment(ation)?|split test/i },
+  { kind: "forecasting", label: "Forecasting", test: /forecast|time series|demand planning|projection/i },
+  {
+    kind: "statistical_analysis",
+    label: "Statistical analysis",
+    test: /statistic|significance|regression|hypothesis|confidence interval/i,
+  },
+  { kind: "dashboard_build", label: "Dashboard design", test: /dashboard|power bi|tableau|looker|data studio/i },
+  { kind: "automation", label: "Automation", test: /automat|pipeline scheduling|etl|airflow|dbt/i },
+  { kind: "data_modelling", label: "Data modelling", test: /data model|dimensional|star schema|warehouse design/i },
+];
+
+function detectBonusStages(extracted: Extracted) {
+  const haystack = [
+    extracted.role_type,
+    extracted.company_context,
+    ...extracted.skills,
+    ...extracted.responsibilities,
+    ...extracted.emphasis_themes,
+  ]
+    .join(" ")
+    .toLowerCase();
+  return BONUS_STAGES.filter((b) => b.test.test(haystack)).slice(0, 2);
+}
+
 
 function normaliseDataset(raw: any): Dataset {
   const columns: DatasetColumn[] = (Array.isArray(raw?.columns) ? raw.columns : [])
