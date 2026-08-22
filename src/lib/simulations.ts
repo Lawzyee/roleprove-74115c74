@@ -32,13 +32,26 @@ export type Rubric = {
 };
 
 export const STAGE_LABELS: Record<string, string> = {
-  data_quality: "Data quality & validation",
+  business_understanding: "Stage 1 — Business understanding",
+  data_acquisition: "Stage 2 — Data acquisition",
+  data_quality: "Stage 3 — Data cleaning & preparation",
+  analysis_visualisation: "Stage 4 — Analysis & visualisation",
+  insights_recommendations: "Stage 5 — Insights & recommendations",
+  executive_review: "Stage 6 — Executive review",
+  statistical_analysis: "Bonus — Statistical analysis",
+  ab_testing: "Bonus — A/B testing",
+  forecasting: "Bonus — Forecasting",
+  dashboard_build: "Bonus — Dashboard design",
+  automation: "Bonus — Automation",
+  data_modelling: "Bonus — Data modelling",
+  // legacy stage kinds from earlier generations
   sql_reasoning: "SQL & analytical reasoning",
   commercial_interpretation: "Commercial interpretation",
   segmentation: "Segmentation & trade-offs",
   discrepancy: "Discrepancy investigation",
   final_recommendation: "Final recommendation",
 };
+
 
 
 export function datasetToCsv(dataset: Dataset) {
