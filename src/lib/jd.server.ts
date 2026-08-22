@@ -495,27 +495,13 @@ async function generateFoundation(extracted: Extracted) {
   const briefIntro = String(dq.brief_intro ?? "").trim();
   if (!questionText || !briefIntro) throw new Error("Generated data-quality stage was incomplete.");
 
-  // Stage 3/4 tables are computed in code from the real rows. A stage is only
-  // offered when its table can genuinely be derived from the dataset.
+  // Stage 5's summary table is computed in code from the real rows.
   const monthlyTable = buildMonthlyTrendTable(datasets);
   const segmentTable = buildSegmentTable(datasets);
-  const supports: Record<string, boolean> = {
-    commercial_interpretation: !!monthlyTable,
-    segmentation: !!segmentTable,
-    discrepancy: true,
-  };
-
-  let optional = (Array.isArray(parsed.optional_stages) ? parsed.optional_stages : [])
-    .map(String)
-    .filter((s: string) => (OPTIONAL_STAGES as readonly string[]).includes(s) && supports[s])
-    .slice(0, 3);
-  if (!optional.length) {
-    optional = monthlyTable ? ["commercial_interpretation"] : segmentTable ? ["segmentation"] : ["discrepancy"];
-  }
-
+  const insightsTable = monthlyTable ?? segmentTable;
 
   const stage: GeneratedStage = {
-    title: String(dq.title ?? "Data quality and validation").trim(),
+    title: String(dq.title ?? "Data cleaning and preparation").trim(),
     brief: [briefIntro, "", questionText].join("\n").trim(),
     task_type: "case",
     rubric_criteria: {
@@ -544,12 +530,12 @@ async function generateFoundation(extracted: Extracted) {
     title: String(parsed.title ?? "").trim(),
     description: String(parsed.description ?? "").trim(),
     datasets,
-    optional,
-    computedTables: { commercial_interpretation: monthlyTable, segmentation: segmentTable },
+    insightsTable,
     stage,
     fields,
   };
 }
+
 
 /** Stages 2-6: SQL reasoning plus the selected open written stages, consistent with the datasets. */
 async function generateNarrativeStages(
