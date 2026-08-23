@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { generatePersonalisedSimulation } from "./jd.server";
+import { generatePersonalisedSimulation, generateGenericSimulation } from "./jd.server";
 
 export const generateJdSimulationFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -18,6 +18,5 @@ export const generateJdSimulationFn = createServerFn({ method: "POST" })
 export const generateGenericSimulationFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { generateGenericSimulation } = await import("./jd.server");
     return generateGenericSimulation(context.userId);
   });
