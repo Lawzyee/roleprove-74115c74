@@ -47,19 +47,6 @@ function Dashboard() {
     },
   });
 
-  const simsQuery = useQuery({
-    queryKey: ["simulations"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("simulations")
-        .select("id, title, description, estimated_minutes, roles(name)")
-        .eq("is_personalized", false)
-        .is("owner_user_id", null)
-        .order("created_at");
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const attemptsQuery = useQuery({
     queryKey: ["attempts", user?.id],
@@ -132,15 +119,9 @@ function Dashboard() {
           </Card>
 
           <div className="space-y-6">
-            <JobDescriptionPaste
-              onStartGeneric={() => {
-                const first = (simsQuery.data ?? [])[0] as any;
-                if (first) onStart(first.id);
-              }}
-            />
+            <JobDescriptionPaste onStartGeneric={() => onStart("data-analyst")} />
 
             <section>
-
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-display text-xl font-semibold">Available simulations</h2>
                 <Button asChild variant="outline" size="sm">
@@ -148,23 +129,24 @@ function Dashboard() {
                 </Button>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                {(simsQuery.data ?? []).map((sim: any) => (
-                  <Card key={sim.id} className="border-border shadow-none">
-                    <CardHeader className="pb-3">
-                      <Badge variant="secondary" className="w-fit">
-                        {sim.roles?.name}
-                      </Badge>
-                      <CardTitle className="font-display text-base">{sim.title}</CardTitle>
-                      <CardDescription className="line-clamp-3">{sim.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">~{sim.estimated_minutes} min</span>
-                      <Button size="sm" onClick={() => onStart(sim.id)} disabled={startingId === sim.id}>
-                        {startingId === sim.id ? "Building your case study…" : "Start simulation"}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                <Card className="border-border shadow-none">
+                  <CardHeader className="pb-3">
+                    <Badge variant="secondary" className="w-fit">
+                      Data Analyst
+                    </Badge>
+                    <CardTitle className="font-display text-base">Data Analyst — Case Study Practice</CardTitle>
+                    <CardDescription className="line-clamp-3">
+                      Work through a full case study from business framing through executive presentation. A new scenario
+                      is generated each time you start.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">~45-60 min</span>
+                    <Button size="sm" onClick={() => onStart("data-analyst")} disabled={startingId === "data-analyst"}>
+                      {startingId === "data-analyst" ? "Building your case study…" : "Start simulation"}
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             </section>
 
