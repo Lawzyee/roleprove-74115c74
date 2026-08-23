@@ -88,6 +88,7 @@ function RolesPage() {
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {(rolesQuery.data ?? []).map((role: any) => {
+            const isDataAnalyst = role.name === "Data Analyst";
             const sim = (role.simulations ?? []).find((s: any) => !s.is_personalized && !s.owner_user_id);
             return (
               <Card key={role.id} className="flex flex-col border-border shadow-none">
@@ -95,14 +96,24 @@ function RolesPage() {
                   <Badge variant="secondary" className="w-fit">
                     {role.category}
                   </Badge>
-                  <CardTitle className="font-display text-lg">{role.name}</CardTitle>
-                  <CardDescription>{role.description}</CardDescription>
+                  <CardTitle className="font-display text-lg">
+                    {isDataAnalyst ? "Data Analyst — Case Study Practice" : role.name}
+                  </CardTitle>
+                  <CardDescription>
+                    {isDataAnalyst
+                      ? "Work through a full case study from business framing through executive presentation. A new scenario is generated each time you start."
+                      : role.description}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="mt-auto flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">
-                    {sim ? `~${sim.estimated_minutes} min` : "In authoring"}
+                    {isDataAnalyst ? "~45-60 min" : sim ? `~${sim.estimated_minutes} min` : "In authoring"}
                   </span>
-                  {sim ? (
+                  {isDataAnalyst ? (
+                    <Button size="sm" onClick={() => onStart("data-analyst")} disabled={startingId === "data-analyst"}>
+                      {startingId === "data-analyst" ? "Building your case study…" : "Start simulation"}
+                    </Button>
+                  ) : sim ? (
                     <Button size="sm" onClick={() => onStart(sim.id)} disabled={startingId === sim.id}>
                       {startingId === sim.id ? "Building your case study…" : "Start simulation"}
                     </Button>
