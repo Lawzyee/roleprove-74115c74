@@ -73,7 +73,9 @@ function SimulationRunner() {
   const [index, setIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [answers, setAnswers] = useState<Record<string, Record<string, unknown>>>({});
+
 
   const query = useQuery({
     queryKey: ["attempt-run", attemptId],
@@ -135,25 +137,43 @@ function SimulationRunner() {
     setAnswers((prev) => ({ ...prev, [task.id]: { ...(prev[task.id] ?? {}), [key]: value } }));
   }
 
+  async function persistCurrent() {
+    if (!task) return;
+    const { error } = await supabase
+      .from("attempt_task_results")
+      .upsert(
+        { attempt_id: attemptId, task_id: task.id, response: current as any },
+        { onConflict: "attempt_id,task_id" },
+      );
+    if (error) throw error;
+  }
+
+  async function goBack() {
+    if (index === 0) return;
+    setSubmitting(true);
+    try {
+      await persistCurrent();
+      setIndex(index - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save your answer");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function submitTask() {
     if (!task) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("attempt_task_results")
-        .upsert(
-          { attempt_id: attemptId, task_id: task.id, response: current as any },
-          { onConflict: "attempt_id,task_id" },
-        );
-      if (error) throw error;
+      await persistCurrent();
 
       if (index < tasks.length - 1) {
         setIndex(index + 1);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        toast.info("Scoring your work…");
-        await gradeAttemptFn({ data: { attemptId } });
-        router.navigate({ to: "/results/$attemptId", params: { attemptId } });
+        setReviewing(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save your answer");
@@ -161,6 +181,19 @@ function SimulationRunner() {
       setSubmitting(false);
     }
   }
+
+  async function finalSubmit() {
+    setSubmitting(true);
+    try {
+      toast.info("Scoring your work…");
+      await gradeAttemptFn({ data: { attemptId } });
+      router.navigate({ to: "/results/$attemptId", params: { attemptId } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not submit your attempt");
+      setSubmitting(false);
+    }
+  }
+
 
   if (query.isLoading) {
     return (
@@ -192,6 +225,85 @@ function SimulationRunner() {
   })();
 
   const stageLabel = rubric.stage_kind ? STAGE_LABELS[rubric.stage_kind] : null;
+
+  if (reviewing) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="mx-auto max-w-3xl px-5 py-10">
+          <h1 className="font-display text-2xl font-semibold">Review your answers</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Check everything below before final submission. You can edit any stage, then come back here.
+          </p>
+
+          <div className="mt-6 space-y-4">
+            {tasks.map((t: any, i: number) => {
+              const r = (t.rubric_criteria ?? {}) as Rubric;
+              const a = answers[t.id] ?? {};
+              const entries: Array<{ label: string; value: string }> = [];
+              for (const f of r.fields ?? []) entries.push({ label: f.label, value: String(a[f.key] ?? "") });
+              for (const w of r.written ?? []) entries.push({ label: w.label, value: String(a[w.key] ?? "") });
+              if (t.task_type === "text") entries.push({ label: r.prompt_label ?? "Answer", value: String(a["text"] ?? "") });
+              if (t.task_type === "multiple_choice")
+                entries.push({
+                  label: "Selected option",
+                  value: typeof a["choice"] === "number" ? ((r.options ?? [])[a["choice"] as number] ?? "") : "",
+                });
+
+              return (
+                <Card key={t.id} className="border-border shadow-none">
+                  <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
+                    <CardTitle className="font-display text-base">
+                      Stage {i + 1}: {t.title}
+                    </CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setReviewing(false);
+                        setIndex(i);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {entries.length === 0 && <p className="text-sm text-muted-foreground">No answer recorded.</p>}
+                    {entries.map((e, k) => (
+                      <div key={k} className="space-y-1">
+                        <p className="text-sm font-medium">{e.label}</p>
+                        <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                          {e.value.trim() ? e.value : "— not answered —"}
+                        </p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReviewing(false);
+                setIndex(Math.max(0, tasks.length - 1));
+              }}
+              disabled={submitting}
+            >
+              Back to last stage
+            </Button>
+            <Button onClick={finalSubmit} disabled={submitting}>
+              {submitting ? "Submitting…" : "Submit and get my score"}
+            </Button>
+          </div>
+        </main>
+      </>
+    );
+  }
+
 
   return (
     <>
@@ -338,16 +450,22 @@ function SimulationRunner() {
               />
             )}
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <p className="text-xs text-muted-foreground">The timer is informational — take the time you need.</p>
-              <Button onClick={submitTask} disabled={!canSubmit || submitting}>
-                {submitting
-                  ? "Saving…"
-                  : index < tasks.length - 1
-                    ? "Submit and continue"
-                    : "Submit and get my score"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={goBack} disabled={index === 0 || submitting}>
+                  Back
+                </Button>
+                <Button onClick={submitTask} disabled={!canSubmit || submitting}>
+                  {submitting
+                    ? "Saving…"
+                    : index < tasks.length - 1
+                      ? "Submit and continue"
+                      : "Review all answers"}
+                </Button>
+              </div>
             </div>
+
           </CardContent>
         </Card>
       </main>
