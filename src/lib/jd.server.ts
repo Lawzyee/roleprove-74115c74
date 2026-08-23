@@ -582,7 +582,7 @@ async function generatePipelineStages(
         },
         data_acquisition: {
           title: "<stage title>",
-          brief: "<describe 2-4 named available data sources (systems/tables) in one line each, realistic for this company>",
+          brief: "<describe the available data sources in one line each — you MUST use the real table names listed above, and may add at most one extra external source; the candidate sees a preview of every real table below the brief>",
           question: {
             key: "sources",
             label: "<label>",
