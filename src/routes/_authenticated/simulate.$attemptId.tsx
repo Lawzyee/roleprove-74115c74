@@ -258,7 +258,7 @@ function SimulationRunner() {
 
         <Card className="mt-5 border-border shadow-none">
           <CardHeader>
-            <CardTitle className="font-display text-base">Your answer</CardTitle>
+            <CardTitle className="font-display text-base">Question</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
             {(task.task_type === "case" || task.task_type === "structured") && (rubric.fields ?? []).length > 0 && (
@@ -268,10 +268,11 @@ function SimulationRunner() {
                     <Label htmlFor={field.key}>{field.label}</Label>
                     <Input
                       id={field.key}
-                      type={field.type === "text" ? "text" : "number"}
-                      step="0.01"
+                      type="text"
+                      inputMode="text"
                       value={String(current[field.key] ?? "")}
                       onChange={(e) => setValue(field.key, e.target.value)}
+                      placeholder="Type your answer…"
                     />
                   </div>
                 ))}

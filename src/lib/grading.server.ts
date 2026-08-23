@@ -23,7 +23,14 @@ function gradeStructured(rubric: Rubric, response: Record<string, unknown>) {
 
   for (const field of fields) {
     const raw = response?.[field.key];
-    const value = typeof raw === "number" ? raw : parseFloat(String(raw ?? ""));
+    // Answers are free text: pull the first number out of whatever the candidate typed
+    // (e.g. "3 rows", "£1,204.50", "about 12") so wording never costs marks.
+    const value =
+      typeof raw === "number"
+        ? raw
+        : parseFloat(
+            (String(raw ?? "").replace(/[,\s]/g, "").match(/-?\d+(\.\d+)?/) ?? [""])[0],
+          );
     const tolerance = field.tolerance ?? 0;
     const correct = Number.isFinite(value) && Math.abs(value - field.answer) <= tolerance;
     if (correct) {
