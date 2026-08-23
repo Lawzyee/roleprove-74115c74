@@ -14,3 +14,10 @@ export const generateJdSimulationFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     return generatePersonalisedSimulation(context.userId, data);
   });
+
+export const generateGenericSimulationFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { generateGenericSimulation } = await import("./jd.server");
+    return generateGenericSimulation(context.userId);
+  });
