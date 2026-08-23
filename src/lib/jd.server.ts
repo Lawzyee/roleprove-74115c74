@@ -670,11 +670,23 @@ async function generatePipelineStages(
   // Stage 2 — written justification plus an extraction query.
   const acq = parsed.data_acquisition ?? {};
   const acqWritten = [normaliseWritten(acq.question, 5, "prose"), normaliseWritten(acq.extraction_query, 5, "sql")];
+  // Show a real preview of every table the stage-2 questions can reference, so the
+  // candidate always sees the actual column names before reasoning or writing SQL.
+  const previewDatasets: Dataset[] = datasets.map((d) => ({
+    name: d.name,
+    columns: d.columns,
+    rows: d.rows.slice(0, 5),
+  }));
   const stage2: GeneratedStage = {
     title: String(acq.title ?? "Data acquisition").trim() || "Data acquisition",
     brief: String(acq.brief ?? "").trim(),
     task_type: "case",
-    rubric_criteria: { max_score: 10, stage_kind: "data_acquisition", written: acqWritten },
+    rubric_criteria: {
+      max_score: 10,
+      stage_kind: "data_acquisition",
+      datasets: previewDatasets,
+      written: acqWritten,
+    },
   };
 
   // Stage 4 — SQL sub-questions plus the visualisation judgement question.
