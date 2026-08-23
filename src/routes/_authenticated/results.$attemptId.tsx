@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { startAttempt } from "@/lib/simulations";
+import { useServerFn } from "@tanstack/react-start";
+import { generateGenericSimulationFn } from "@/lib/jd.functions";
 
 export const Route = createFileRoute("/_authenticated/results/$attemptId")({
   head: () => ({
@@ -30,6 +32,7 @@ function ResultsPage() {
   const { attemptId } = Route.useParams();
   const { user } = useAuth();
   const router = useRouter();
+  const generateGeneric = useServerFn(generateGenericSimulationFn);
 
   const query = useQuery({
     queryKey: ["attempt-results", attemptId],
@@ -59,7 +62,13 @@ function ResultsPage() {
   async function retake() {
     if (!user || !query.data) return;
     try {
-      const newId = await startAttempt(user.id, (query.data.attempt as any).simulation_id);
+      const current = query.data.attempt as any;
+      if (current.simulation_type === "generic") {
+        const { attemptId: freshId } = await generateGeneric();
+        router.navigate({ to: "/simulate/$attemptId", params: { attemptId: freshId } });
+        return;
+      }
+      const newId = await startAttempt(user.id, current.simulation_id);
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId: newId } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start a retake");

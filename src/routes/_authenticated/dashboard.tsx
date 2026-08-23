@@ -12,7 +12,9 @@ import { AttemptTypeBadge } from "@/components/AttemptTypeBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { compositeScore, startAttempt, FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
+import { compositeScore, FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
+import { useServerFn } from "@tanstack/react-start";
+import { generateGenericSimulationFn } from "@/lib/jd.functions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -32,6 +34,7 @@ function Dashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const [startingId, setStartingId] = useState<string | null>(null);
+  const generateGeneric = useServerFn(generateGenericSimulationFn);
 
 
   const profileQuery = useQuery({
@@ -51,6 +54,7 @@ function Dashboard() {
         .from("simulations")
         .select("id, title, description, estimated_minutes, roles(name)")
         .eq("is_personalized", false)
+        .is("owner_user_id", null)
         .order("created_at");
       if (error) throw error;
       return data;
@@ -83,7 +87,7 @@ function Dashboard() {
     }
     setStartingId(simulationId);
     try {
-      const attemptId = await startAttempt(user.id, simulationId);
+      const { attemptId } = await generateGeneric();
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start the simulation");
@@ -156,7 +160,7 @@ function Dashboard() {
                     <CardContent className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">~{sim.estimated_minutes} min</span>
                       <Button size="sm" onClick={() => onStart(sim.id)} disabled={startingId === sim.id}>
-                        {startingId === sim.id ? "Starting…" : "Start simulation"}
+                        {startingId === sim.id ? "Building your case study…" : "Start simulation"}
                       </Button>
                     </CardContent>
                   </Card>

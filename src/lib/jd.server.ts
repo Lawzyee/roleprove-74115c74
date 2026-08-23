@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildMonthlyTrendTable, buildSegmentTable, summariseTable } from "./jd-aggregates";
+import { pickGenericScenario } from "./generic-scenarios";
 
 
 type Extracted = {
@@ -862,4 +863,76 @@ export async function generatePersonalisedSimulation(
     roleType: extracted.role_type,
     skills: extracted.skills.slice(0, 8),
   };
+}
+
+/**
+ * Generic (non-JD) Data Analyst simulation.
+ * Runs the exact same canonical 6-stage generation pipeline as the JD path,
+ * seeded with a randomly picked business scenario instead of parsed JD text.
+ * Produces a brand-new is_personalized = false simulation record on every call.
+ */
+export async function generateGenericSimulation(userId: string) {
+  const scenario = pickGenericScenario();
+
+  const extracted: Extracted = {
+    role_type: "Data Analyst",
+    seniority: "junior",
+    skills: scenario.skills,
+    responsibilities: scenario.responsibilities,
+    emphasis_themes: scenario.emphasis_themes,
+    company_context: scenario.company_context,
+    confidence: 1,
+  };
+
+  const { data: role, error: roleError } = await supabaseAdmin
+    .from("roles")
+    .select("id")
+    .ilike("name", "%data analyst%")
+    .limit(1)
+    .maybeSingle();
+  if (roleError) throw new Error(roleError.message);
+  if (!role) throw new Error("The Data Analyst role is unavailable.");
+
+  const generated = await generateCaseStudyWithRetry(extracted);
+
+  const { data: newSim, error: simError } = await supabaseAdmin
+    .from("simulations")
+    .insert({
+      role_id: role.id,
+      title: generated.title || "Data Analyst case study",
+      description:
+        generated.description ||
+        "A multi-stage Data Analyst case study generated for this attempt.",
+      estimated_minutes: Math.max(30, generated.tasks.length * 12),
+      is_personalized: false,
+      owner_user_id: userId,
+    } as any)
+    .select("id")
+    .single();
+  if (simError) throw new Error(simError.message);
+
+  const { error: tasksError } = await supabaseAdmin.from("simulation_tasks").insert(
+    generated.tasks.map((t, i) => ({
+      simulation_id: newSim.id,
+      title: t.title,
+      brief: t.brief,
+      task_type: t.task_type,
+      rubric_criteria: t.rubric_criteria,
+      order: i + 1,
+    })) as any,
+  );
+  if (tasksError) throw new Error(tasksError.message);
+
+  const { data: attempt, error: attemptError } = await supabaseAdmin
+    .from("simulation_attempts")
+    .insert({
+      user_id: userId,
+      simulation_id: newSim.id,
+      simulation_type: "generic",
+    } as any)
+    .select("id")
+    .single();
+  if (attemptError) throw new Error(attemptError.message);
+
+  return { attemptId: attempt.id as string, simulationId: newSim.id as string, scenario: scenario.id };
 }
