@@ -73,7 +73,9 @@ function SimulationRunner() {
   const [index, setIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
   const [answers, setAnswers] = useState<Record<string, Record<string, unknown>>>({});
+
 
   const query = useQuery({
     queryKey: ["attempt-run", attemptId],
