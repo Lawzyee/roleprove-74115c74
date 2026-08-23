@@ -371,16 +371,22 @@ function SimulationRunner() {
               />
             )}
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               <p className="text-xs text-muted-foreground">The timer is informational — take the time you need.</p>
-              <Button onClick={submitTask} disabled={!canSubmit || submitting}>
-                {submitting
-                  ? "Saving…"
-                  : index < tasks.length - 1
-                    ? "Submit and continue"
-                    : "Submit and get my score"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" onClick={goBack} disabled={index === 0 || submitting}>
+                  Back
+                </Button>
+                <Button onClick={submitTask} disabled={!canSubmit || submitting}>
+                  {submitting
+                    ? "Saving…"
+                    : index < tasks.length - 1
+                      ? "Submit and continue"
+                      : "Review all answers"}
+                </Button>
+              </div>
             </div>
+
           </CardContent>
         </Card>
       </main>
