@@ -226,6 +226,85 @@ function SimulationRunner() {
 
   const stageLabel = rubric.stage_kind ? STAGE_LABELS[rubric.stage_kind] : null;
 
+  if (reviewing) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="mx-auto max-w-3xl px-5 py-10">
+          <h1 className="font-display text-2xl font-semibold">Review your answers</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Check everything below before final submission. You can edit any stage, then come back here.
+          </p>
+
+          <div className="mt-6 space-y-4">
+            {tasks.map((t: any, i: number) => {
+              const r = (t.rubric_criteria ?? {}) as Rubric;
+              const a = answers[t.id] ?? {};
+              const entries: Array<{ label: string; value: string }> = [];
+              for (const f of r.fields ?? []) entries.push({ label: f.label, value: String(a[f.key] ?? "") });
+              for (const w of r.written ?? []) entries.push({ label: w.label, value: String(a[w.key] ?? "") });
+              if (t.task_type === "text") entries.push({ label: r.prompt_label ?? "Answer", value: String(a["text"] ?? "") });
+              if (t.task_type === "multiple_choice")
+                entries.push({
+                  label: "Selected option",
+                  value: typeof a["choice"] === "number" ? ((r.options ?? [])[a["choice"] as number] ?? "") : "",
+                });
+
+              return (
+                <Card key={t.id} className="border-border shadow-none">
+                  <CardHeader className="flex-row items-start justify-between gap-4 space-y-0">
+                    <CardTitle className="font-display text-base">
+                      Stage {i + 1}: {t.title}
+                    </CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setReviewing(false);
+                        setIndex(i);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {entries.length === 0 && <p className="text-sm text-muted-foreground">No answer recorded.</p>}
+                    {entries.map((e, k) => (
+                      <div key={k} className="space-y-1">
+                        <p className="text-sm font-medium">{e.label}</p>
+                        <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                          {e.value.trim() ? e.value : "— not answered —"}
+                        </p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReviewing(false);
+                setIndex(Math.max(0, tasks.length - 1));
+              }}
+              disabled={submitting}
+            >
+              Back to last stage
+            </Button>
+            <Button onClick={finalSubmit} disabled={submitting}>
+              {submitting ? "Submitting…" : "Submit and get my score"}
+            </Button>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+
   return (
     <>
       <SiteHeader />
