@@ -135,25 +135,43 @@ function SimulationRunner() {
     setAnswers((prev) => ({ ...prev, [task.id]: { ...(prev[task.id] ?? {}), [key]: value } }));
   }
 
+  async function persistCurrent() {
+    if (!task) return;
+    const { error } = await supabase
+      .from("attempt_task_results")
+      .upsert(
+        { attempt_id: attemptId, task_id: task.id, response: current as any },
+        { onConflict: "attempt_id,task_id" },
+      );
+    if (error) throw error;
+  }
+
+  async function goBack() {
+    if (index === 0) return;
+    setSubmitting(true);
+    try {
+      await persistCurrent();
+      setIndex(index - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save your answer");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function submitTask() {
     if (!task) return;
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("attempt_task_results")
-        .upsert(
-          { attempt_id: attemptId, task_id: task.id, response: current as any },
-          { onConflict: "attempt_id,task_id" },
-        );
-      if (error) throw error;
+      await persistCurrent();
 
       if (index < tasks.length - 1) {
         setIndex(index + 1);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        toast.info("Scoring your work…");
-        await gradeAttemptFn({ data: { attemptId } });
-        router.navigate({ to: "/results/$attemptId", params: { attemptId } });
+        setReviewing(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not save your answer");
@@ -161,6 +179,19 @@ function SimulationRunner() {
       setSubmitting(false);
     }
   }
+
+  async function finalSubmit() {
+    setSubmitting(true);
+    try {
+      toast.info("Scoring your work…");
+      await gradeAttemptFn({ data: { attemptId } });
+      router.navigate({ to: "/results/$attemptId", params: { attemptId } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not submit your attempt");
+      setSubmitting(false);
+    }
+  }
+
 
   if (query.isLoading) {
     return (
