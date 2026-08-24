@@ -163,7 +163,7 @@ function PerformancePage() {
               {contributors.length === 0 && (
                 <p className="text-sm text-muted-foreground">No completed attempts are feeding your score yet.</p>
               )}
-              {contributors.map(({ roleId, attempt, isFallback }) => (
+              {contributors.map(({ attempt, isFallback }) => (
                 <Card key={attempt.id} className="border-border shadow-none">
                   <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
                     <div>
@@ -175,8 +175,7 @@ function PerformancePage() {
                       <p className="mt-1 text-xs text-muted-foreground">
                         {isFallback
                           ? "No JD-matched attempt for this role yet — a practice attempt is standing in."
-                          : "Best JD-matched attempt for this role."}{" "}
-                        Role: {roleId}
+                          : "Best JD-matched attempt for this role."}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
