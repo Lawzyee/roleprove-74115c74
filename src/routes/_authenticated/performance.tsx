@@ -71,6 +71,11 @@ function PerformancePage() {
   }
 
   const scored = PILLARS.filter((p) => typeof pillarAverages[p] === "number");
+  const legacyOnly =
+    contributors.length > 0 &&
+    contributors.every(
+      (c) => !c.attempt.pillar_scores || Object.values(c.attempt.pillar_scores).every((v) => typeof v !== "number"),
+    );
   const best = scored.length
     ? scored.reduce((a, b) => ((pillarAverages[a] as number) >= (pillarAverages[b] as number) ? a : b))
     : null;
