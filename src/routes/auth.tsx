@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
@@ -30,6 +32,14 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
+  const rolesQuery = useQuery({
+    queryKey: ["roles-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("roles").select("id, name").order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
   const router = useRouter();
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("signup");
@@ -42,7 +52,8 @@ function AuthPage() {
     password: "",
     confirmPassword: "",
     name: "",
-    target_role: "",
+    target_role_id: "",
+    headline: "",
     location: "",
   });
 
@@ -71,8 +82,8 @@ function AuthPage() {
             emailRedirectTo: `${window.location.origin}/dashboard`,
             data: {
               name: form.name,
-              headline: form.target_role,
-              target_role: form.target_role,
+              headline: form.headline,
+              target_role_id: form.target_role_id,
               location: form.location,
             },
           },
@@ -126,12 +137,29 @@ function AuthPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="target_role">Target role / headline</Label>
+                  <Label htmlFor="target_role_id">Target role</Label>
+                  <Select
+                    value={form.target_role_id || undefined}
+                    onValueChange={(v) => update("target_role_id", v)}
+                  >
+                    <SelectTrigger id="target_role_id">
+                      <SelectValue placeholder="Select your target role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(rolesQuery.data ?? []).map((r: any) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="headline">Headline</Label>
                   <Input
-                    id="target_role"
-                    required
-                    value={form.target_role}
-                    onChange={(e) => update("target_role", e.target.value)}
+                    id="headline"
+                    value={form.headline}
+                    onChange={(e) => update("headline", e.target.value)}
                     placeholder="e.g. Senior Marketing Manager moving into Data"
                   />
                 </div>
