@@ -217,6 +217,7 @@ export type Database = {
           portfolio_url: string | null
           profile_visible: boolean
           target_role: string | null
+          target_role_id: string | null
         }
         Insert: {
           created_at?: string
@@ -231,6 +232,7 @@ export type Database = {
           portfolio_url?: string | null
           profile_visible?: boolean
           target_role?: string | null
+          target_role_id?: string | null
         }
         Update: {
           created_at?: string
@@ -245,8 +247,17 @@ export type Database = {
           portfolio_url?: string | null
           profile_visible?: boolean
           target_role?: string | null
+          target_role_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_target_role_id_fkey"
+            columns: ["target_role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       roles: {
         Row: {
