@@ -53,7 +53,7 @@ function ProfilePage() {
   const [form, setForm] = useState({
     name: "",
     headline: "",
-    target_role: "",
+    target_role_id: "",
     location: "",
     linkedin_url: "",
     github_url: "",
@@ -75,6 +75,15 @@ function ProfilePage() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const rolesQuery = useQuery({
+    queryKey: ["roles-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("roles").select("id, name").order("created_at");
       if (error) throw error;
       return data;
     },
@@ -114,7 +123,7 @@ function ProfilePage() {
     setForm({
       name: p.name ?? "",
       headline: p.headline ?? "",
-      target_role: p.target_role ?? "",
+      target_role_id: p.target_role_id ?? "",
       location: p.location ?? "",
       linkedin_url: p.linkedin_url ?? "",
       github_url: p.github_url ?? "",
@@ -125,7 +134,10 @@ function ProfilePage() {
   async function saveProfile() {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update(form).eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ ...form, target_role_id: form.target_role_id || null })
+      .eq("id", user.id);
     setSaving(false);
     if (error) toast.error(error.message);
     else {
