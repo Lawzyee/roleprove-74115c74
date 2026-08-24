@@ -142,6 +142,38 @@ export function compositeScore(attempts: ScoreAttempt[]) {
   };
 }
 
+export type ContributorAttempt = ScoreAttempt & {
+  id: string;
+  pillar_scores?: Record<string, number | null> | null;
+  simulations?: { title?: string | null; role_id?: string | null } | null;
+};
+
+/**
+ * Which attempts actually feed the composite score: per role, the best verified
+ * attempt, falling back to the best generic/practice attempt.
+ */
+export function compositeContributors<T extends ContributorAttempt>(attempts: T[]) {
+  const done = attempts.filter((a) => a.status === "completed" && typeof a.overall_score === "number");
+  const byRole = new Map<string, { verified: T | null; generic: T | null }>();
+
+  for (const a of done) {
+    const roleId = a.simulations?.role_id ?? "unknown";
+    const entry = byRole.get(roleId) ?? { verified: null, generic: null };
+    const key = a.simulation_type === "generic" ? "generic" : "verified";
+    const current = entry[key];
+    if (!current || (a.overall_score ?? 0) > (current.overall_score ?? 0)) entry[key] = a;
+    byRole.set(roleId, entry);
+  }
+
+  const out: Array<{ roleId: string; attempt: T; isFallback: boolean }> = [];
+  for (const [roleId, entry] of byRole.entries()) {
+    if (entry.verified) out.push({ roleId, attempt: entry.verified, isFallback: false });
+    else if (entry.generic) out.push({ roleId, attempt: entry.generic, isFallback: true });
+  }
+  return out;
+}
+
+
 
 export function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60);
