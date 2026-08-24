@@ -12,7 +12,7 @@ import { AttemptTypeBadge } from "@/components/AttemptTypeBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { compositeScore, FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
+import { compositeScore, roleBestScore, FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
 import { useServerFn } from "@tanstack/react-start";
 import { generateGenericSimulationFn } from "@/lib/jd.functions";
 
@@ -55,6 +55,15 @@ function Dashboard() {
   });
 
 
+  const rolesQuery = useQuery({
+    queryKey: ["roles-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("roles").select("id, name").order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const attemptsQuery = useQuery({
     queryKey: ["attempts", user?.id],
     enabled: !!user,
@@ -72,7 +81,10 @@ function Dashboard() {
 
   const attempts = attemptsQuery.data ?? [];
   const composite = compositeScore(attempts);
-  const score = composite.score;
+  const targetRoleId: string | null = (profileQuery.data as any)?.target_role_id ?? null;
+  const targetRoleName = (rolesQuery.data ?? []).find((r: any) => r.id === targetRoleId)?.name ?? null;
+  const roleScore = targetRoleId ? roleBestScore(attempts, targetRoleId) : null;
+  const score = roleScore?.score ?? composite.score;
   const completedCount = attempts.filter((a) => a.status === "completed").length;
   const visibleAttempts =
     historyFilter === "all" ? attempts : attempts.filter((a) => a.status === historyFilter);
@@ -119,9 +131,21 @@ function Dashboard() {
                 <span className="mt-1 block text-xs font-medium text-primary">View breakdown →</span>
               </button>
               <p className="-mt-3 text-center text-xs text-muted-foreground">
-                {composite.score === null
-                  ? "Complete a simulation to earn a score"
-                  : `Best ${composite.basis === "verified" ? "JD-matched" : "practice"} attempt per role · ${composite.attemptCount} attempt${composite.attemptCount === 1 ? "" : "s"} completed`}
+                {!targetRoleId ? (
+                  <>
+                    {composite.score === null
+                      ? "Complete a simulation to earn a score"
+                      : `Best attempt per role · ${composite.attemptCount} attempt${composite.attemptCount === 1 ? "" : "s"} completed`}
+                    <br />
+                    <Link to="/profile" className="font-medium text-primary">
+                      Set your target role to see a role-specific score →
+                    </Link>
+                  </>
+                ) : roleScore && roleScore.score !== null ? (
+                  `${targetRoleName} · best ${roleScore.basis === "verified" ? "JD-matched" : "practice"} attempt of ${roleScore.attemptCount}`
+                ) : (
+                  `We don't have simulations for ${targetRoleName ?? "your target role"} yet — showing your overall score.`
+                )}
               </p>
               <div className="grid w-full grid-cols-2 gap-3 text-center">
                 <button

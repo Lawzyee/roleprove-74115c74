@@ -142,6 +142,25 @@ export function compositeScore(attempts: ScoreAttempt[]) {
   };
 }
 
+/**
+ * Best completed score for one specific role (exact role_id match).
+ * Prefers the best verified (JD-matched) attempt; falls back to the best practice attempt.
+ */
+export function roleBestScore(attempts: ScoreAttempt[], roleId: string) {
+  const done = attempts.filter(
+    (a) => a.status === "completed" && typeof a.overall_score === "number" && a.simulations?.role_id === roleId,
+  );
+  if (!done.length) return { score: null as number | null, basis: null as "verified" | "generic" | null, attemptCount: 0 };
+
+  const verified = done.filter((a) => a.simulation_type !== "generic");
+  const pool = verified.length ? verified : done;
+  return {
+    score: Math.max(...pool.map((a) => a.overall_score ?? 0)),
+    basis: (verified.length ? "verified" : "generic") as "verified" | "generic",
+    attemptCount: done.length,
+  };
+}
+
 export type ContributorAttempt = ScoreAttempt & {
   id: string;
   pillar_scores?: Record<string, number | null> | null;
