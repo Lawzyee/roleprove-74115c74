@@ -99,6 +99,21 @@ function PerformancePage() {
 
         {!query.isLoading && (
           <>
+            {legacyOnly && (
+              <Card className="mt-6 border-primary/30 bg-primary/5 shadow-none">
+                <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
+                  <p className="max-w-xl text-sm text-muted-foreground">
+                    This score is from an attempt completed before detailed performance breakdowns were introduced, so
+                    pillar-level data isn&apos;t available for it. Complete a new simulation to see your pillar-level
+                    strengths and focus areas.
+                  </p>
+                  <Button asChild size="sm">
+                    <Link to="/roles">Start a new simulation</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="mt-8 grid gap-6 md:grid-cols-[280px_1fr]">
               <Card className="border-border shadow-none">
                 <CardContent className="flex flex-col items-center gap-3 pt-6">
