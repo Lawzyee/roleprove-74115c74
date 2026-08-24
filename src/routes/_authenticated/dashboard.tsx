@@ -100,23 +100,39 @@ function Dashboard() {
         <div className="mt-8 grid gap-6 lg:grid-cols-[320px_1fr]">
           <Card className="border-border shadow-none">
             <CardContent className="flex flex-col items-center gap-6 pt-6">
-              <ScoreRing value={score} />
+              <button
+                type="button"
+                onClick={() => router.navigate({ to: "/performance" })}
+                className="rounded-2xl transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="View performance breakdown"
+              >
+                <ScoreRing value={score} />
+                <span className="mt-1 block text-xs font-medium text-primary">View breakdown →</span>
+              </button>
               <p className="-mt-3 text-center text-xs text-muted-foreground">
                 {composite.score === null
                   ? "Complete a simulation to earn a score"
                   : `Best ${composite.basis === "verified" ? "JD-matched" : "practice"} attempt per role · ${composite.attemptCount} attempt${composite.attemptCount === 1 ? "" : "s"} completed`}
               </p>
               <div className="grid w-full grid-cols-2 gap-3 text-center">
-                <div className="rounded-xl bg-muted p-3">
+                <button
+                  type="button"
+                  onClick={() => showHistory("completed")}
+                  className={`rounded-xl p-3 transition hover:bg-muted/70 ${historyFilter === "completed" ? "bg-primary/10 ring-1 ring-primary" : "bg-muted"}`}
+                >
                   <p className="font-display text-xl font-semibold">{completedCount}</p>
                   <p className="text-xs text-muted-foreground">Completed</p>
-                </div>
-                <div className="rounded-xl bg-muted p-3">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => showHistory("in_progress")}
+                  className={`rounded-xl p-3 transition hover:bg-muted/70 ${historyFilter === "in_progress" ? "bg-primary/10 ring-1 ring-primary" : "bg-muted"}`}
+                >
                   <p className="font-display text-xl font-semibold">
                     {attempts.filter((a) => a.status === "in_progress").length}
                   </p>
                   <p className="text-xs text-muted-foreground">In progress</p>
-                </div>
+                </button>
               </div>
               <p className="text-center text-xs text-muted-foreground">
                 {FREE_ATTEMPT_LIMIT - completedCount > 0
@@ -125,6 +141,7 @@ function Dashboard() {
               </p>
             </CardContent>
           </Card>
+
 
           <div className="space-y-6">
             <JobDescriptionPaste onStartGeneric={() => onStart("data-analyst")} />
