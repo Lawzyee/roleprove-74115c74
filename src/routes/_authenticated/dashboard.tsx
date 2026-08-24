@@ -54,7 +54,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, started_at, completed_at, simulation_type, simulations(title)")
+        .select("id, status, overall_score, started_at, completed_at, simulation_type, simulations(title, role_id)")
         .eq("user_id", user!.id)
         .order("started_at", { ascending: false });
       if (error) throw error;
@@ -64,7 +64,8 @@ function Dashboard() {
 
 
   const attempts = attemptsQuery.data ?? [];
-  const score = compositeScore(attempts);
+  const composite = compositeScore(attempts);
+  const score = composite.score;
   const completedCount = attempts.filter((a) => a.status === "completed").length;
 
   async function onStart(simulationId: string) {
@@ -91,13 +92,20 @@ function Dashboard() {
           {profileQuery.data?.name ? `Hi ${profileQuery.data.name.split(" ")[0]},` : "Welcome back,"} ready to practise?
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Your score is the average of every simulation you complete. Retakes count too.
+          Your score reflects your best verified (JD-matched) attempt per role — a weaker practice run never pulls it
+          down. Practice attempts count toward your completed total and are used only when a role has no verified
+          attempt yet.
         </p>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[320px_1fr]">
           <Card className="border-border shadow-none">
             <CardContent className="flex flex-col items-center gap-6 pt-6">
               <ScoreRing value={score} />
+              <p className="-mt-3 text-center text-xs text-muted-foreground">
+                {composite.score === null
+                  ? "Complete a simulation to earn a score"
+                  : `Best ${composite.basis === "verified" ? "JD-matched" : "practice"} attempt per role · ${composite.attemptCount} attempt${composite.attemptCount === 1 ? "" : "s"} completed`}
+              </p>
               <div className="grid w-full grid-cols-2 gap-3 text-center">
                 <div className="rounded-xl bg-muted p-3">
                   <p className="font-display text-xl font-semibold">{completedCount}</p>

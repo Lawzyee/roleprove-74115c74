@@ -98,11 +98,50 @@ export async function startAttempt(userId: string, simulationId: string) {
   return data.id;
 }
 
-export function compositeScore(attempts: Array<{ overall_score: number | null; status: string }>) {
+export type ScoreAttempt = {
+  overall_score: number | null;
+  status: string;
+  simulation_type?: string | null;
+  simulations?: { role_id?: string | null } | null;
+};
+
+/**
+ * Composite profile score = per role, the best-scoring verified (JD-matched) attempt.
+ * If a role has no verified attempt, its best generic/practice attempt is used instead.
+ * A single poor attempt can never pull the score down.
+ */
+export function compositeScore(attempts: ScoreAttempt[]) {
   const done = attempts.filter((a) => a.status === "completed" && typeof a.overall_score === "number");
-  if (!done.length) return null;
-  return Math.round(done.reduce((sum, a) => sum + (a.overall_score ?? 0), 0) / done.length);
+  const byRole = new Map<string, { verified: number | null; generic: number | null }>();
+
+  for (const a of done) {
+    const roleId = a.simulations?.role_id ?? "unknown";
+    const entry = byRole.get(roleId) ?? { verified: null, generic: null };
+    const key = a.simulation_type === "generic" ? "generic" : "verified";
+    entry[key] = Math.max(entry[key] ?? 0, a.overall_score ?? 0);
+    byRole.set(roleId, entry);
+  }
+
+  const bests: number[] = [];
+  let anyVerified = false;
+  for (const entry of byRole.values()) {
+    if (entry.verified !== null) {
+      bests.push(entry.verified);
+      anyVerified = true;
+    } else if (entry.generic !== null) {
+      bests.push(entry.generic);
+    }
+  }
+
+  if (!bests.length) return { score: null, basis: null as "verified" | "generic" | null, attemptCount: done.length };
+
+  return {
+    score: Math.round(bests.reduce((s, v) => s + v, 0) / bests.length),
+    basis: (anyVerified ? "verified" : "generic") as "verified" | "generic",
+    attemptCount: done.length,
+  };
 }
+
 
 export function formatDuration(seconds: number) {
   const m = Math.floor(seconds / 60);

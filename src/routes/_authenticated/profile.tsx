@@ -100,7 +100,7 @@ function ProfilePage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, started_at, simulation_type, simulations(title)")
+        .select("id, status, overall_score, started_at, simulation_type, simulations(title, role_id)")
         .eq("user_id", user!.id)
         .order("started_at", { ascending: false });
       if (error) throw error;
@@ -180,14 +180,22 @@ function ProfilePage() {
     qc.invalidateQueries({ queryKey: ["credentials", user?.id] });
   }
 
-  const score = compositeScore(attemptsQuery.data ?? []);
+  const composite = compositeScore(attemptsQuery.data ?? []);
+  const score = composite.score;
 
   return (
     <>
       <SiteHeader />
       <main className="mx-auto max-w-5xl px-5 py-10">
         <div className="flex flex-wrap items-center gap-6">
-          <ScoreRing value={score} size={120} />
+          <div className="flex flex-col items-center gap-2">
+            <ScoreRing value={score} size={120} />
+            <p className="max-w-[180px] text-center text-xs text-muted-foreground">
+              {composite.score === null
+                ? "No completed simulations yet"
+                : `Best ${composite.basis === "verified" ? "JD-matched" : "practice"} attempt per role · ${composite.attemptCount} completed`}
+            </p>
+          </div>
           <div>
             <h1 className="font-display text-3xl font-semibold">{form.name || "Your profile"}</h1>
             <p className="text-muted-foreground">{form.headline || "Add a headline to introduce yourself."}</p>

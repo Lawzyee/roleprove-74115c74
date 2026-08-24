@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { startAttempt } from "@/lib/simulations";
+import { PILLARS, PILLAR_LABELS, TIER_LABELS, type Pillar } from "@/lib/scoring-config";
 import { useServerFn } from "@tanstack/react-start";
 import { generateGenericSimulationFn } from "@/lib/jd.functions";
 
@@ -39,14 +40,14 @@ function ResultsPage() {
     queryFn: async () => {
       const { data: attempt, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, completed_at, simulation_id, simulation_type, simulations(title, description)")
+        .select("id, status, overall_score, completed_at, simulation_id, simulation_type, pillar_scores, simulations(title, description)")
         .eq("id", attemptId)
         .single();
       if (error) throw error;
 
       const { data: results, error: rErr } = await supabase
         .from("attempt_task_results")
-        .select("id, task_id, score, max_score, feedback, simulation_tasks(title, order, task_type)")
+        .select("id, task_id, score, max_score, feedback, criteria_breakdown, pillar, simulation_tasks(title, order, task_type)")
         .eq("attempt_id", attemptId);
       if (rErr) throw rErr;
 
@@ -95,9 +96,32 @@ function ResultsPage() {
             <div className="mt-8 flex flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8">
               <ScoreRing value={attempt.overall_score} />
               <p className="text-center text-sm text-muted-foreground">
-                Scored against the role rubric. Written answers are AI-assessed; structured and multiple-choice tasks
-                are rule-graded. Uploaded work samples are stored as evidence and never change your score.
+                Weighted rubric score: every criterion is tiered (must-have criteria count 3×, good-to-have 1×) and
+                rolled up as achieved ÷ possible across the criteria that could actually be evaluated. Criteria marked
+                "Cannot evaluate" are excluded rather than scored zero. Uploaded work samples are stored as evidence and
+                never change your score.
               </p>
+            </div>
+
+            <h2 className="mt-10 font-display text-xl font-semibold">Competency pillars</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {PILLARS.map((pillar: Pillar) => {
+                const value = (attempt.pillar_scores ?? {})[pillar] as number | null | undefined;
+                return (
+                  <div key={pillar} className="rounded-xl border border-border bg-card p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-medium">{PILLAR_LABELS[pillar]}</p>
+                      <span className="font-display text-sm font-semibold">
+                        {typeof value === "number" ? `${value}%` : "—"}
+                      </span>
+                    </div>
+                    <Progress value={typeof value === "number" ? value : 0} className="mt-2 h-2" />
+                    {typeof value !== "number" && (
+                      <p className="mt-1 text-xs text-muted-foreground">Not evaluated in this simulation.</p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             <h2 className="mt-10 font-display text-xl font-semibold">Task breakdown</h2>
@@ -117,6 +141,28 @@ function ResultsPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3 pt-0">
+                    {(r.criteria_breakdown ?? []).length > 0 && (
+                      <div className="space-y-2">
+                        {(r.criteria_breakdown as any[]).map((c: any, i: number) => (
+                          <div key={i} className="rounded-xl border border-border p-3">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <p className="text-sm font-medium">{c.label}</p>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <Badge variant="outline" className="text-[10px]">
+                                  {TIER_LABELS[c.tier as "must_have" | "good_to_have"] ?? c.tier}
+                                </Badge>
+                                <span className="font-display text-xs font-semibold">
+                                  {c.cannot_evaluate
+                                    ? "Cannot evaluate"
+                                    : `${Math.round(c.score)} / ${Math.round(c.max)}`}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">{c.justification}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {(query.data?.deliverables ?? [])
                       .filter((d: any) => d.task_id === r.task_id)
                       .map((d: any) => (

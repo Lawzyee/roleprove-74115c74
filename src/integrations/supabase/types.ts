@@ -72,9 +72,11 @@ export type Database = {
         Row: {
           attempt_id: string
           created_at: string
+          criteria_breakdown: Json
           feedback: string | null
           id: string
           max_score: number
+          pillar: string | null
           response: Json
           score: number | null
           task_id: string
@@ -82,9 +84,11 @@ export type Database = {
         Insert: {
           attempt_id: string
           created_at?: string
+          criteria_breakdown?: Json
           feedback?: string | null
           id?: string
           max_score?: number
+          pillar?: string | null
           response?: Json
           score?: number | null
           task_id: string
@@ -92,9 +96,11 @@ export type Database = {
         Update: {
           attempt_id?: string
           created_at?: string
+          criteria_breakdown?: Json
           feedback?: string | null
           id?: string
           max_score?: number
+          pillar?: string | null
           response?: Json
           score?: number | null
           task_id?: string
@@ -272,6 +278,7 @@ export type Database = {
           id: string
           job_posting_id: string | null
           overall_score: number | null
+          pillar_scores: Json
           simulation_id: string
           simulation_type: string
           started_at: string
@@ -283,6 +290,7 @@ export type Database = {
           id?: string
           job_posting_id?: string | null
           overall_score?: number | null
+          pillar_scores?: Json
           simulation_id: string
           simulation_type?: string
           started_at?: string
@@ -294,6 +302,7 @@ export type Database = {
           id?: string
           job_posting_id?: string | null
           overall_score?: number | null
+          pillar_scores?: Json
           simulation_id?: string
           simulation_type?: string
           started_at?: string
