@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,13 @@ function Dashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const [startingId, setStartingId] = useState<string | null>(null);
+  const [historyFilter, setHistoryFilter] = useState<"all" | "completed" | "in_progress">("all");
+  const historyRef = useRef<HTMLElement | null>(null);
+
+  function showHistory(status: "completed" | "in_progress") {
+    setHistoryFilter((prev) => (prev === status ? "all" : status));
+    historyRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   const generateGeneric = useServerFn(generateGenericSimulationFn);
 
 
@@ -67,6 +74,8 @@ function Dashboard() {
   const composite = compositeScore(attempts);
   const score = composite.score;
   const completedCount = attempts.filter((a) => a.status === "completed").length;
+  const visibleAttempts =
+    historyFilter === "all" ? attempts : attempts.filter((a) => a.status === historyFilter);
 
   async function onStart(simulationId: string) {
     if (!user) {
@@ -100,23 +109,39 @@ function Dashboard() {
         <div className="mt-8 grid gap-6 lg:grid-cols-[320px_1fr]">
           <Card className="border-border shadow-none">
             <CardContent className="flex flex-col items-center gap-6 pt-6">
-              <ScoreRing value={score} />
+              <button
+                type="button"
+                onClick={() => router.navigate({ to: "/performance" })}
+                className="rounded-2xl transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="View performance breakdown"
+              >
+                <ScoreRing value={score} />
+                <span className="mt-1 block text-xs font-medium text-primary">View breakdown →</span>
+              </button>
               <p className="-mt-3 text-center text-xs text-muted-foreground">
                 {composite.score === null
                   ? "Complete a simulation to earn a score"
                   : `Best ${composite.basis === "verified" ? "JD-matched" : "practice"} attempt per role · ${composite.attemptCount} attempt${composite.attemptCount === 1 ? "" : "s"} completed`}
               </p>
               <div className="grid w-full grid-cols-2 gap-3 text-center">
-                <div className="rounded-xl bg-muted p-3">
+                <button
+                  type="button"
+                  onClick={() => showHistory("completed")}
+                  className={`rounded-xl p-3 transition hover:bg-muted/70 ${historyFilter === "completed" ? "bg-primary/10 ring-1 ring-primary" : "bg-muted"}`}
+                >
                   <p className="font-display text-xl font-semibold">{completedCount}</p>
                   <p className="text-xs text-muted-foreground">Completed</p>
-                </div>
-                <div className="rounded-xl bg-muted p-3">
+                </button>
+                <button
+                  type="button"
+                  onClick={() => showHistory("in_progress")}
+                  className={`rounded-xl p-3 transition hover:bg-muted/70 ${historyFilter === "in_progress" ? "bg-primary/10 ring-1 ring-primary" : "bg-muted"}`}
+                >
                   <p className="font-display text-xl font-semibold">
                     {attempts.filter((a) => a.status === "in_progress").length}
                   </p>
                   <p className="text-xs text-muted-foreground">In progress</p>
-                </div>
+                </button>
               </div>
               <p className="text-center text-xs text-muted-foreground">
                 {FREE_ATTEMPT_LIMIT - completedCount > 0
@@ -125,6 +150,7 @@ function Dashboard() {
               </p>
             </CardContent>
           </Card>
+
 
           <div className="space-y-6">
             <JobDescriptionPaste onStartGeneric={() => onStart("data-analyst")} />
@@ -158,16 +184,25 @@ function Dashboard() {
               </div>
             </section>
 
-            <section>
-              <h2 className="mb-3 font-display text-xl font-semibold">Your history</h2>
+            <section ref={historyRef}>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-display text-xl font-semibold">Your history</h2>
+                {historyFilter !== "all" && (
+                  <Button variant="ghost" size="sm" onClick={() => setHistoryFilter("all")}>
+                    Showing {historyFilter === "completed" ? "completed" : "in progress"} · Clear filter
+                  </Button>
+                )}
+              </div>
               <Card className="border-border shadow-none">
                 <CardContent className="divide-y divide-border p-0">
-                  {attempts.length === 0 && (
+                  {visibleAttempts.length === 0 && (
                     <p className="p-6 text-sm text-muted-foreground">
-                      No attempts yet. Start a simulation above to build your score.
+                      {historyFilter === "all"
+                        ? "No attempts yet. Start a simulation above to build your score."
+                        : `No ${historyFilter === "completed" ? "completed" : "in-progress"} attempts.`}
                     </p>
                   )}
-                  {attempts.map((attempt: any) => (
+                  {visibleAttempts.map((attempt: any) => (
                     <div key={attempt.id} className="flex items-center justify-between gap-4 p-4">
                       <div>
                         <div className="flex items-center gap-2">
