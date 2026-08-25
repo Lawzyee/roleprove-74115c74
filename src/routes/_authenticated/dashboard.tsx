@@ -12,7 +12,7 @@ import { AttemptTypeBadge } from "@/components/AttemptTypeBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { compositeScore, roleBestScore, FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
+import { compositeScore, compositeContributors, roleBestScore, isLiveRole, FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
 import { useServerFn } from "@tanstack/react-start";
 import { generateGenericSimulationFn } from "@/lib/jd.functions";
 
@@ -83,8 +83,19 @@ function Dashboard() {
   const composite = compositeScore(attempts);
   const targetRoleId: string | null = (profileQuery.data as any)?.target_role_id ?? null;
   const targetRoleName = (rolesQuery.data ?? []).find((r: any) => r.id === targetRoleId)?.name ?? null;
-  const roleScore = targetRoleId ? roleBestScore(attempts, targetRoleId) : null;
-  const score = roleScore?.score ?? composite.score;
+  const roleSupported = isLiveRole(targetRoleId);
+  const roleScore = targetRoleId && roleSupported ? roleBestScore(attempts, targetRoleId) : null;
+  const usingRoleScore = !!roleScore;
+  const score = usingRoleScore ? roleScore!.score : composite.score;
+  const roleNameById = new Map((rolesQuery.data ?? []).map((r: any) => [r.id, r.name as string]));
+  const otherRoles = compositeContributors(attempts as any)
+    .filter((c) => c.roleId !== targetRoleId)
+    .map((c) => ({
+      roleId: c.roleId,
+      name: roleNameById.get(c.roleId) ?? "Other role",
+      score: c.attempt.overall_score,
+      attemptId: c.attempt.id,
+    }));
   const completedCount = attempts.filter((a) => a.status === "completed").length;
   const visibleAttempts =
     historyFilter === "all" ? attempts : attempts.filter((a) => a.status === historyFilter);
@@ -113,9 +124,8 @@ function Dashboard() {
           {profileQuery.data?.name ? `Hi ${profileQuery.data.name.split(" ")[0]},` : "Welcome back,"} ready to practise?
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Your score reflects your best verified (JD-matched) attempt per role — a weaker practice run never pulls it
-          down. Practice attempts count toward your completed total and are used only when a role has no verified
-          attempt yet.
+          Your headline score is your best verified (JD-matched) attempt for your target role — a weaker practice run
+          never pulls it down. Other roles you&apos;ve attempted are listed separately.
         </p>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[320px_1fr]">
@@ -131,7 +141,13 @@ function Dashboard() {
                 <span className="mt-1 block text-xs font-medium text-primary">View breakdown →</span>
               </button>
               <p className="-mt-3 text-center text-xs text-muted-foreground">
-                {!targetRoleId ? (
+                {usingRoleScore && roleScore!.score === null ? (
+                  `Complete a ${targetRoleName ?? "target role"} simulation to see your score`
+                ) : usingRoleScore ? (
+                  `${targetRoleName} · best ${roleScore!.basis === "verified" ? "JD-matched" : "practice"} attempt of ${roleScore!.attemptCount}`
+                ) : targetRoleId ? (
+                  "We don't have simulations for your target role yet — showing your overall average instead."
+                ) : (
                   <>
                     {composite.score === null
                       ? "Complete a simulation to earn a score"
@@ -141,10 +157,6 @@ function Dashboard() {
                       Set your target role to see a role-specific score →
                     </Link>
                   </>
-                ) : roleScore && roleScore.score !== null ? (
-                  `${targetRoleName} · best ${roleScore.basis === "verified" ? "JD-matched" : "practice"} attempt of ${roleScore.attemptCount}`
-                ) : (
-                  `We don't have simulations for ${targetRoleName ?? "your target role"} yet — showing your overall score.`
                 )}
               </p>
               <div className="grid w-full grid-cols-2 gap-3 text-center">
@@ -167,6 +179,21 @@ function Dashboard() {
                   <p className="text-xs text-muted-foreground">In progress</p>
                 </button>
               </div>
+              {otherRoles.length > 0 && (
+                <div className="w-full rounded-xl border border-border p-3">
+                  <p className="text-xs font-medium">Other roles</p>
+                  <ul className="mt-2 space-y-1">
+                    {otherRoles.map((r) => (
+                      <li key={r.roleId} className="flex items-center justify-between text-xs text-muted-foreground">
+                        <Link to="/results/$attemptId" params={{ attemptId: r.attemptId }} className="hover:underline">
+                          {r.name}
+                        </Link>
+                        <span className="font-display font-semibold text-foreground">{r.score}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <p className="text-center text-xs text-muted-foreground">
                 {FREE_ATTEMPT_LIMIT - completedCount > 0
                   ? `${FREE_ATTEMPT_LIMIT - completedCount} free simulation${FREE_ATTEMPT_LIMIT - completedCount === 1 ? "" : "s"} left`

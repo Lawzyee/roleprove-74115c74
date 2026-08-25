@@ -2,6 +2,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const FREE_ATTEMPT_LIMIT = 3;
 
+/** Roles that currently have a live simulation pipeline. */
+export const LIVE_ROLE_IDS = ["11111111-1111-1111-1111-111111111101"];
+export const isLiveRole = (roleId: string | null | undefined) => !!roleId && LIVE_ROLE_IDS.includes(roleId);
+
 export type DatasetColumn = { key: string; label: string };
 export type Dataset = { name: string; columns: DatasetColumn[]; rows: Array<Record<string, string>> };
 export type SummaryTable = { title: string; columns: DatasetColumn[]; rows: Array<Record<string, string>> };
