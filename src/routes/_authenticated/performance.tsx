@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { compositeScore, compositeContributors } from "@/lib/simulations";
+import { compositeScore, compositeContributors, roleBestScore, isLiveRole } from "@/lib/simulations";
 import { PILLARS, PILLAR_LABELS, type Pillar } from "@/lib/scoring-config";
 
 export const Route = createFileRoute("/_authenticated/performance")({
@@ -42,6 +42,25 @@ const PILLAR_MEANING: Record<Pillar, string> = {
 function PerformancePage() {
   const { user } = useAuth();
 
+  const profileQuery = useQuery({
+    queryKey: ["profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const rolesQuery = useQuery({
+    queryKey: ["roles-list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("roles").select("id, name").order("created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const query = useQuery({
     queryKey: ["performance-attempts", user?.id],
     enabled: !!user,
@@ -60,7 +79,17 @@ function PerformancePage() {
 
   const attempts = query.data ?? [];
   const composite = compositeScore(attempts as any);
-  const contributors = compositeContributors(attempts as any);
+  const allContributors = compositeContributors(attempts as any);
+  const targetRoleId: string | null = (profileQuery.data as any)?.target_role_id ?? null;
+  const roleNameById = new Map(((rolesQuery.data ?? []) as any[]).map((r) => [r.id, r.name as string]));
+  const targetRoleName = targetRoleId ? (roleNameById.get(targetRoleId) ?? null) : null;
+  const roleSupported = isLiveRole(targetRoleId);
+  const roleScore = targetRoleId && roleSupported ? roleBestScore(attempts as any, targetRoleId) : null;
+  const scopedToRole = !!roleScore;
+
+  const contributors = scopedToRole ? allContributors.filter((c) => c.roleId === targetRoleId) : allContributors;
+  const otherContributors = scopedToRole ? allContributors.filter((c) => c.roleId !== targetRoleId) : [];
+  const headlineScore = scopedToRole ? roleScore!.score : composite.score;
 
   const pillarAverages: Record<string, number | null> = {};
   for (const pillar of PILLARS) {
@@ -92,7 +121,9 @@ function PerformancePage() {
         </Button>
         <h1 className="mt-3 font-display text-3xl font-semibold">Performance breakdown</h1>
         <p className="mt-2 text-muted-foreground">
-          How your composite score is built: the best attempt per role, rolled up across four competency pillars.
+          {scopedToRole
+            ? `How your ${targetRoleName} score is built: your best attempt for that role, rolled up across four competency pillars.`
+            : "How your score is built: the best attempt per role, rolled up across four competency pillars."}
         </p>
 
         {query.isLoading && <p className="mt-8 text-muted-foreground">Loading your breakdown…</p>}
@@ -117,11 +148,15 @@ function PerformancePage() {
             <div className="mt-8 grid gap-6 md:grid-cols-[280px_1fr]">
               <Card className="border-border shadow-none">
                 <CardContent className="flex flex-col items-center gap-3 pt-6">
-                  <ScoreRing value={composite.score} />
+                  <ScoreRing value={headlineScore} />
                   <p className="text-center text-xs text-muted-foreground">
-                    {composite.score === null
-                      ? "Complete a simulation to earn a score"
-                      : `Based on ${contributors.length} contributing attempt${contributors.length === 1 ? "" : "s"}`}
+                    {headlineScore === null
+                      ? scopedToRole
+                        ? `Complete a ${targetRoleName} simulation to see your score`
+                        : "Complete a simulation to earn a score"
+                      : scopedToRole
+                        ? `${targetRoleName} · ${contributors.length} contributing attempt${contributors.length === 1 ? "" : "s"}`
+                        : `Based on ${contributors.length} contributing attempt${contributors.length === 1 ? "" : "s"}`}
                   </p>
                 </CardContent>
               </Card>
@@ -129,7 +164,11 @@ function PerformancePage() {
               <Card className="border-border shadow-none">
                 <CardHeader className="pb-3">
                   <CardTitle className="font-display text-base">Competency pillars</CardTitle>
-                  <CardDescription>Averaged across the attempts feeding your composite score.</CardDescription>
+                  <CardDescription>
+                    {scopedToRole
+                      ? `From your best ${targetRoleName} attempt.`
+                      : "Averaged across the attempts feeding your score."}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {PILLARS.map((pillar) => {
@@ -210,6 +249,35 @@ function PerformancePage() {
                 </Card>
               ))}
             </div>
+
+            {otherContributors.length > 0 && (
+              <>
+                <h2 className="mt-10 font-display text-xl font-semibold">Other roles</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Not blended into your target-role score or pillar breakdown.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {otherContributors.map(({ roleId, attempt }) => (
+                    <Card key={attempt.id} className="border-border shadow-none">
+                      <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+                        <div>
+                          <p className="font-medium">{roleNameById.get(roleId) ?? "Other role"}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{attempt.simulations?.title}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-display text-lg font-semibold">{attempt.overall_score}</span>
+                          <Button asChild size="sm" variant="outline">
+                            <Link to="/results/$attemptId" params={{ attemptId: attempt.id }}>
+                              View results
+                            </Link>
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
       </main>
