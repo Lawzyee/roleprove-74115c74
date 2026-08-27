@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CATEGORY_LABELS } from "@/lib/interview-prep.server";
+import { CATEGORY_LABELS } from "@/lib/interview-prep";
 import { gradePrepAnswerFn } from "@/lib/interview-prep.functions";
 
 export const Route = createFileRoute("/_authenticated/interview-prep/$sessionId")({

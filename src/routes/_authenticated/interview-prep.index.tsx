@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createPrepSessionFn } from "@/lib/interview-prep.functions";
 
-export const Route = createFileRoute("/_authenticated/interview-prep")({
+export const Route = createFileRoute("/_authenticated/interview-prep/")({
   head: () => ({
     meta: [
       { title: "Interview Prep | RoleProve" },
