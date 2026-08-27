@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.15"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -158,6 +158,109 @@ export type Database = {
           user_id?: string
           verification_url?: string | null
           year?: number | null
+        }
+        Relationships: []
+      }
+      interview_prep_questions: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          order_index: number
+          question_text: string
+          session_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          question_text: string
+          session_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          order_index?: number
+          question_text?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_prep_questions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_prep_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_prep_responses: {
+        Row: {
+          created_at: string
+          feedback_text: string | null
+          id: string
+          question_id: string
+          response_text: string
+          rubric_scores: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          question_id: string
+          response_text?: string
+          rubric_scores?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          feedback_text?: string | null
+          id?: string
+          question_id?: string
+          response_text?: string
+          rubric_scores?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_prep_responses_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: true
+            referencedRelation: "interview_prep_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_prep_sessions: {
+        Row: {
+          created_at: string
+          extracted_role_context: Json | null
+          id: string
+          source_jd_text: string
+          source_url: string | null
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_role_context?: Json | null
+          id?: string
+          source_jd_text: string
+          source_url?: string | null
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted_role_context?: Json | null
+          id?: string
+          source_jd_text?: string
+          source_url?: string | null
+          title?: string | null
+          user_id?: string
         }
         Relationships: []
       }
