@@ -40,7 +40,7 @@ function ResultsPage() {
     queryFn: async () => {
       const { data: attempt, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, completed_at, simulation_id, simulation_type, pillar_scores, simulations(title, description)")
+        .select("id, status, overall_score, completed_at, simulation_id, simulation_type, proctoring_mode, recording_file_path, pillar_scores, simulations(title, description)")
         .eq("id", attemptId)
         .single();
       if (error) throw error;
@@ -56,7 +56,17 @@ function ResultsPage() {
         .select("id, task_id, file_name, file_type, status, feedback, uploaded_at")
         .eq("attempt_id", attemptId);
 
-      return { attempt, deliverables: deliverables ?? [], results: (results ?? []).slice().sort((a: any, b: any) => (a.simulation_tasks?.order ?? 0) - (b.simulation_tasks?.order ?? 0)) };
+      let recordingUrl: string | null = null;
+      const recordingPath = (attempt as any).recording_file_path as string | null;
+      if (recordingPath) {
+        const { data: signed } = await supabase.storage
+          .from("attempt-recordings")
+          .createSignedUrl(recordingPath, 60 * 60);
+        recordingUrl = signed?.signedUrl ?? null;
+      }
+
+      return { attempt, recordingUrl, deliverables: deliverables ?? [], results: (results ?? []).slice().sort((a: any, b: any) => (a.simulation_tasks?.order ?? 0) - (b.simulation_tasks?.order ?? 0)) };
+
     },
   });
 
