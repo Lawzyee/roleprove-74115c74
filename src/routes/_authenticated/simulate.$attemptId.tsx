@@ -75,14 +75,18 @@ function SimulationRunner() {
   const [submitting, setSubmitting] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const [answers, setAnswers] = useState<Record<string, Record<string, unknown>>>({});
-
+  const [gateBusy, setGateBusy] = useState(false);
+  const [recordingActive, setRecordingActive] = useState(false);
+  const recorderRef = useRef<AttemptRecorder | null>(null);
 
   const query = useQuery({
     queryKey: ["attempt-run", attemptId],
     queryFn: async () => {
       const { data: attempt, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, simulation_id, simulations(title, description)")
+        .select(
+          "id, status, simulation_id, simulation_type, proctoring_mode, recording_file_path, simulations(title, description, estimated_minutes)",
+        )
         .eq("id", attemptId)
         .single();
       if (error) throw error;
@@ -108,6 +112,8 @@ function SimulationRunner() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => () => recorderRef.current?.dispose(), []);
+
   useEffect(() => {
     if (!query.data) return;
     if (query.data.attempt.status === "completed") {
@@ -120,6 +126,7 @@ function SimulationRunner() {
     const answeredCount = query.data.tasks.findIndex((t: any) => !preload[t.id]);
     setIndex(answeredCount === -1 ? Math.max(0, query.data.tasks.length - 1) : answeredCount);
   }, [query.data, attemptId, router]);
+
 
   const tasks = query.data?.tasks ?? [];
   const task = tasks[index] as any;
