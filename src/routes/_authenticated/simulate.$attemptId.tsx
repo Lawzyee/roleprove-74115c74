@@ -193,9 +193,93 @@ function SimulationRunner() {
     }
   }
 
+  async function haltVerified(reason: string) {
+    recorderRef.current?.dispose();
+    recorderRef.current = null;
+    setRecordingActive(false);
+    await supabase
+      .from("simulation_attempts")
+      .update({ proctoring_mode: "practice", recording_file_path: null } as any)
+      .eq("id", attemptId);
+    await query.refetch();
+    toast.error(`${reason} This attempt has been switched to a practice attempt — your answers are kept.`);
+  }
+
+  async function choosePractice() {
+    setGateBusy(true);
+    try {
+      const { error } = await supabase
+        .from("simulation_attempts")
+        .update({ proctoring_mode: "practice" } as any)
+        .eq("id", attemptId);
+      if (error) throw error;
+      await query.refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start the attempt");
+    } finally {
+      setGateBusy(false);
+    }
+  }
+
+  async function startVerified(streams: ProctorStreams) {
+    setGateBusy(true);
+    try {
+      const recorder = new AttemptRecorder(streams, (reason) => {
+        void haltVerified(reason);
+      });
+      await recorder.start();
+      recorderRef.current = recorder;
+      setRecordingActive(true);
+
+      const { error } = await supabase
+        .from("simulation_attempts")
+        .update({
+          proctoring_mode: "verified",
+          recording_consent_given_at: new Date().toISOString(),
+        } as any)
+        .eq("id", attemptId);
+      if (error) throw error;
+      await query.refetch();
+      toast.success("Recording started — camera, microphone and screen are being captured.");
+    } catch (err) {
+      recorderRef.current?.dispose();
+      recorderRef.current = null;
+      stopStream(streams.camera);
+      stopStream(streams.screen);
+      setRecordingActive(false);
+      toast.error(err instanceof Error ? err.message : "Could not start recording");
+    } finally {
+      setGateBusy(false);
+    }
+  }
+
+  async function stopAndUploadRecording() {
+    const recorder = recorderRef.current;
+    if (!recorder || !user) return;
+    try {
+      const blob = await recorder.stop();
+      recorder.dispose();
+      recorderRef.current = null;
+      setRecordingActive(false);
+      if (!blob) return;
+      const path = `${user.id}/${attemptId}/attempt-recording-${Date.now()}.webm`;
+      const { error } = await supabase.storage
+        .from(RECORDING_BUCKET)
+        .upload(path, blob, { contentType: blob.type || "video/webm", upsert: true });
+      if (error) throw error;
+      await supabase.from("simulation_attempts").update({ recording_file_path: path } as any).eq("id", attemptId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save your recording");
+    }
+  }
+
   async function finalSubmit() {
     setSubmitting(true);
     try {
+      if (recorderRef.current) {
+        toast.info("Saving your recording…");
+        await stopAndUploadRecording();
+      }
       toast.info("Scoring your work…");
       await gradeAttemptFn({ data: { attemptId } });
       router.navigate({ to: "/results/$attemptId", params: { attemptId } });
@@ -215,6 +299,22 @@ function SimulationRunner() {
     );
   }
 
+  if (needsGate) {
+    return (
+      <>
+        <SiteHeader />
+        <VerifiedAttemptGate
+          title={attemptRow?.simulations?.title ?? "JD-matched simulation"}
+          estimatedMinutes={attemptRow?.simulations?.estimated_minutes ?? 45}
+          stageCount={tasks.length}
+          busy={gateBusy}
+          onPractice={choosePractice}
+          onVerified={startVerified}
+        />
+      </>
+    );
+  }
+
   if (!task) {
     return (
       <>
@@ -223,6 +323,7 @@ function SimulationRunner() {
       </>
     );
   }
+
 
   const canSubmit = (() => {
     if (task.task_type === "case") {
