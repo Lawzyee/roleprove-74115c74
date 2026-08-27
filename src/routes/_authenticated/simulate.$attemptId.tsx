@@ -444,10 +444,18 @@ function SimulationRunner() {
               </Badge>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            {formatDuration(elapsed)}
+          <div className="flex shrink-0 items-center gap-2">
+            {recordingActive && (
+              <Badge variant="destructive" className="gap-1">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-current" /> Recording
+              </Badge>
+            )}
+            <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              {formatDuration(elapsed)}
+            </div>
           </div>
+
         </div>
 
         <Progress value={((index + (canSubmit ? 1 : 0)) / tasks.length) * 100} className="mt-4 h-2" />
