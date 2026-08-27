@@ -74,6 +74,8 @@ function DataTable({ columns, rows }: { columns: Array<{ key: string; label: str
 function SimulationRunner() {
   const { attemptId } = Route.useParams();
   const router = useRouter();
+  const { user } = useAuth();
+
   const [index, setIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -134,6 +136,13 @@ function SimulationRunner() {
 
   const tasks = query.data?.tasks ?? [];
   const task = tasks[index] as any;
+  const attemptRow = query.data?.attempt as any;
+  const needsGate =
+    !!attemptRow &&
+    attemptRow.simulation_type === "jd_matched" &&
+    attemptRow.status !== "completed" &&
+    (!attemptRow.proctoring_mode || (attemptRow.proctoring_mode === "verified" && !recordingActive));
+
   const rubric = useMemo<Rubric>(() => (task?.rubric_criteria ?? {}) as Rubric, [task]);
   const current = task ? (answers[task.id] ?? {}) : {};
 
