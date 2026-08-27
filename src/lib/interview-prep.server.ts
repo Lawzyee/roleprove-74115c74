@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { extractJobPosting, fetchJobPostingText, wordCount } from "./jd.server";
 import { extractCvText } from "./interview-prep-cv.server";
-import { toPillar } from "./interview-prep";
+
 import type { PrepCategory } from "./interview-prep";
 
 
