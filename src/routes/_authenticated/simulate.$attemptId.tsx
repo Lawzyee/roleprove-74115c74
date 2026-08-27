@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,10 @@ import {
   type SummaryTable,
 } from "@/lib/simulations";
 import { gradeAttemptFn } from "@/lib/grading.functions";
+import { useAuth } from "@/hooks/useAuth";
+import { VerifiedAttemptGate } from "@/components/VerifiedAttemptGate";
+import { AttemptRecorder, RECORDING_BUCKET, stopStream, type ProctorStreams } from "@/lib/proctoring";
+
 
 export const Route = createFileRoute("/_authenticated/simulate/$attemptId")({
   head: () => ({
