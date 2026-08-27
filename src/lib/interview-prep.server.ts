@@ -111,7 +111,7 @@ export async function createPrepSession(userId: string, input: { text?: string; 
       title,
       source_jd_text: text.slice(0, 20000),
       source_url: sourceUrl,
-      extracted_role_context: extracted as unknown as Record<string, unknown>,
+      extracted_role_context: extracted as unknown as never,
     })
     .select("id")
     .single();
@@ -143,7 +143,7 @@ export async function gradePrepAnswer(userId: string, questionId: string, respon
 
   const answer = responseText.trim();
   let feedback_text: string;
-  let rubric_scores: Record<string, unknown> | null;
+  let rubric_scores: { evaluated: boolean; structure?: number; specificity?: number; relevance?: number };
 
   if (wordCount(answer) < 25) {
     feedback_text =
@@ -179,7 +179,13 @@ export async function gradePrepAnswer(userId: string, questionId: string, respon
   const { error: upErr } = await supabaseAdmin
     .from("interview_prep_responses")
     .upsert(
-      { question_id: questionId, response_text: answer, feedback_text, rubric_scores, updated_at: new Date().toISOString() },
+      {
+        question_id: questionId,
+        response_text: answer,
+        feedback_text,
+        rubric_scores: rubric_scores as unknown as never,
+        updated_at: new Date().toISOString(),
+      },
       { onConflict: "question_id" },
     );
   if (upErr) throw upErr;
