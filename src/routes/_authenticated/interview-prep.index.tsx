@@ -116,6 +116,42 @@ function InterviewPrepPage() {
               placeholder="Paste the job description here, or a link to the posting…"
             />
 
+            <div className="rounded-xl border border-dashed border-border p-4">
+              <p className="text-sm font-medium">Upload your CV (optional)</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                PDF or DOCX. We&apos;ll ground questions in your real experience and probe gaps against this job.
+              </p>
+              <input
+                ref={cvInputRef}
+                type="file"
+                accept=".pdf,.docx"
+                className="hidden"
+                onChange={(e) => setCvFile(e.target.files?.[0] ?? null)}
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => cvInputRef.current?.click()}>
+                  <Paperclip className="mr-2 h-4 w-4" />
+                  {cvFile ? "Choose a different file" : "Choose file"}
+                </Button>
+                {cvFile && (
+                  <span className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs">
+                    {cvFile.name}
+                    <button
+                      type="button"
+                      aria-label="Remove CV"
+                      onClick={() => {
+                        setCvFile(null);
+                        if (cvInputRef.current) cvInputRef.current.value = "";
+                      }}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                )}
+              </div>
+            </div>
+
+
             {loading && (
               <div className="flex items-center gap-2 rounded-xl bg-muted p-3 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
