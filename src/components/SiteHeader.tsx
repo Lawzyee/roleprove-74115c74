@@ -1,6 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, LogOut, Settings, User as UserIcon, Library } from "lucide-react";
+import { LayoutDashboard, LogOut, Settings, User as UserIcon, Library, MessagesSquare } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +47,9 @@ export function SiteHeader() {
               <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
                 <Link to="/roles">Roles</Link>
               </Button>
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Link to="/interview-prep">Interview Prep</Link>
+              </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -72,6 +75,11 @@ export function SiteHeader() {
                   <DropdownMenuItem asChild className="sm:hidden">
                     <Link to="/roles">
                       <Library className="mr-2 h-4 w-4" /> Roles
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="sm:hidden">
+                    <Link to="/interview-prep">
+                      <MessagesSquare className="mr-2 h-4 w-4" /> Interview Prep
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>

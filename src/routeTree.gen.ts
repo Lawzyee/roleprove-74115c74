@@ -16,8 +16,8 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenticated/performance'
-import { Route as AuthenticatedInterviewPrepRouteImport } from './routes/_authenticated/interview-prep'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedInterviewPrepIndexRouteImport } from './routes/_authenticated/interview-prep.index'
 import { Route as AuthenticatedSimulateAttemptIdRouteImport } from './routes/_authenticated/simulate.$attemptId'
 import { Route as AuthenticatedResultsAttemptIdRouteImport } from './routes/_authenticated/results.$attemptId'
 import { Route as AuthenticatedInterviewPrepSessionIdRouteImport } from './routes/_authenticated/interview-prep.$sessionId'
@@ -57,17 +57,17 @@ const AuthenticatedPerformanceRoute =
     path: '/performance',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedInterviewPrepRoute =
-  AuthenticatedInterviewPrepRouteImport.update({
-    id: '/interview-prep',
-    path: '/interview-prep',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInterviewPrepIndexRoute =
+  AuthenticatedInterviewPrepIndexRouteImport.update({
+    id: '/interview-prep/',
+    path: '/interview-prep/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSimulateAttemptIdRoute =
   AuthenticatedSimulateAttemptIdRouteImport.update({
     id: '/simulate/$attemptId',
@@ -82,16 +82,15 @@ const AuthenticatedResultsAttemptIdRoute =
   } as any)
 const AuthenticatedInterviewPrepSessionIdRoute =
   AuthenticatedInterviewPrepSessionIdRouteImport.update({
-    id: '/$sessionId',
-    path: '/$sessionId',
-    getParentRoute: () => AuthenticatedInterviewPrepRoute,
+    id: '/interview-prep/$sessionId',
+    path: '/interview-prep/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/interview-prep': typeof AuthenticatedInterviewPrepRouteWithChildren
   '/performance': typeof AuthenticatedPerformanceRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/roles': typeof AuthenticatedRolesRoute
@@ -99,12 +98,12 @@ export interface FileRoutesByFullPath {
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
   '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
+  '/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/interview-prep': typeof AuthenticatedInterviewPrepRouteWithChildren
   '/performance': typeof AuthenticatedPerformanceRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/roles': typeof AuthenticatedRolesRoute
@@ -112,6 +111,7 @@ export interface FileRoutesByTo {
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
   '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
+  '/interview-prep': typeof AuthenticatedInterviewPrepIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -119,7 +119,6 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/interview-prep': typeof AuthenticatedInterviewPrepRouteWithChildren
   '/_authenticated/performance': typeof AuthenticatedPerformanceRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
@@ -127,6 +126,7 @@ export interface FileRoutesById {
   '/_authenticated/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
   '/_authenticated/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/_authenticated/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
+  '/_authenticated/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -134,7 +134,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
-    | '/interview-prep'
     | '/performance'
     | '/profile'
     | '/roles'
@@ -142,12 +141,12 @@ export interface FileRouteTypes {
     | '/interview-prep/$sessionId'
     | '/results/$attemptId'
     | '/simulate/$attemptId'
+    | '/interview-prep/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/dashboard'
-    | '/interview-prep'
     | '/performance'
     | '/profile'
     | '/roles'
@@ -155,13 +154,13 @@ export interface FileRouteTypes {
     | '/interview-prep/$sessionId'
     | '/results/$attemptId'
     | '/simulate/$attemptId'
+    | '/interview-prep'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
-    | '/_authenticated/interview-prep'
     | '/_authenticated/performance'
     | '/_authenticated/profile'
     | '/_authenticated/roles'
@@ -169,6 +168,7 @@ export interface FileRouteTypes {
     | '/_authenticated/interview-prep/$sessionId'
     | '/_authenticated/results/$attemptId'
     | '/_authenticated/simulate/$attemptId'
+    | '/_authenticated/interview-prep/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -228,18 +228,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPerformanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/interview-prep': {
-      id: '/_authenticated/interview-prep'
-      path: '/interview-prep'
-      fullPath: '/interview-prep'
-      preLoaderRoute: typeof AuthenticatedInterviewPrepRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/interview-prep/': {
+      id: '/_authenticated/interview-prep/'
+      path: '/interview-prep'
+      fullPath: '/interview-prep/'
+      preLoaderRoute: typeof AuthenticatedInterviewPrepIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/simulate/$attemptId': {
@@ -258,49 +258,37 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/interview-prep/$sessionId': {
       id: '/_authenticated/interview-prep/$sessionId'
-      path: '/$sessionId'
+      path: '/interview-prep/$sessionId'
       fullPath: '/interview-prep/$sessionId'
       preLoaderRoute: typeof AuthenticatedInterviewPrepSessionIdRouteImport
-      parentRoute: typeof AuthenticatedInterviewPrepRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
-interface AuthenticatedInterviewPrepRouteChildren {
-  AuthenticatedInterviewPrepSessionIdRoute: typeof AuthenticatedInterviewPrepSessionIdRoute
-}
-
-const AuthenticatedInterviewPrepRouteChildren: AuthenticatedInterviewPrepRouteChildren =
-  {
-    AuthenticatedInterviewPrepSessionIdRoute:
-      AuthenticatedInterviewPrepSessionIdRoute,
-  }
-
-const AuthenticatedInterviewPrepRouteWithChildren =
-  AuthenticatedInterviewPrepRoute._addFileChildren(
-    AuthenticatedInterviewPrepRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedInterviewPrepRoute: typeof AuthenticatedInterviewPrepRouteWithChildren
   AuthenticatedPerformanceRoute: typeof AuthenticatedPerformanceRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedInterviewPrepSessionIdRoute: typeof AuthenticatedInterviewPrepSessionIdRoute
   AuthenticatedResultsAttemptIdRoute: typeof AuthenticatedResultsAttemptIdRoute
   AuthenticatedSimulateAttemptIdRoute: typeof AuthenticatedSimulateAttemptIdRoute
+  AuthenticatedInterviewPrepIndexRoute: typeof AuthenticatedInterviewPrepIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedInterviewPrepRoute: AuthenticatedInterviewPrepRouteWithChildren,
   AuthenticatedPerformanceRoute: AuthenticatedPerformanceRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedInterviewPrepSessionIdRoute:
+    AuthenticatedInterviewPrepSessionIdRoute,
   AuthenticatedResultsAttemptIdRoute: AuthenticatedResultsAttemptIdRoute,
   AuthenticatedSimulateAttemptIdRoute: AuthenticatedSimulateAttemptIdRoute,
+  AuthenticatedInterviewPrepIndexRoute: AuthenticatedInterviewPrepIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
