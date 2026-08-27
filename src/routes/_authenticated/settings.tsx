@@ -82,18 +82,39 @@ function SettingsPage() {
     setBusy(false);
   }
 
+  /** Removes every stored object under the user's folder in a bucket, recursively. */
+  async function purgeStorageFolder(bucket: string, prefix: string) {
+    const { data: entries } = await supabase.storage.from(bucket).list(prefix, { limit: 1000 });
+    if (!entries?.length) return;
+    const files: string[] = [];
+    for (const entry of entries) {
+      const path = `${prefix}/${entry.name}`;
+      if (entry.id === null) await purgeStorageFolder(bucket, path);
+      else files.push(path);
+    }
+    if (files.length) await supabase.storage.from(bucket).remove(files);
+  }
+
   async function deleteData() {
     if (!user) return;
-    if (!window.confirm("This permanently deletes your profile, credentials and simulation history. Continue?")) return;
+    if (
+      !window.confirm(
+        "This permanently deletes your profile, credentials, simulation history, uploaded work samples and any attempt recordings. Continue?",
+      )
+    )
+      return;
     setBusy(true);
+    await purgeStorageFolder("attempt-recordings", user.id);
+    await purgeStorageFolder("deliverables", user.id);
     await supabase.from("simulation_attempts").delete().eq("user_id", user.id);
     await supabase.from("credentials").delete().eq("user_id", user.id);
     await supabase.from("profiles").delete().eq("id", user.id);
     await supabase.auth.signOut();
     setBusy(false);
-    toast.success("Your data has been deleted");
+    toast.success("Your data and recordings have been deleted");
     router.navigate({ to: "/" });
   }
+
 
   const profile = profileQuery.data;
 

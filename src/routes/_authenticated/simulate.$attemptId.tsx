@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,10 @@ import {
   type SummaryTable,
 } from "@/lib/simulations";
 import { gradeAttemptFn } from "@/lib/grading.functions";
+import { useAuth } from "@/hooks/useAuth";
+import { VerifiedAttemptGate } from "@/components/VerifiedAttemptGate";
+import { AttemptRecorder, RECORDING_BUCKET, stopStream, type ProctorStreams } from "@/lib/proctoring";
+
 
 export const Route = createFileRoute("/_authenticated/simulate/$attemptId")({
   head: () => ({
@@ -70,19 +74,25 @@ function DataTable({ columns, rows }: { columns: Array<{ key: string; label: str
 function SimulationRunner() {
   const { attemptId } = Route.useParams();
   const router = useRouter();
+  const { user } = useAuth();
+
   const [index, setIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const [answers, setAnswers] = useState<Record<string, Record<string, unknown>>>({});
-
+  const [gateBusy, setGateBusy] = useState(false);
+  const [recordingActive, setRecordingActive] = useState(false);
+  const recorderRef = useRef<AttemptRecorder | null>(null);
 
   const query = useQuery({
     queryKey: ["attempt-run", attemptId],
     queryFn: async () => {
       const { data: attempt, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, simulation_id, simulations(title, description)")
+        .select(
+          "id, status, simulation_id, simulation_type, proctoring_mode, recording_file_path, simulations(title, description, estimated_minutes)",
+        )
         .eq("id", attemptId)
         .single();
       if (error) throw error;
@@ -108,6 +118,8 @@ function SimulationRunner() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => () => recorderRef.current?.dispose(), []);
+
   useEffect(() => {
     if (!query.data) return;
     if (query.data.attempt.status === "completed") {
@@ -121,8 +133,16 @@ function SimulationRunner() {
     setIndex(answeredCount === -1 ? Math.max(0, query.data.tasks.length - 1) : answeredCount);
   }, [query.data, attemptId, router]);
 
+
   const tasks = query.data?.tasks ?? [];
   const task = tasks[index] as any;
+  const attemptRow = query.data?.attempt as any;
+  const needsGate =
+    !!attemptRow &&
+    attemptRow.simulation_type === "jd_matched" &&
+    attemptRow.status !== "completed" &&
+    (!attemptRow.proctoring_mode || (attemptRow.proctoring_mode === "verified" && !recordingActive));
+
   const rubric = useMemo<Rubric>(() => (task?.rubric_criteria ?? {}) as Rubric, [task]);
   const current = task ? (answers[task.id] ?? {}) : {};
 
@@ -182,9 +202,93 @@ function SimulationRunner() {
     }
   }
 
+  async function haltVerified(reason: string) {
+    recorderRef.current?.dispose();
+    recorderRef.current = null;
+    setRecordingActive(false);
+    await supabase
+      .from("simulation_attempts")
+      .update({ proctoring_mode: "practice", recording_file_path: null } as any)
+      .eq("id", attemptId);
+    await query.refetch();
+    toast.error(`${reason} This attempt has been switched to a practice attempt — your answers are kept.`);
+  }
+
+  async function choosePractice() {
+    setGateBusy(true);
+    try {
+      const { error } = await supabase
+        .from("simulation_attempts")
+        .update({ proctoring_mode: "practice" } as any)
+        .eq("id", attemptId);
+      if (error) throw error;
+      await query.refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start the attempt");
+    } finally {
+      setGateBusy(false);
+    }
+  }
+
+  async function startVerified(streams: ProctorStreams) {
+    setGateBusy(true);
+    try {
+      const recorder = new AttemptRecorder(streams, (reason) => {
+        void haltVerified(reason);
+      });
+      await recorder.start();
+      recorderRef.current = recorder;
+      setRecordingActive(true);
+
+      const { error } = await supabase
+        .from("simulation_attempts")
+        .update({
+          proctoring_mode: "verified",
+          recording_consent_given_at: new Date().toISOString(),
+        } as any)
+        .eq("id", attemptId);
+      if (error) throw error;
+      await query.refetch();
+      toast.success("Recording started — camera, microphone and screen are being captured.");
+    } catch (err) {
+      recorderRef.current?.dispose();
+      recorderRef.current = null;
+      stopStream(streams.camera);
+      stopStream(streams.screen);
+      setRecordingActive(false);
+      toast.error(err instanceof Error ? err.message : "Could not start recording");
+    } finally {
+      setGateBusy(false);
+    }
+  }
+
+  async function stopAndUploadRecording() {
+    const recorder = recorderRef.current;
+    if (!recorder || !user) return;
+    try {
+      const blob = await recorder.stop();
+      recorder.dispose();
+      recorderRef.current = null;
+      setRecordingActive(false);
+      if (!blob) return;
+      const path = `${user.id}/${attemptId}/attempt-recording-${Date.now()}.webm`;
+      const { error } = await supabase.storage
+        .from(RECORDING_BUCKET)
+        .upload(path, blob, { contentType: blob.type || "video/webm", upsert: true });
+      if (error) throw error;
+      await supabase.from("simulation_attempts").update({ recording_file_path: path } as any).eq("id", attemptId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save your recording");
+    }
+  }
+
   async function finalSubmit() {
     setSubmitting(true);
     try {
+      if (recorderRef.current) {
+        toast.info("Saving your recording…");
+        await stopAndUploadRecording();
+      }
       toast.info("Scoring your work…");
       await gradeAttemptFn({ data: { attemptId } });
       router.navigate({ to: "/results/$attemptId", params: { attemptId } });
@@ -204,6 +308,22 @@ function SimulationRunner() {
     );
   }
 
+  if (needsGate) {
+    return (
+      <>
+        <SiteHeader />
+        <VerifiedAttemptGate
+          title={attemptRow?.simulations?.title ?? "JD-matched simulation"}
+          estimatedMinutes={attemptRow?.simulations?.estimated_minutes ?? 45}
+          stageCount={tasks.length}
+          busy={gateBusy}
+          onPractice={choosePractice}
+          onVerified={startVerified}
+        />
+      </>
+    );
+  }
+
   if (!task) {
     return (
       <>
@@ -212,6 +332,7 @@ function SimulationRunner() {
       </>
     );
   }
+
 
   const canSubmit = (() => {
     if (task.task_type === "case") {
@@ -323,10 +444,18 @@ function SimulationRunner() {
               </Badge>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            {formatDuration(elapsed)}
+          <div className="flex shrink-0 items-center gap-2">
+            {recordingActive && (
+              <Badge variant="destructive" className="gap-1">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-current" /> Recording
+              </Badge>
+            )}
+            <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              {formatDuration(elapsed)}
+            </div>
           </div>
+
         </div>
 
         <Progress value={((index + (canSubmit ? 1 : 0)) / tasks.length) * 100} className="mt-4 h-2" />
