@@ -83,7 +83,8 @@ function PrepSessionPage() {
           ({ cat, items }) =>
             items.length > 0 && (
               <section key={cat} className="mt-8">
-                <h2 className="mb-3 font-display text-xl font-semibold">{CATEGORY_LABELS[cat]}</h2>
+                <h2 className="font-display text-xl font-semibold">{CATEGORY_LABELS[cat]}</h2>
+                <p className="mb-3 mt-1 text-sm text-muted-foreground">{CATEGORY_BLURBS[cat]}</p>
                 <div className="space-y-4">
                   {items.map((q: any, i: number) => (
                     <QuestionCard
