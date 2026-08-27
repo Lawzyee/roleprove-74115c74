@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { extractJobPosting, fetchJobPostingText, wordCount } from "./jd.server";
 import { extractCvText } from "./interview-prep-cv.server";
-import { toPillar } from "./interview-prep";
+
 import type { PrepCategory } from "./interview-prep";
 
 
@@ -43,9 +43,8 @@ async function callAi(system: string, user: string) {
   }
 }
 
-function normaliseCategory(value: unknown): PrepCategory {
-  return toPillar(String(value ?? ""));
-}
+
+
 
 export async function createPrepSession(
   userId: string,
@@ -67,51 +66,70 @@ export async function createPrepSession(
 
   const extracted = await extractJobPosting(text);
 
-  const generated = await callAi(
-    "You are an experienced hiring manager who writes interview questions. Always reply with JSON only.",
-    [
-      "Write the interview questions this candidate is genuinely likely to be asked for THIS specific job.",
-      "Organise them around five pillars — every real interview question tests one of these:",
-      '- "can_do_job": role-specific/technical ability, grounded in the posting\'s actual tools and responsibilities',
-      '- "solve_problems": situational judgement — present a realistic hypothetical scenario for this role and ask how they would handle it',
-      '- "work_with_others": behavioural, communication, stakeholder management',
-      '- "can_trust": ownership, accountability, integrity — mistakes, difficult trade-offs, professional judgement',
-      '- "will_grow": motivation, learning agility, culture and values fit',
-      "",
-      "Rules:",
-      "- Write 2-3 questions per pillar (10-15 total).",
-      "- Reference the actual responsibilities, tools, domain language and company context from the posting. Never write a generic question with the company name swapped in.",
-      "- Each question is one clear question a human would actually ask out loud.",
-      ...(cvText
-        ? [
-            "- A CV is provided. For 'can_do_job' and 'work_with_others', reference specific real details from the CV (named projects, employers, achievements). Never invent details that are not in the CV.",
-            "- Identify meaningful gaps between the CV and the job description (skills/tools the JD requires that the CV never mentions) and include at least one question directly probing each gap, e.g. \"The role requires strong SQL, which isn't mentioned on your CV — how would you describe your experience with it?\".",
-          ]
-        : []),
-      "",
-      'Reply as JSON: {"questions": [{"category": "can_do_job|solve_problems|work_with_others|can_trust|will_grow", "question_text": "..."}]}',
-      "",
-      `ROLE: ${extracted.role_type} (${extracted.seniority})`,
-      `SKILLS: ${extracted.skills.join(", ")}`,
-      `RESPONSIBILITIES: ${extracted.responsibilities.join(" | ")}`,
-      `EMPHASIS: ${extracted.emphasis_themes.join(", ")}`,
-      `COMPANY CONTEXT: ${extracted.company_context}`,
-      "",
-      "JOB DESCRIPTION:",
-      text.slice(0, 10000),
-      ...(cvText ? ["", "CANDIDATE CV:", cvText.slice(0, 8000)] : []),
-    ].join("\n"),
-  );
+  const pillarBriefs: Record<PrepCategory, string> = {
+    can_do_job:
+      "role-specific/technical ability, grounded in the posting's actual tools, systems and responsibilities",
+    solve_problems:
+      "situational judgement — realistic hypothetical scenarios for this role and how they would handle them",
+    work_with_others: "behaviour, communication, collaboration and stakeholder management",
+    can_trust: "ownership, accountability, integrity — mistakes, difficult trade-offs, professional judgement",
+    will_grow: "motivation, learning agility, culture and values fit",
+  };
 
-  const rawQuestions: Array<{ category?: string; question_text?: string }> = Array.isArray(generated.questions)
-    ? generated.questions
-    : [];
-  const questions = rawQuestions
-    .map((q) => ({ category: normaliseCategory(q.category), question_text: String(q.question_text ?? "").trim() }))
-    .filter((q) => q.question_text.length > 10)
-    .slice(0, 15);
+  const pillarOrder: PrepCategory[] = [
+    "can_do_job",
+    "solve_problems",
+    "work_with_others",
+    "can_trust",
+    "will_grow",
+  ];
+
+  const jobContext = [
+    `ROLE: ${extracted.role_type} (${extracted.seniority})`,
+    `SKILLS: ${extracted.skills.join(", ")}`,
+    `RESPONSIBILITIES: ${extracted.responsibilities.join(" | ")}`,
+    `EMPHASIS: ${extracted.emphasis_themes.join(", ")}`,
+    `COMPANY CONTEXT: ${extracted.company_context}`,
+    "",
+    "JOB DESCRIPTION:",
+    text.slice(0, 10000),
+    ...(cvText ? ["", "CANDIDATE CV:", cvText.slice(0, 8000)] : []),
+  ].join("\n");
+
+  async function generatePillar(pillar: PrepCategory) {
+    const result = await callAi(
+      "You are an experienced hiring manager who writes interview questions. Always reply with JSON only.",
+      [
+        `Write the interview questions this candidate is genuinely likely to be asked for THIS specific job, for one pillar only: "${pillar}" — ${pillarBriefs[pillar]}.`,
+        "",
+        "Rules:",
+        "- Write exactly 5 questions for this pillar. Each must cover a different responsibility, tool, scenario or theme — no repetition or filler that could apply to any candidate.",
+        "- Reference the actual responsibilities, tools, domain language and company context from the posting. Never write a generic question with the company name swapped in.",
+        "- Each question is one clear question a human would actually ask out loud.",
+        ...(cvText
+          ? [
+              "- A CV is provided. Reference specific real details from the CV (named projects, employers, achievements) where natural. Never invent details that are not in the CV.",
+              "- Where the job description requires skills/tools the CV never mentions, include at least one question probing that gap, e.g. \"The role requires strong SQL, which isn't mentioned on your CV — how would you describe your experience with it?\".",
+            ]
+          : []),
+        "",
+        'Reply as JSON: {"questions": [{"question_text": "..."}]}',
+        "",
+        jobContext,
+      ].join("\n"),
+    );
+    const raw: Array<{ question_text?: string }> = Array.isArray(result.questions) ? result.questions : [];
+    return raw
+      .map((q) => ({ category: pillar, question_text: String(q.question_text ?? "").trim() }))
+      .filter((q) => q.question_text.length > 10)
+      .slice(0, 5);
+  }
+
+  const perPillar = await Promise.all(pillarOrder.map((p) => generatePillar(p).catch(() => [])));
+  const questions = perPillar.flat();
 
   if (questions.length < 3) throw new Error("We couldn't generate questions for that posting. Please try again.");
+
 
   const title = extracted.role_type
     ? `${extracted.role_type}${extracted.company_context ? ` — ${extracted.company_context.split(/[.\n]/)[0]!.slice(0, 60)}` : ""}`

@@ -61,8 +61,24 @@ function PrepSessionPage() {
   const grouped = PREP_CATEGORIES.map((cat) => ({
     cat: cat as string,
     items: questions.filter((q: any) => toPillar(q.category) === cat),
-  }));
+  })).filter((g) => g.items.length > 0);
 
+  const storageKey = `prep-pillar-${sessionId}`;
+  const [step, setStep] = useState(0);
+  const [restored, setRestored] = useState(false);
+
+  useEffect(() => {
+    if (restored || grouped.length === 0) return;
+    const saved = Number(window.localStorage.getItem(storageKey) ?? "0");
+    if (Number.isFinite(saved) && saved > 0) setStep(Math.min(saved, grouped.length - 1));
+    setRestored(true);
+  }, [grouped.length, restored, storageKey]);
+
+  useEffect(() => {
+    if (restored) window.localStorage.setItem(storageKey, String(step));
+  }, [step, restored, storageKey]);
+
+  const current = grouped[Math.min(step, Math.max(grouped.length - 1, 0))];
 
   return (
     <>
@@ -79,30 +95,60 @@ function PrepSessionPage() {
 
         {questionsQuery.isLoading && <p className="mt-8 text-sm text-muted-foreground">Loading your questions…</p>}
 
-        {grouped.map(
-          ({ cat, items }) =>
-            items.length > 0 && (
-              <section key={cat} className="mt-8">
-                <h2 className="font-display text-xl font-semibold">{CATEGORY_LABELS[cat]}</h2>
-                <p className="mb-3 mt-1 text-sm text-muted-foreground">{CATEGORY_BLURBS[cat]}</p>
-                <div className="space-y-4">
-                  {items.map((q: any, i: number) => (
-                    <QuestionCard
-                      key={q.id}
-                      index={i + 1}
-                      id={q.id}
-                      text={q.question_text}
-                      existing={q.interview_prep_responses?.[0] ?? q.interview_prep_responses ?? null}
-                    />
-                  ))}
-                </div>
-              </section>
-            ),
+        {current && (
+          <section className="mt-8">
+            <div className="mb-4">
+              <p className="text-sm font-medium text-primary">
+                Pillar {step + 1} of {grouped.length}: {CATEGORY_LABELS[current.cat]}
+              </p>
+              <div className="mt-2 flex gap-1.5">
+                {grouped.map((g, i) => (
+                  <button
+                    key={g.cat}
+                    type="button"
+                    aria-label={`Go to ${CATEGORY_LABELS[g.cat]}`}
+                    onClick={() => setStep(i)}
+                    className={`h-1.5 flex-1 rounded-full transition-colors ${
+                      i <= step ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <h2 className="font-display text-xl font-semibold">{CATEGORY_LABELS[current.cat]}</h2>
+            <p className="mb-3 mt-1 text-sm text-muted-foreground">{CATEGORY_BLURBS[current.cat]}</p>
+            <div className="space-y-4">
+              {current.items.map((q: any, i: number) => (
+                <QuestionCard
+                  key={q.id}
+                  index={i + 1}
+                  id={q.id}
+                  text={q.question_text}
+                  existing={q.interview_prep_responses?.[0] ?? q.interview_prep_responses ?? null}
+                />
+              ))}
+            </div>
+
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <Button variant="outline" disabled={step === 0} onClick={() => setStep((s) => Math.max(0, s - 1))}>
+                Back
+              </Button>
+              {step < grouped.length - 1 ? (
+                <Button onClick={() => setStep((s) => s + 1)}>Continue to next section</Button>
+              ) : (
+                <Button asChild variant="outline">
+                  <Link to="/interview-prep">Finish practice</Link>
+                </Button>
+              )}
+            </div>
+          </section>
         )}
       </main>
     </>
   );
 }
+
 
 function QuestionCard({
   index,
