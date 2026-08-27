@@ -43,9 +43,8 @@ async function callAi(system: string, user: string) {
   }
 }
 
-function normaliseCategory(value: unknown): PrepCategory {
-  return toPillar(String(value ?? ""));
-}
+
+
 
 export async function createPrepSession(
   userId: string,
