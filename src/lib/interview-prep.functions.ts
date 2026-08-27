@@ -7,10 +7,15 @@ export const createPrepSessionFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
     z
-      .object({ text: z.string().optional(), url: z.string().url().optional() })
+      .object({
+        text: z.string().optional(),
+        url: z.string().url().optional(),
+        cvFilePath: z.string().optional(),
+      })
       .refine((v) => Boolean(v.text?.trim() || v.url), { message: "Paste a job description or a link to one." })
       .parse(data),
   )
+
   .handler(async ({ data, context }) => createPrepSession(context.userId, data));
 
 export const gradePrepAnswerFn = createServerFn({ method: "POST" })
