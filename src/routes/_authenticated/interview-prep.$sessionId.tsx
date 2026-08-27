@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CATEGORY_LABELS } from "@/lib/interview-prep";
+import { CATEGORY_BLURBS, CATEGORY_LABELS, PREP_CATEGORIES, toPillar } from "@/lib/interview-prep";
 import { gradePrepAnswerFn } from "@/lib/interview-prep.functions";
 
 export const Route = createFileRoute("/_authenticated/interview-prep/$sessionId")({
@@ -58,10 +58,11 @@ function PrepSessionPage() {
   });
 
   const questions = questionsQuery.data ?? [];
-  const grouped = ["behavioral", "technical", "culture"].map((cat) => ({
-    cat,
-    items: questions.filter((q: any) => q.category === cat),
+  const grouped = PREP_CATEGORIES.map((cat) => ({
+    cat: cat as string,
+    items: questions.filter((q: any) => toPillar(q.category) === cat),
   }));
+
 
   return (
     <>
@@ -82,7 +83,8 @@ function PrepSessionPage() {
           ({ cat, items }) =>
             items.length > 0 && (
               <section key={cat} className="mt-8">
-                <h2 className="mb-3 font-display text-xl font-semibold">{CATEGORY_LABELS[cat]}</h2>
+                <h2 className="font-display text-xl font-semibold">{CATEGORY_LABELS[cat]}</h2>
+                <p className="mb-3 mt-1 text-sm text-muted-foreground">{CATEGORY_BLURBS[cat]}</p>
                 <div className="space-y-4">
                   {items.map((q: any, i: number) => (
                     <QuestionCard

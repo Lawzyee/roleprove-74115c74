@@ -1,7 +1,10 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { extractJobPosting, fetchJobPostingText, wordCount } from "./jd.server";
-
+import { extractCvText } from "./interview-prep-cv.server";
+import { toPillar } from "./interview-prep";
 import type { PrepCategory } from "./interview-prep";
+
+
 
 function apiKey() {
   const key = process.env["LOVABLE_API_KEY"];
@@ -41,13 +44,13 @@ async function callAi(system: string, user: string) {
 }
 
 function normaliseCategory(value: unknown): PrepCategory {
-  const v = String(value ?? "").toLowerCase();
-  if (v.startsWith("behav")) return "behavioral";
-  if (v.startsWith("cult") || v.includes("value")) return "culture";
-  return "technical";
+  return toPillar(String(value ?? ""));
 }
 
-export async function createPrepSession(userId: string, input: { text?: string; url?: string }) {
+export async function createPrepSession(
+  userId: string,
+  input: { text?: string; url?: string; cvFilePath?: string },
+) {
   const sourceUrl = input.url?.trim() || null;
   let text = input.text?.trim() ?? "";
   if (!text && sourceUrl) text = await fetchJobPostingText(sourceUrl);
@@ -59,18 +62,34 @@ export async function createPrepSession(userId: string, input: { text?: string; 
     };
   }
 
+  const cvFilePath = input.cvFilePath?.trim() || null;
+  const cvText = cvFilePath ? await extractCvText(cvFilePath) : "";
+
   const extracted = await extractJobPosting(text);
 
   const generated = await callAi(
     "You are an experienced hiring manager who writes interview questions. Always reply with JSON only.",
     [
-      "Write 10 interview questions this candidate is genuinely likely to be asked for THIS specific job.",
-      "Rules:",
-      "- Reference the actual responsibilities, tools, domain language and company context from the posting. Never write a generic question with the company name swapped in.",
-      "- 4 behavioral, 4 technical (role-specific, naming the specific tools/skills in the posting), 2 culture.",
-      "- Each question is one clear question a human would actually ask out loud.",
+      "Write the interview questions this candidate is genuinely likely to be asked for THIS specific job.",
+      "Organise them around five pillars — every real interview question tests one of these:",
+      '- "can_do_job": role-specific/technical ability, grounded in the posting\'s actual tools and responsibilities',
+      '- "solve_problems": situational judgement — present a realistic hypothetical scenario for this role and ask how they would handle it',
+      '- "work_with_others": behavioural, communication, stakeholder management',
+      '- "can_trust": ownership, accountability, integrity — mistakes, difficult trade-offs, professional judgement',
+      '- "will_grow": motivation, learning agility, culture and values fit',
       "",
-      'Reply as JSON: {"questions": [{"category": "behavioral|technical|culture", "question_text": "..."}]}',
+      "Rules:",
+      "- Write 2-3 questions per pillar (10-15 total).",
+      "- Reference the actual responsibilities, tools, domain language and company context from the posting. Never write a generic question with the company name swapped in.",
+      "- Each question is one clear question a human would actually ask out loud.",
+      ...(cvText
+        ? [
+            "- A CV is provided. For 'can_do_job' and 'work_with_others', reference specific real details from the CV (named projects, employers, achievements). Never invent details that are not in the CV.",
+            "- Identify meaningful gaps between the CV and the job description (skills/tools the JD requires that the CV never mentions) and include at least one question directly probing each gap, e.g. \"The role requires strong SQL, which isn't mentioned on your CV — how would you describe your experience with it?\".",
+          ]
+        : []),
+      "",
+      'Reply as JSON: {"questions": [{"category": "can_do_job|solve_problems|work_with_others|can_trust|will_grow", "question_text": "..."}]}',
       "",
       `ROLE: ${extracted.role_type} (${extracted.seniority})`,
       `SKILLS: ${extracted.skills.join(", ")}`,
@@ -80,6 +99,7 @@ export async function createPrepSession(userId: string, input: { text?: string; 
       "",
       "JOB DESCRIPTION:",
       text.slice(0, 10000),
+      ...(cvText ? ["", "CANDIDATE CV:", cvText.slice(0, 8000)] : []),
     ].join("\n"),
   );
 
@@ -89,7 +109,7 @@ export async function createPrepSession(userId: string, input: { text?: string; 
   const questions = rawQuestions
     .map((q) => ({ category: normaliseCategory(q.category), question_text: String(q.question_text ?? "").trim() }))
     .filter((q) => q.question_text.length > 10)
-    .slice(0, 12);
+    .slice(0, 15);
 
   if (questions.length < 3) throw new Error("We couldn't generate questions for that posting. Please try again.");
 
@@ -105,6 +125,8 @@ export async function createPrepSession(userId: string, input: { text?: string; 
       source_jd_text: text.slice(0, 20000),
       source_url: sourceUrl,
       extracted_role_context: extracted as unknown as never,
+      cv_file_path: cvFilePath,
+      cv_extracted_text: cvText || null,
     })
     .select("id")
     .single();
@@ -122,6 +144,7 @@ export async function createPrepSession(userId: string, input: { text?: string; 
 
   return { outcome: "ready" as const, sessionId: session.id as string };
 }
+
 
 export async function gradePrepAnswer(userId: string, questionId: string, responseText: string) {
   const { data: question, error } = await supabaseAdmin

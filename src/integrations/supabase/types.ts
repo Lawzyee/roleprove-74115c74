@@ -237,6 +237,8 @@ export type Database = {
       interview_prep_sessions: {
         Row: {
           created_at: string
+          cv_extracted_text: string | null
+          cv_file_path: string | null
           extracted_role_context: Json | null
           id: string
           source_jd_text: string
@@ -246,6 +248,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cv_extracted_text?: string | null
+          cv_file_path?: string | null
           extracted_role_context?: Json | null
           id?: string
           source_jd_text: string
@@ -255,6 +259,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cv_extracted_text?: string | null
+          cv_file_path?: string | null
           extracted_role_context?: Json | null
           id?: string
           source_jd_text?: string

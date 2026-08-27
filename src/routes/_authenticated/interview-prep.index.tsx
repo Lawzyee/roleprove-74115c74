@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, MessagesSquare } from "lucide-react";
+import { Loader2, MessagesSquare, Paperclip, X } from "lucide-react";
+
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +39,8 @@ function InterviewPrepPage() {
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [tooVague, setTooVague] = useState<string | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const cvInputRef = useRef<HTMLInputElement>(null);
 
   const trimmed = value.trim();
   const isUrl = /^https?:\/\/\S+$/i.test(trimmed);
@@ -55,12 +58,24 @@ function InterviewPrepPage() {
     },
   });
 
+  async function uploadCv(): Promise<string | undefined> {
+    if (!cvFile || !user) return undefined;
+    const safeName = cvFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${user.id}/interview-prep-cv/${Date.now()}-${safeName}`;
+    const { error } = await supabase.storage.from("deliverables").upload(path, cvFile);
+    if (error) throw error;
+    return path;
+  }
+
   async function onGenerate() {
     if (!trimmed) return;
     setLoading(true);
     setTooVague(null);
     try {
-      const result = await createPrepSessionFn({ data: isUrl ? { url: trimmed } : { text: trimmed } });
+      const cvFilePath = await uploadCv();
+      const result = await createPrepSessionFn({
+        data: { ...(isUrl ? { url: trimmed } : { text: trimmed }), ...(cvFilePath ? { cvFilePath } : {}) },
+      });
       if (result.outcome === "too_vague") {
         setTooVague(result.message);
       } else {
@@ -72,6 +87,7 @@ function InterviewPrepPage() {
       setLoading(false);
     }
   }
+
 
   return (
     <>
@@ -99,6 +115,42 @@ function InterviewPrepPage() {
               onChange={(e) => setValue(e.target.value)}
               placeholder="Paste the job description here, or a link to the posting…"
             />
+
+            <div className="rounded-xl border border-dashed border-border p-4">
+              <p className="text-sm font-medium">Upload your CV (optional)</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                PDF or DOCX. We&apos;ll ground questions in your real experience and probe gaps against this job.
+              </p>
+              <input
+                ref={cvInputRef}
+                type="file"
+                accept=".pdf,.docx"
+                className="hidden"
+                onChange={(e) => setCvFile(e.target.files?.[0] ?? null)}
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={loading} onClick={() => cvInputRef.current?.click()}>
+                  <Paperclip className="mr-2 h-4 w-4" />
+                  {cvFile ? "Choose a different file" : "Choose file"}
+                </Button>
+                {cvFile && (
+                  <span className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-xs">
+                    {cvFile.name}
+                    <button
+                      type="button"
+                      aria-label="Remove CV"
+                      onClick={() => {
+                        setCvFile(null);
+                        if (cvInputRef.current) cvInputRef.current.value = "";
+                      }}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                )}
+              </div>
+            </div>
+
 
             {loading && (
               <div className="flex items-center gap-2 rounded-xl bg-muted p-3 text-sm text-muted-foreground">
