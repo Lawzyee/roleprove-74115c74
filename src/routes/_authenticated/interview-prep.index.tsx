@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, MessagesSquare } from "lucide-react";
+import { Loader2, MessagesSquare, Paperclip, X } from "lucide-react";
+
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +39,8 @@ function InterviewPrepPage() {
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [tooVague, setTooVague] = useState<string | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const cvInputRef = useRef<HTMLInputElement>(null);
 
   const trimmed = value.trim();
   const isUrl = /^https?:\/\/\S+$/i.test(trimmed);
@@ -55,12 +58,24 @@ function InterviewPrepPage() {
     },
   });
 
+  async function uploadCv(): Promise<string | undefined> {
+    if (!cvFile || !user) return undefined;
+    const safeName = cvFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${user.id}/interview-prep-cv/${Date.now()}-${safeName}`;
+    const { error } = await supabase.storage.from("deliverables").upload(path, cvFile);
+    if (error) throw error;
+    return path;
+  }
+
   async function onGenerate() {
     if (!trimmed) return;
     setLoading(true);
     setTooVague(null);
     try {
-      const result = await createPrepSessionFn({ data: isUrl ? { url: trimmed } : { text: trimmed } });
+      const cvFilePath = await uploadCv();
+      const result = await createPrepSessionFn({
+        data: { ...(isUrl ? { url: trimmed } : { text: trimmed }), ...(cvFilePath ? { cvFilePath } : {}) },
+      });
       if (result.outcome === "too_vague") {
         setTooVague(result.message);
       } else {
@@ -72,6 +87,7 @@ function InterviewPrepPage() {
       setLoading(false);
     }
   }
+
 
   return (
     <>
