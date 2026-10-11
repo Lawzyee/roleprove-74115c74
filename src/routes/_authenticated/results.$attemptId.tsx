@@ -40,7 +40,7 @@ function ResultsPage() {
     queryFn: async () => {
       const { data: attempt, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, completed_at, simulation_id, simulation_type, pillar_scores, simulations(title, description)")
+        .select("id, status, overall_score, completed_at, simulation_id, simulation_type, pillar_scores, proctoring_mode, recording_file_path, recording_consent_given_at, simulations(title, description)")
         .eq("id", attemptId)
         .single();
       if (error) throw error;
@@ -56,7 +56,15 @@ function ResultsPage() {
         .select("id, task_id, file_name, file_type, status, feedback, uploaded_at")
         .eq("attempt_id", attemptId);
 
-      return { attempt, deliverables: deliverables ?? [], results: (results ?? []).slice().sort((a: any, b: any) => (a.simulation_tasks?.order ?? 0) - (b.simulation_tasks?.order ?? 0)) };
+      let recordingUrl: string | null = null;
+      if (attempt.recording_file_path) {
+        const { data: signed } = await supabase.storage
+          .from("attempt-recordings")
+          .createSignedUrl(attempt.recording_file_path, 3600);
+        recordingUrl = signed?.signedUrl ?? null;
+      }
+
+      return { attempt, recordingUrl, deliverables: deliverables ?? [], results: (results ?? []).slice().sort((a: any, b: any) => (a.simulation_tasks?.order ?? 0) - (b.simulation_tasks?.order ?? 0)) };
     },
   });
 
@@ -87,7 +95,9 @@ function ResultsPage() {
         {attempt && (
           <>
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">Practice attempt</Badge>
+              <Badge variant={attempt.proctoring_mode === "verified" ? "default" : "secondary"}>
+                {attempt.proctoring_mode === "verified" ? "Verified attempt" : "Practice attempt"}
+              </Badge>
               <AttemptTypeBadge type={attempt.simulation_type} />
             </div>
             <h1 className="mt-3 font-display text-3xl font-semibold">{attempt.simulations?.title}</h1>
@@ -102,6 +112,26 @@ function ResultsPage() {
                 never change your score.
               </p>
             </div>
+
+            {attempt.proctoring_mode === "verified" && (
+              <Card className="mt-8 shadow-none">
+                <CardHeader>
+                  <CardTitle className="font-display text-lg">Your recording</CardTitle>
+                  <CardDescription>
+                    Exactly what was captured during this attempt. Only you can view it.
+                    {attempt.recording_consent_given_at &&
+                      ` Consent given ${new Date(attempt.recording_consent_given_at).toLocaleString()}.`}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {query.data?.recordingUrl ? (
+                    <video src={query.data.recordingUrl} controls className="w-full rounded-lg border border-border bg-muted" />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No recording was found for this attempt.</p>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             <h2 className="mt-10 font-display text-xl font-semibold">Competency pillars</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
