@@ -447,9 +447,16 @@ function SimulationRunner() {
               </Badge>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            {formatDuration(elapsed)}
+          <div className="flex shrink-0 items-center gap-2">
+            {isVerified && (
+              <span className="flex items-center gap-1.5 rounded-full border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-destructive" /> Recording
+              </span>
+            )}
+            <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              {formatDuration(elapsed)}
+            </div>
           </div>
         </div>
 
