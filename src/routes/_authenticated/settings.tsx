@@ -84,8 +84,14 @@ function SettingsPage() {
 
   async function deleteData() {
     if (!user) return;
-    if (!window.confirm("This permanently deletes your profile, credentials and simulation history. Continue?")) return;
+    if (!window.confirm("This permanently deletes your profile, credentials, simulation history and any attempt recordings. Continue?")) return;
     setBusy(true);
+    try {
+      await deleteAllRecordings(user.id);
+    } catch (err) {
+      setBusy(false);
+      return toast.error("Could not delete your recordings, so nothing was deleted. Please try again.");
+    }
     await supabase.from("simulation_attempts").delete().eq("user_id", user.id);
     await supabase.from("credentials").delete().eq("user_id", user.id);
     await supabase.from("profiles").delete().eq("id", user.id);
