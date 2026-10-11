@@ -399,9 +399,6 @@ export type Database = {
           job_posting_id: string | null
           overall_score: number | null
           pillar_scores: Json
-          proctoring_mode: string | null
-          recording_consent_given_at: string | null
-          recording_file_path: string | null
           simulation_id: string
           simulation_type: string
           started_at: string
@@ -414,9 +411,6 @@ export type Database = {
           job_posting_id?: string | null
           overall_score?: number | null
           pillar_scores?: Json
-          proctoring_mode?: string | null
-          recording_consent_given_at?: string | null
-          recording_file_path?: string | null
           simulation_id: string
           simulation_type?: string
           started_at?: string
@@ -429,9 +423,6 @@ export type Database = {
           job_posting_id?: string | null
           overall_score?: number | null
           pillar_scores?: Json
-          proctoring_mode?: string | null
-          recording_consent_given_at?: string | null
-          recording_file_path?: string | null
           simulation_id?: string
           simulation_type?: string
           started_at?: string
