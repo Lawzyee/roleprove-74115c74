@@ -263,7 +263,7 @@ function SimulationRunner() {
   }
 
   const attemptRow = query.data?.attempt as any;
-  if (attemptRow?.simulation_type === "jd_matched" && attemptRow.status !== "completed") {
+  if (attemptRow && attemptRow.status !== "completed") {
     const mode = attemptRow.proctoring_mode as string | null;
     const wrap = (node: ReactNode) => (
       <>
