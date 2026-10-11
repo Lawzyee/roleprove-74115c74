@@ -741,7 +741,7 @@ async function generatePipelineStages(
   return { before: [stage1, stage2], after: [stage4, stage5, stage6, ...bonusStages] };
 }
 
-async function generateCaseStudy(extracted: Extracted): Promise<GeneratedSimulation> {
+export async function generateCaseStudy(extracted: Extracted): Promise<GeneratedSimulation> {
   const foundation = await generateFoundation(extracted);
   const { before, after } = await generatePipelineStages(
     extracted,
