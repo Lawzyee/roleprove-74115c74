@@ -355,12 +355,28 @@ function normaliseDataset(raw: any): Dataset {
 
 
 
+const FALLBACK_CRITERIA: Record<"sql" | "prose", string[]> = {
+  sql: [
+    "Query targets the correct table(s) and column(s) from the provided datasets.",
+    "Logic (joins, filters, grouping) correctly answers the question asked.",
+    "The denominator/base for any rate is explicit and defensible.",
+    "The result would be verifiable against the provided data.",
+  ],
+  prose: [
+    "Answer engages directly with the specific scenario and data described.",
+    "Reasoning is structured and easy to follow.",
+    "Conclusions are supported by evidence from the provided context.",
+    "Recommendations or next steps are concrete and actionable.",
+  ],
+};
+
 function normaliseWritten(raw: any, points: number, input: "sql" | "prose"): WrittenQuestion {
   const key = String(raw?.key ?? "").trim();
   const prompt = String(raw?.prompt ?? "").trim();
-  const criteria = (Array.isArray(raw?.criteria) ? raw.criteria : []).map(String).filter(Boolean).slice(0, 6);
-  if (!key || !prompt || criteria.length < 3) throw new Error("A written question was generated incompletely.");
-  return { key, label: String(raw?.label ?? "Your answer").trim(), prompt, criteria, points, input };
+  let criteria = (Array.isArray(raw?.criteria) ? raw.criteria : []).map(String).filter(Boolean).slice(0, 6);
+  if (!key || !prompt) throw new Error("A written question was generated incompletely.");
+  if (criteria.length < 3) criteria = [...criteria, ...FALLBACK_CRITERIA[input]].slice(0, 5);
+  return { key, label: String(raw?.label ?? "Question").trim(), prompt, criteria, points, input };
 }
 
 function distributePoints(count: number, total = 10) {
