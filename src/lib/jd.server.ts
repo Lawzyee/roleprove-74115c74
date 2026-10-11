@@ -775,13 +775,15 @@ export async function generateCaseStudy(extracted: Extracted): Promise<Generated
 }
 
 
-async function generateCaseStudyWithRetry(extracted: Extracted): Promise<GeneratedSimulation> {
+export async function generateCaseStudyWithRetry(extracted: Extracted): Promise<GeneratedSimulation> {
   let lastError: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * attempt));
     try {
       return await generateCaseStudy(extracted);
     } catch (error) {
       lastError = error;
+      console.error(`[jd] generation attempt ${attempt + 1} failed:`, error instanceof Error ? error.message : error);
     }
   }
   console.error("[jd] personalised generation failed", lastError);
