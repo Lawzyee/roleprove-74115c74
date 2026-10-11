@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Proctoring recordings are composited client-side (screen + camera PiP + mic) and uploaded once on final submit to the private attempt-recordings bucket at {userId}/{attemptId}.webm — keeps storage paths user-scoped so RLS and data deletion can target a single folder.
