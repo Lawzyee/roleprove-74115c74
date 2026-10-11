@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Clock, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,15 @@ import {
   type SummaryTable,
 } from "@/lib/simulations";
 import { gradeAttemptFn } from "@/lib/grading.functions";
+import { useAuth } from "@/hooks/useAuth";
+import { VerifiedStaging } from "@/components/VerifiedStaging";
+import {
+  cancelRecording,
+  finishAndUpload,
+  getActiveRecording,
+  startRecording,
+  type MediaStreams,
+} from "@/lib/proctoring";
 
 export const Route = createFileRoute("/_authenticated/simulate/$attemptId")({
   head: () => ({
@@ -70,19 +79,31 @@ function DataTable({ columns, rows }: { columns: Array<{ key: string; label: str
 function SimulationRunner() {
   const { attemptId } = Route.useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [index, setIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const [answers, setAnswers] = useState<Record<string, Record<string, unknown>>>({});
+  const [choosingVerified, setChoosingVerified] = useState(false);
+  const [interrupted, setInterrupted] = useState<string | null>(null);
+  const [recTick, setRecTick] = useState(0);
 
+  // Re-attach interrupt handler / stop recording if user navigates away
+  useEffect(() => {
+    const rec = getActiveRecording(attemptId);
+    if (rec) rec.onInterrupt = (reason) => setInterrupted(reason);
+    return () => {
+      cancelRecording();
+    };
+  }, [attemptId]);
 
   const query = useQuery({
     queryKey: ["attempt-run", attemptId],
     queryFn: async () => {
       const { data: attempt, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, simulation_id, simulations(title, description)")
+        .select("id, status, simulation_id, simulation_type, proctoring_mode, simulations(title, description, estimated_minutes)")
         .eq("id", attemptId)
         .single();
       if (error) throw error;
@@ -122,6 +143,7 @@ function SimulationRunner() {
   }, [query.data, attemptId, router]);
 
   const tasks = query.data?.tasks ?? [];
+  const isVerified = (query.data?.attempt as any)?.proctoring_mode === "verified";
   const task = tasks[index] as any;
   const rubric = useMemo<Rubric>(() => (task?.rubric_criteria ?? {}) as Rubric, [task]);
   const current = task ? (answers[task.id] ?? {}) : {};
@@ -185,6 +207,11 @@ function SimulationRunner() {
   async function finalSubmit() {
     setSubmitting(true);
     try {
+      if (isVerified) {
+        if (!user || !getActiveRecording(attemptId)) throw new Error("Recording is not running — restart it before submitting.");
+        toast.info("Uploading your recording…");
+        await finishAndUpload(attemptId, user.id);
+      }
       toast.info("Scoring your work…");
       await gradeAttemptFn({ data: { attemptId } });
       router.navigate({ to: "/results/$attemptId", params: { attemptId } });
@@ -194,6 +221,37 @@ function SimulationRunner() {
     }
   }
 
+  async function setMode(mode: "practice" | "verified", consent = false) {
+    const patch: Record<string, unknown> = { proctoring_mode: mode };
+    if (consent) patch.recording_consent_given_at = new Date().toISOString();
+    const { error } = await supabase.from("simulation_attempts").update(patch as any).eq("id", attemptId);
+    if (error) throw error;
+    await query.refetch();
+  }
+
+  async function switchToPractice() {
+    cancelRecording();
+    setInterrupted(null);
+    setChoosingVerified(false);
+    try {
+      await setMode("practice");
+      toast.success("Switched to a practice attempt — nothing is being recorded.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not switch mode");
+    }
+  }
+
+  async function startVerified(streams: MediaStreams) {
+    startRecording(attemptId, streams, (reason) => setInterrupted(reason));
+    try {
+      await setMode("verified", true);
+    } catch (e) {
+      cancelRecording();
+      throw e;
+    }
+    setChoosingVerified(false);
+    setRecTick((t) => t + 1);
+  }
 
   if (query.isLoading) {
     return (
@@ -202,6 +260,72 @@ function SimulationRunner() {
         <main className="mx-auto max-w-3xl px-5 py-16 text-muted-foreground">Loading simulation…</main>
       </>
     );
+  }
+
+  const attemptRow = query.data?.attempt as any;
+  if (attemptRow?.simulation_type === "jd_matched" && attemptRow.status !== "completed") {
+    const mode = attemptRow.proctoring_mode as string | null;
+    const wrap = (node: ReactNode) => (
+      <>
+        <SiteHeader />
+        <main className="mx-auto max-w-3xl px-5 py-10">{node}</main>
+      </>
+    );
+    if (interrupted) {
+      return wrap(
+        <Card className="shadow-none">
+          <CardHeader>
+            <CardTitle className="font-display text-xl">Verified attempt halted</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm text-muted-foreground">
+            <p>{interrupted} A verified score needs continuous recording, so this attempt can't continue as verified until recording restarts.</p>
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => { cancelRecording(); setInterrupted(null); setRecTick((t) => t + 1); }}>Restart recording</Button>
+              <Button variant="outline" onClick={switchToPractice}>Continue as practice attempt</Button>
+            </div>
+          </CardContent>
+        </Card>,
+      );
+    }
+    if (!mode && !choosingVerified) {
+      return wrap(
+        <div className="space-y-6">
+          <div>
+            <h1 className="font-display text-2xl font-semibold">How do you want to take this attempt?</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{attemptRow.simulations?.title}</p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Card className="shadow-none">
+              <CardHeader><CardTitle className="text-base">Practice attempt</CardTitle></CardHeader>
+              <CardContent className="space-y-4 text-sm text-muted-foreground">
+                <p>No recording. You get full feedback and a practice score.</p>
+                <Button variant="outline" className="w-full" onClick={switchToPractice}>Start practice</Button>
+              </CardContent>
+            </Card>
+            <Card className="border-primary/50 shadow-none">
+              <CardHeader><CardTitle className="text-base">Verified attempt</CardTitle></CardHeader>
+              <CardContent className="space-y-4 text-sm text-muted-foreground">
+                <p>Camera, microphone and full-screen recording required. Produces a verified score. Desktop browser only.</p>
+                <Button className="w-full" onClick={() => setChoosingVerified(true)}>Set up verified attempt</Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>,
+      );
+    }
+    if ((mode === "verified" || choosingVerified) && !getActiveRecording(attemptId)) {
+      return wrap(
+        <VerifiedStaging
+          key={recTick}
+          title={attemptRow.simulations?.title ?? "Simulation"}
+          stageCount={tasks.length}
+          minutes={attemptRow.simulations?.estimated_minutes ?? 45}
+          resuming={mode === "verified"}
+          onStart={startVerified}
+          onPractice={switchToPractice}
+        />,
+      );
+    }
   }
 
   if (!task) {
@@ -323,9 +447,16 @@ function SimulationRunner() {
               </Badge>
             )}
           </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            {formatDuration(elapsed)}
+          <div className="flex shrink-0 items-center gap-2">
+            {isVerified && (
+              <span className="flex items-center gap-1.5 rounded-full border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-destructive" /> Recording
+              </span>
+            )}
+            <div className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              {formatDuration(elapsed)}
+            </div>
           </div>
         </div>
 
