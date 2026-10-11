@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Clock, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,6 +143,7 @@ function SimulationRunner() {
   }, [query.data, attemptId, router]);
 
   const tasks = query.data?.tasks ?? [];
+  const isVerified = (query.data?.attempt as any)?.proctoring_mode === "verified";
   const task = tasks[index] as any;
   const rubric = useMemo<Rubric>(() => (task?.rubric_criteria ?? {}) as Rubric, [task]);
   const current = task ? (answers[task.id] ?? {}) : {};
@@ -264,7 +265,7 @@ function SimulationRunner() {
   const attemptRow = query.data?.attempt as any;
   if (attemptRow?.simulation_type === "jd_matched" && attemptRow.status !== "completed") {
     const mode = attemptRow.proctoring_mode as string | null;
-    const wrap = (node: React.ReactNode) => (
+    const wrap = (node: ReactNode) => (
       <>
         <SiteHeader />
         <main className="mx-auto max-w-3xl px-5 py-10">{node}</main>
