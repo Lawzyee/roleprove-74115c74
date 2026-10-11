@@ -355,12 +355,28 @@ function normaliseDataset(raw: any): Dataset {
 
 
 
+const FALLBACK_CRITERIA: Record<"sql" | "prose", string[]> = {
+  sql: [
+    "Query targets the correct table(s) and column(s) from the provided datasets.",
+    "Logic (joins, filters, grouping) correctly answers the question asked.",
+    "The denominator/base for any rate is explicit and defensible.",
+    "The result would be verifiable against the provided data.",
+  ],
+  prose: [
+    "Answer engages directly with the specific scenario and data described.",
+    "Reasoning is structured and easy to follow.",
+    "Conclusions are supported by evidence from the provided context.",
+    "Recommendations or next steps are concrete and actionable.",
+  ],
+};
+
 function normaliseWritten(raw: any, points: number, input: "sql" | "prose"): WrittenQuestion {
   const key = String(raw?.key ?? "").trim();
   const prompt = String(raw?.prompt ?? "").trim();
-  const criteria = (Array.isArray(raw?.criteria) ? raw.criteria : []).map(String).filter(Boolean).slice(0, 6);
-  if (!key || !prompt || criteria.length < 3) throw new Error("A written question was generated incompletely.");
-  return { key, label: String(raw?.label ?? "Your answer").trim(), prompt, criteria, points, input };
+  let criteria = (Array.isArray(raw?.criteria) ? raw.criteria : []).map(String).filter(Boolean).slice(0, 6);
+  if (!key || !prompt) throw new Error("A written question was generated incompletely.");
+  if (criteria.length < 3) criteria = [...criteria, ...FALLBACK_CRITERIA[input]].slice(0, 5);
+  return { key, label: String(raw?.label ?? "Question").trim(), prompt, criteria, points, input };
 }
 
 function distributePoints(count: number, total = 10) {
@@ -692,11 +708,12 @@ async function generatePipelineStages(
   // Stage 4 — SQL sub-questions plus the visualisation judgement question.
   const analysis = parsed.analysis_visualisation ?? {};
   const subs = Array.isArray(analysis.sub_questions) ? analysis.sub_questions.slice(0, 3) : [];
-  if (subs.length < 2 || !String(analysis.brief ?? "").trim()) throw new Error("Generated analysis stage was incomplete.");
+  const analysisBrief = String(analysis.brief ?? "").trim() || "Analyse the datasets provided for this case study and answer the questions below.";
+  if (subs.length < 1) throw new Error("Generated analysis stage was incomplete.");
   const sqlPoints = distributePoints(subs.length, 7);
   const stage4: GeneratedStage = {
     title: String(analysis.title ?? "Analysis and visualisation").trim(),
-    brief: String(analysis.brief).trim(),
+    brief: analysisBrief,
     task_type: "case",
     rubric_criteria: {
       max_score: 10,
@@ -741,7 +758,7 @@ async function generatePipelineStages(
   return { before: [stage1, stage2], after: [stage4, stage5, stage6, ...bonusStages] };
 }
 
-async function generateCaseStudy(extracted: Extracted): Promise<GeneratedSimulation> {
+export async function generateCaseStudy(extracted: Extracted): Promise<GeneratedSimulation> {
   const foundation = await generateFoundation(extracted);
   const { before, after } = await generatePipelineStages(
     extracted,
@@ -758,13 +775,15 @@ async function generateCaseStudy(extracted: Extracted): Promise<GeneratedSimulat
 }
 
 
-async function generateCaseStudyWithRetry(extracted: Extracted): Promise<GeneratedSimulation> {
+export async function generateCaseStudyWithRetry(extracted: Extracted): Promise<GeneratedSimulation> {
   let lastError: unknown;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * attempt));
     try {
       return await generateCaseStudy(extracted);
     } catch (error) {
       lastError = error;
+      console.error(`[jd] generation attempt ${attempt + 1} failed:`, error instanceof Error ? error.message : error);
     }
   }
   console.error("[jd] personalised generation failed", lastError);
