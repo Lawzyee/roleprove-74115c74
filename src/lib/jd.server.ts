@@ -708,11 +708,12 @@ async function generatePipelineStages(
   // Stage 4 — SQL sub-questions plus the visualisation judgement question.
   const analysis = parsed.analysis_visualisation ?? {};
   const subs = Array.isArray(analysis.sub_questions) ? analysis.sub_questions.slice(0, 3) : [];
-  if (subs.length < 2 || !String(analysis.brief ?? "").trim()) throw new Error("Generated analysis stage was incomplete.");
+  const analysisBrief = String(analysis.brief ?? "").trim() || "Analyse the datasets provided for this case study and answer the questions below.";
+  if (subs.length < 1) throw new Error("Generated analysis stage was incomplete.");
   const sqlPoints = distributePoints(subs.length, 7);
   const stage4: GeneratedStage = {
     title: String(analysis.title ?? "Analysis and visualisation").trim(),
-    brief: String(analysis.brief).trim(),
+    brief: analysisBrief,
     task_type: "case",
     rubric_criteria: {
       max_score: 10,
