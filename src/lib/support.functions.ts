@@ -136,5 +136,5 @@ export const getDisputeAttemptFn = createServerFn({ method: 'POST' }).middleware
     const { data: attempt } = await supabaseAdmin.from('simulation_attempts').select('id, status, overall_score, pillar_scores, completed_at, simulation_type, simulations(title)').eq('id', ticket.attempt_id).maybeSingle();
     if (!attempt) return { error: 'The attempt no longer exists.' };
     const { data: results } = await supabaseAdmin.from('attempt_task_results').select('id, score, max_score, feedback, criteria_breakdown, pillar, simulation_tasks(title, order)').eq('attempt_id', attempt.id);
-    return { attempt: JSON.parse(JSON.stringify(attempt)) as Record<string, unknown>, results: JSON.parse(JSON.stringify(results ?? [])) as Record<string, unknown>[] };
+    return { payload: JSON.stringify({ attempt, results: results ?? [] }) };
   });

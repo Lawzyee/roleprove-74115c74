@@ -67,9 +67,10 @@ function AdminSupport() {
 type Criterion = { criterion?: string; name?: string; score?: number | null; justification?: string };
 function DisputePanel({ ticketId }: { ticketId: string }) {
   const q = useQuery({ queryKey: ['dispute-attempt', ticketId], queryFn: () => getDisputeAttemptFn({ data: { ticketId } }) });
-  if (!q.data || 'error' in q.data) return null;
-  const a = q.data.attempt as { overall_score: number | null; status: string; simulations?: { title?: string } | null };
-  const results = [...q.data.results].sort((x, y) => Number((x.simulation_tasks as { order?: number } | null)?.order ?? 0) - Number((y.simulation_tasks as { order?: number } | null)?.order ?? 0));
+  if (!q.data || !('payload' in q.data) || !q.data.payload) return null;
+  const parsed = JSON.parse(q.data.payload) as { attempt: unknown; results: Record<string, unknown>[] };
+  const a = parsed.attempt as { overall_score: number | null; status: string; simulations?: { title?: string } | null };
+  const results = [...parsed.results].sort((x, y) => Number((x.simulation_tasks as { order?: number } | null)?.order ?? 0) - Number((y.simulation_tasks as { order?: number } | null)?.order ?? 0));
   return <section aria-label="Disputed attempt" className="mt-8 rounded-lg border border-border p-5">
     <h2 className="font-display text-lg font-semibold">Disputed attempt</h2>
     <p className="text-sm text-muted-foreground">{a.simulations?.title} · {a.status} · Overall {a.overall_score ?? '—'}/100</p>
