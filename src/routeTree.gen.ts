@@ -19,6 +19,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/roles'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authenticated/subscribe'
+import { Route as AuthConfirmRouteImport } from './routes/auth_.confirm'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedCheckoutReturnRouteImport } from './routes/_authenticated/checkout.return'
 import { Route as AuthenticatedInterviewPrepIndexRouteImport } from './routes/_authenticated/interview-prep.index'
@@ -82,6 +83,11 @@ const AuthenticatedSubscribeRoute = AuthenticatedSubscribeRouteImport.update({
   id: '/subscribe',
   path: '/subscribe',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthConfirmRoute = AuthConfirmRouteImport.update({
+  id: '/auth_/confirm',
+  path: '/auth/confirm',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminSupportRoute =
   AuthenticatedAdminSupportRouteImport.update({
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/roles': typeof AuthenticatedRolesRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/roles': typeof AuthenticatedRolesRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
+  '/auth/confirm': typeof AuthConfirmRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/_authenticated/roles': typeof AuthenticatedRolesRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
+  '/auth_/confirm': typeof AuthConfirmRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/_authenticated/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
@@ -245,6 +254,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/settings'
     | '/subscribe'
+    | '/auth/confirm'
     | '/admin/support'
     | '/checkout/return'
     | '/interview-prep/$sessionId'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/roles'
     | '/settings'
     | '/subscribe'
+    | '/auth/confirm'
     | '/admin/support'
     | '/checkout/return'
     | '/interview-prep/$sessionId'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/_authenticated/roles'
     | '/_authenticated/settings'
     | '/_authenticated/subscribe'
+    | '/auth_/confirm'
     | '/_authenticated/admin/support'
     | '/_authenticated/checkout/return'
     | '/_authenticated/interview-prep/$sessionId'
@@ -314,6 +326,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   HelpRoute: typeof HelpRoute
+  AuthConfirmRoute: typeof AuthConfirmRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -391,6 +404,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/subscribe'
       preLoaderRoute: typeof AuthenticatedSubscribeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/auth_/confirm': {
+      id: '/auth_/confirm'
+      path: '/auth/confirm'
+      fullPath: '/auth/confirm'
+      preLoaderRoute: typeof AuthConfirmRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/support': {
       id: '/_authenticated/admin/support'
@@ -531,6 +551,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   HelpRoute: HelpRoute,
+  AuthConfirmRoute: AuthConfirmRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,

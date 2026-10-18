@@ -1,3 +1,7 @@
+# Sign-up and live auth emails
+- [ ] Live branded auth emails — diagnosed stale published templates; awaits publishing the edited app and a real inbox confirmation.
+- [x] Add confirmation screen, 60-second resend cooldown, sign-in confirmation return and friendly errors; unit tests and browser response simulations pass.
+
 # Subscription checkout
 - [x] Create the Practice/Prep test product and checkout.
 - [x] Persist subscriptions, launch switch, trial history and usage; enforce access before generation.
