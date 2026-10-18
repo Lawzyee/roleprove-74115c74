@@ -8,6 +8,13 @@
       "when": 1791758470690,
       "tag": "0000_attempt_recordings_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792329630492,
+      "tag": "0001_subscription_access_and_launch_trials",
+      "breakpoints": true
     }
   ]
 }
