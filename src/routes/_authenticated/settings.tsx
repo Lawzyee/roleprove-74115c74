@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { deleteAllRecordings } from "@/lib/proctoring";
+import { getStripeEnvironment } from "@/lib/stripe";
+import { deleteAccountFn } from "@/lib/payments.functions";
 import { Link } from "@tanstack/react-router";
 
 async function deleteSupportFiles(userId: string) {
@@ -99,7 +101,7 @@ function SettingsPage() {
 
   async function deleteData() {
     if (!user) return;
-    if (!window.confirm("This permanently deletes your profile, credentials, simulation history, support tickets and any attempt recordings. Continue?")) return;
+    if (!window.confirm("This cancels any subscription immediately (no refund) and permanently deletes your account, profile, credentials, simulation history, support tickets and any attempt recordings. Continue?")) return;
     setBusy(true);
     try {
       await deleteAllRecordings(user.id);
@@ -108,12 +110,8 @@ function SettingsPage() {
       setBusy(false);
       return toast.error("Could not delete your files, so nothing else was deleted. Please try again.");
     }
-    // Ticket deletion cascades to messages and attachment records.
-    const { error: ticketError } = await supabase.from("support_tickets").delete().eq("user_id", user.id);
-    if (ticketError) { setBusy(false); return toast.error("Could not delete your support tickets. Please try again."); }
-    await supabase.from("simulation_attempts").delete().eq("user_id", user.id);
-    await supabase.from("credentials").delete().eq("user_id", user.id);
-    await supabase.from("profiles").delete().eq("id", user.id);
+    const result = await deleteAccountFn({ data: { environment: getStripeEnvironment() } });
+    if ('error' in result) { setBusy(false); return toast.error(`Could not delete your account: ${result.error}`); }
     await supabase.auth.signOut();
     setBusy(false);
     toast.success("Your data has been deleted");

@@ -29,4 +29,8 @@ describe('confirmed subscription access', () => {
   it('unlocks unlimited practice during a card-free trial', () => {
     expect(canGenerate({ ...access, trialActive: true, trialDaysLeft: 21, simulationsLeft: 0 }, 'simulation')).toBe(true);
   });
+  it('keeps active renewals for a one-day buffer after period end', () => {
+    expect(subscriptionHasAccess('active', '2026-10-17T13:17:01Z', null, now)).toBe(true);
+    expect(subscriptionHasAccess('active', '2026-10-17T13:17:00Z', null, now)).toBe(false);
+  });
 });

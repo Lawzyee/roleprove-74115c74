@@ -16,3 +16,9 @@
 - [x] Delete tickets and attachments in account deletion.
 - [x] Verify ticket+screenshot creation, signed-out/forged/direct-write denial, non-staff blocked.
 - [ ] Verify cross-account isolation, staff reply/dispute view and account deletion — blocked: needs a second test account and a staff-flagged account.
+
+# Billing gap fixes
+- [x] Delete-account cancels Stripe subscription immediately (no refund) and fully removes login, files and data.
+- [x] 1-day renewal buffer for active subscriptions (database + tested rule).
+- [x] Failed first payment no longer blocks retrying checkout.
+- [x] Billing emails: subscription started, payment failed, cancellation confirmed (send once notify.roleprove.com verifies).
