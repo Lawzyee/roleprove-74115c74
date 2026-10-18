@@ -27,6 +27,9 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
           This code will expire shortly. If you didn't request this, you can
           safely ignore this email.
         </Text>
+        <Text style={footer}>
+          Questions? Contact support@roleprove.com
+        </Text>
       </Container>
     </Body>
   </Html>
