@@ -81,27 +81,6 @@ export function downloadDatasetCsv(dataset: Dataset) {
   URL.revokeObjectURL(url);
 }
 
-export async function startAttempt(userId: string, simulationId: string) {
-  const { data: existing } = await supabase
-    .from("simulation_attempts")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("simulation_id", simulationId)
-    .eq("status", "in_progress")
-    .maybeSingle();
-
-  if (existing) return existing.id;
-
-  const { data, error } = await supabase
-    .from("simulation_attempts")
-    .insert({ user_id: userId, simulation_id: simulationId })
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  return data.id;
-}
-
 export type ScoreAttempt = {
   overall_score: number | null;
   status: string;

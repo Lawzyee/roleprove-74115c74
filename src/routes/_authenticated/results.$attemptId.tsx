@@ -10,10 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { startAttempt } from "@/lib/simulations";
 import { PILLARS, PILLAR_LABELS, TIER_LABELS, type Pillar } from "@/lib/scoring-config";
 import { useServerFn } from "@tanstack/react-start";
-import { generateGenericSimulationFn } from "@/lib/jd.functions";
+import { generateGenericSimulationFn, retakeSimulationFn } from "@/lib/jd.functions";
+import { getStripeEnvironment } from '@/lib/stripe';
 
 export const Route = createFileRoute("/_authenticated/results/$attemptId")({
   head: () => ({
@@ -73,12 +73,15 @@ function ResultsPage() {
     try {
       const current = query.data.attempt as any;
       if (current.simulation_type === "generic") {
-        const { attemptId: freshId } = await generateGeneric();
+        const result = await generateGeneric({ data: { environment: getStripeEnvironment() } });
+        if ('outcome' in result) { router.navigate({ to: '/subscribe' }); return; }
+        const freshId = result.attemptId;
         router.navigate({ to: "/simulate/$attemptId", params: { attemptId: freshId } });
         return;
       }
-      const newId = await startAttempt(user.id, current.simulation_id);
-      router.navigate({ to: "/simulate/$attemptId", params: { attemptId: newId } });
+      const result = await retakeSimulationFn({ data: { attemptId, environment: getStripeEnvironment() } });
+      if ('outcome' in result) { router.navigate({ to: '/subscribe' }); return; }
+      router.navigate({ to: "/simulate/$attemptId", params: { attemptId: result.attemptId } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start a retake");
     }
