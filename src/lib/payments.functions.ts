@@ -58,7 +58,7 @@ export const createCheckoutSession = createServerFn({ method: 'POST' }).middlewa
         line_items: [{ price: price.id, quantity: 1 }],
         return_url: `${origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
         metadata: { userId: context.userId }, subscription_data: { metadata: { userId: context.userId } },
-      }, { idempotencyKey: `${data.environment}:${context.userId}:practice:${Math.floor(Date.now() / 600000)}` });
+      });
       if (!session.client_secret) throw new Error('Stripe did not return a checkout form.');
       return { clientSecret: session.client_secret };
     } catch (error) { return { error: getStripeErrorMessage(error) }; }
