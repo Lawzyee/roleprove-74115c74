@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
 import { useServerFn } from "@tanstack/react-start";
 import { generateGenericSimulationFn } from "@/lib/jd.functions";
+import { getStripeEnvironment } from '@/lib/stripe';
 
 export const Route = createFileRoute("/_authenticated/roles")({
   head: () => ({
@@ -67,7 +68,9 @@ function RolesPage() {
     }
     setStartingId(simulationId);
     try {
-      const { attemptId } = await generateGeneric();
+      const result = await generateGeneric({ data: { environment: getStripeEnvironment() } });
+      if ('outcome' in result) { router.navigate({ to: '/subscribe' }); return; }
+      const { attemptId } = result;
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start the simulation");

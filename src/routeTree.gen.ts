@@ -21,6 +21,7 @@ import { Route as AuthenticatedInterviewPrepIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedInterviewPrepSessionIdRouteImport } from './routes/_authenticated/interview-prep.$sessionId'
 import { Route as AuthenticatedResultsAttemptIdRouteImport } from './routes/_authenticated/results.$attemptId'
 import { Route as AuthenticatedSimulateAttemptIdRouteImport } from './routes/_authenticated/simulate.$attemptId'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -86,6 +87,12 @@ const AuthenticatedSimulateAttemptIdRoute =
     path: '/simulate/$attemptId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
   '/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -112,6 +120,7 @@ export interface FileRoutesByTo {
   '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
   '/interview-prep': typeof AuthenticatedInterviewPrepIndexRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -127,6 +136,7 @@ export interface FileRoutesById {
   '/_authenticated/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/_authenticated/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
   '/_authenticated/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/results/$attemptId'
     | '/simulate/$attemptId'
     | '/interview-prep/'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/results/$attemptId'
     | '/simulate/$attemptId'
     | '/interview-prep'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
@@ -169,12 +181,14 @@ export interface FileRouteTypes {
     | '/_authenticated/results/$attemptId'
     | '/_authenticated/simulate/$attemptId'
     | '/_authenticated/interview-prep/'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -263,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSimulateAttemptIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -298,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

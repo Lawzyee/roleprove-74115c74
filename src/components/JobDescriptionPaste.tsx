@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateJdSimulationFn } from "@/lib/jd.functions";
+import { getStripeEnvironment } from '@/lib/stripe';
 
 type NoMatch = { roleType: string };
 
@@ -29,10 +30,12 @@ export function JobDescriptionPaste({ onStartGeneric }: { onStartGeneric: () => 
     setTooVague(null);
     try {
       const result = await generateJdSimulationFn({
-        data: isUrl ? { url: trimmed } : { text: trimmed },
+        data: { ...(isUrl ? { url: trimmed } : { text: trimmed }), environment: getStripeEnvironment() },
       });
 
-      if (result.outcome === "too_vague") {
+      if (result.outcome === 'paywall') {
+        router.navigate({ to: '/subscribe' });
+      } else if (result.outcome === "too_vague") {
         setTooVague(result.message);
       } else if (result.outcome === "no_match") {
         setNoMatch({ roleType: result.roleType });

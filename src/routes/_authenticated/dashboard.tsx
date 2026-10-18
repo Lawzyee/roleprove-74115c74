@@ -15,6 +15,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { compositeScore, compositeContributors, roleBestScore, isLiveRole, FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
 import { useServerFn } from "@tanstack/react-start";
 import { generateGenericSimulationFn } from "@/lib/jd.functions";
+import { getStripeEnvironment } from '@/lib/stripe';
+import { BillingStatus } from '@/components/BillingStatus';
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -107,7 +109,9 @@ function Dashboard() {
     }
     setStartingId(simulationId);
     try {
-      const { attemptId } = await generateGeneric();
+      const result = await generateGeneric({ data: { environment: getStripeEnvironment() } });
+      if ('outcome' in result) { router.navigate({ to: '/subscribe' }); return; }
+      const { attemptId } = result;
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not start the simulation");
@@ -127,6 +131,7 @@ function Dashboard() {
           Your headline score is your best verified (JD-matched) attempt for your target role — a weaker practice run
           never pulls it down. Other roles you&apos;ve attempted are listed separately.
         </p>
+        <BillingStatus />
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[320px_1fr]">
           <Card className="border-border shadow-none">
@@ -194,11 +199,6 @@ function Dashboard() {
                   </ul>
                 </div>
               )}
-              <p className="text-center text-xs text-muted-foreground">
-                {FREE_ATTEMPT_LIMIT - completedCount > 0
-                  ? `${FREE_ATTEMPT_LIMIT - completedCount} free simulation${FREE_ATTEMPT_LIMIT - completedCount === 1 ? "" : "s"} left`
-                  : "Free simulations used"}
-              </p>
             </CardContent>
           </Card>
 
