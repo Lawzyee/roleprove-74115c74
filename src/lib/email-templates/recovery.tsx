@@ -29,15 +29,18 @@ export const RecoveryEmail = ({
       <Container style={container}>
         <Heading style={h1}>Reset your password</Heading>
         <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          We received a request to reset your {siteName} password. Click the
+          button below to choose a new one. This link expires soon.
         </Text>
         <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Reset Password
+          Reset my password
         </Button>
         <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+          If you didn't request this, you can safely ignore this email. Your
+          password won't change.
+        </Text>
+        <Text style={footer}>
+          Questions? Contact support@roleprove.com
         </Text>
       </Container>
     </Body>
