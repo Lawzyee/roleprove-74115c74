@@ -55,3 +55,16 @@ export async function syncSubscription(id: string, env: StripeEnv, expectedUserI
   if (error) throw error;
   return sub;
 }
+
+export async function sendBillingEmail(sub: { metadata: Record<string, string>; items: { data: Array<{ current_period_end?: number }> } }, kind: 'started' | 'payment_failed' | 'cancelled', eventId: string) {
+  const userId = sub.metadata.userId;
+  if (!userId) return;
+  const { data: profile } = await supabaseAdmin.from('profiles').select('email, name').eq('id', userId).maybeSingle();
+  if (!profile?.email) return; // deleted accounts get no email
+  const end = sub.items.data[0]?.current_period_end;
+  const { sendTemplateEmail } = await import('./email-templates/send-email');
+  await sendTemplateEmail('billing-update', profile.email, {
+    idempotencyKey: `billing-${eventId}`,
+    templateData: { kind, name: profile.name || undefined, accessUntil: kind === 'cancelled' && end && end * 1000 > Date.now() ? new Date(end * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : undefined },
+  });
+}
