@@ -30,6 +30,7 @@ function SubscribePage() {
   return <><PaymentTestModeBanner /><SiteHeader /><main className="mx-auto max-w-3xl px-5 py-10">
     <Button asChild variant="ghost" size="sm"><Link to="/dashboard"><ArrowLeft className="mr-2 h-4 w-4" />Dashboard</Link></Button>
     <h1 className="mt-6 font-display text-3xl font-semibold">Practice/Prep</h1>
+    {billing.data?.enforced && !billing.data.paid && !billing.data.trialActive && <p className="mt-2 text-primary">Subscribe to continue</p>}
     <p className="mt-3 font-display text-4xl font-semibold">$15 <span className="font-sans text-base font-normal text-muted-foreground">USD / month</span></p>
     <ul className="my-7 space-y-3">{['Unlimited generic and job-description simulations', 'Unlimited interview preparation', 'Verified attempts with private recordings'].map((item) => <li key={item} className="flex items-center gap-3 text-sm"><Check className="h-4 w-4 shrink-0 text-primary" />{item}</li>)}</ul>
     <p className="mb-6 text-sm text-muted-foreground">Cancel anytime. Your access continues until the paid period ends.</p>

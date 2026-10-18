@@ -3,6 +3,9 @@ import { createStripeClient, type StripeEnv } from './stripe.server';
 import { PRACTICE_PRICE } from './billing';
 
 export async function withUsage<T>(userId: string, env: StripeEnv, kind: 'simulation' | 'interview_prep', run: () => Promise<T>, resource: (result: T) => string | undefined) {
+  const token = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN;
+  const configured = token?.startsWith('pk_test_') ? 'sandbox' : token?.startsWith('pk_live_') ? 'live' : null;
+  if (!configured || env !== configured) throw new Error('Payments are not configured for this environment.');
   const { data, error } = await supabaseAdmin.rpc('reserve_billing_usage', { p_user: userId, p_env: env, p_kind: kind });
   if (error) throw new Error(error.message);
   const reservation = data as { allowed: boolean; reservationId?: string };

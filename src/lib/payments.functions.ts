@@ -5,7 +5,10 @@ import { createStripeClient, getStripeErrorMessage } from './stripe.server';
 import { syncSubscription } from './billing.server';
 import { PRACTICE_PRICE, type BillingAccess } from './billing';
 
-const environment = z.enum(['sandbox', 'live']);
+const environment = z.enum(['sandbox', 'live']).refine((env) => {
+  const token = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN;
+  return env === (token?.startsWith('pk_test_') ? 'sandbox' : token?.startsWith('pk_live_') ? 'live' : null);
+}, 'Payments are not configured for this environment.');
 
 async function resolveOrCreateCustomer(
   stripe: ReturnType<typeof createStripeClient>,

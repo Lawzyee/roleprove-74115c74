@@ -32,6 +32,7 @@ export function BillingStatus({ detailed = false }: { detailed?: boolean }) {
       <h2 className="flex items-center gap-2 font-display text-lg font-semibold"><CreditCard className="h-4 w-4" />{title}</h2>
       <p className="text-sm text-muted-foreground">{access.paid ? '$15 USD / month · unlimited practice' : !access.enforced ? 'Unlimited practice while launch access is open.' : access.trialActive ? 'Unlimited practice · no card required' : `${access.simulationsLeft} simulations · ${access.interviewPrepLeft} interview prep session${access.interviewPrepLeft === 1 ? '' : 's'} remaining`}</p>
       {access.cancelAtPeriodEnd && access.periodEnd && <p className="text-sm text-muted-foreground">Cancelled · access until {new Date(access.periodEnd).toLocaleDateString()}</p>}
+      {access.paid && !access.cancelAtPeriodEnd && access.periodEnd && <p className="text-sm text-muted-foreground">Renews {new Date(access.periodEnd).toLocaleDateString()}</p>}
       {access.subscriptionStatus === 'past_due' && <p className="text-sm text-destructive">Payment failed. Update your payment method within 7 days to keep access.</p>}
       {access.trialActive && access.trialDaysLeft <= 5 && <p className="text-sm text-primary">Your trial ends soon. Keep practising with Practice/Prep.</p>}
       {detailed && <p className="text-xs text-muted-foreground">Career+ · Coming soon</p>}
