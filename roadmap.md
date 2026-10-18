@@ -11,7 +11,8 @@
 - [x] My tickets list/thread, reply, resolve/reopen, unread badge.
 - [x] Score dispute link on results; data-request options and tags.
 - [x] Staff flag and /admin/support with RLS and server checks.
-- [ ] Email notifications (new ticket to support, staff reply to user) — blocked: needs the email sender domain set up.
+- [x] Set up managed email infrastructure and server-only sending for the selected sender domain.
+- [ ] Email notifications (new ticket to support, staff reply to user) — delivery waits on domain verification; support recipient address still needs confirmation.
 - [x] Delete tickets and attachments in account deletion.
 - [x] Verify ticket+screenshot creation, signed-out/forged/direct-write denial, non-staff blocked.
 - [ ] Verify cross-account isolation, staff reply/dispute view and account deletion — blocked: needs a second test account and a staff-flagged account.
