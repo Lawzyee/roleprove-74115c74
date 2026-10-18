@@ -1,4 +1,5 @@
 export const PRACTICE_PRICE = 'roleprove_practice_prep_monthly';
+export const RENEWAL_BUFFER_MS = 86400000;
 export type BillingAccess = {
   enforced: boolean; trialActive: boolean; trialDaysLeft: number; trialEndsAt: string | null;
   paid: boolean; subscriptionStatus: string; periodEnd: string | null; cancelAtPeriodEnd: boolean;

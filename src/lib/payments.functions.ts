@@ -51,7 +51,9 @@ export const createCheckoutSession = createServerFn({ method: 'POST' }).middlewa
       if (error || !auth.user) throw new Error('Please sign in again.');
       const customer = await resolveOrCreateCustomer(stripe, { userId: context.userId, email: auth.user.email });
       const existing = await stripe.subscriptions.list({ customer, status: 'all', limit: 100 });
-      if (existing.data.some((s) => ['active', 'trialing', 'past_due', 'incomplete'].includes(s.status))) throw new Error('You already have a subscription. Manage it in Billing instead.');
+      if (existing.data.some((s) => ['active', 'trialing', 'past_due', 'unpaid'].includes(s.status))) throw new Error('You already have a subscription. Manage it in Billing instead.');
+      // A failed first payment leaves an 'incomplete' subscription; cancel it so the customer can retry cleanly.
+      for (const s of existing.data.filter((s) => s.status === 'incomplete')) await stripe.subscriptions.cancel(s.id);
       const prices = await stripe.prices.list({ lookup_keys: [PRACTICE_PRICE], active: true });
       const price = prices.data[0];
       if (!price) throw new Error('Practice/Prep price is unavailable.');
@@ -92,5 +94,38 @@ export const confirmCheckout = createServerFn({ method: 'POST' }).middleware([re
       if (!id) throw new Error('Subscription not found.');
       await syncSubscription(id, data.environment, context.userId);
       return { state: 'paid' as const };
+    } catch (error) { return { error: getStripeErrorMessage(error) }; }
+  });
+
+export const deleteAccountFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ environment }).parse(data))
+  .handler(async ({ data, context }) => {
+    try {
+      const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+      const userId = context.userId;
+      // Cancel billing first: if Stripe fails, nothing is deleted and the customer is never charged for a deleted account.
+      const { data: subs, error } = await supabaseAdmin.from('subscriptions').select('stripe_subscription_id, status').eq('user_id', userId).eq('environment', data.environment);
+      if (error) throw error;
+      const stripe = createStripeClient(data.environment);
+      for (const s of subs ?? []) {
+        if (['canceled', 'incomplete_expired'].includes(s.status)) continue;
+        const live = await stripe.subscriptions.retrieve(s.stripe_subscription_id);
+        if (!['canceled', 'incomplete_expired'].includes(live.status)) await stripe.subscriptions.cancel(live.id, { invoice_now: false, prorate: false });
+      }
+      for (const bucket of ['credentials', 'deliverables']) {
+        const { data: files } = await supabaseAdmin.storage.from(bucket).list(userId, { limit: 1000 });
+        if (files?.length) await supabaseAdmin.storage.from(bucket).remove(files.map((f) => `${userId}/${f.name}`));
+      }
+      await supabaseAdmin.from('support_tickets').delete().eq('user_id', userId);
+      await supabaseAdmin.from('simulation_attempts').delete().eq('user_id', userId);
+      await supabaseAdmin.from('interview_prep_sessions').delete().eq('user_id', userId);
+      await supabaseAdmin.from('job_postings').delete().eq('user_id', userId);
+      await supabaseAdmin.from('credentials').delete().eq('user_id', userId);
+      await supabaseAdmin.from('billing_usage').delete().eq('user_id', userId);
+      await supabaseAdmin.from('subscriptions').delete().eq('user_id', userId);
+      await supabaseAdmin.from('profiles').delete().eq('id', userId);
+      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
+      if (authError) throw authError;
+      return { ok: true as const };
     } catch (error) { return { error: getStripeErrorMessage(error) }; }
   });
