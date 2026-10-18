@@ -1,4 +1,9 @@
 # Subscription checkout
+# Sign-up and live auth emails
+- [ ] Diagnose and reconnect live branded auth emails without altering unrelated flows.
+- [ ] Add confirmation screen, 60-second resend cooldown, sign-in confirmation return and friendly errors; test the flow.
+
+# Subscription checkout
 - [x] Create the Practice/Prep test product and checkout.
 - [x] Persist subscriptions, launch switch, trial history and usage; enforce access before generation.
 - [x] Add dashboard plan status, billing settings and subscribe screen.
