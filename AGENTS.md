@@ -15,3 +15,4 @@
 - Launch controls are service-role-only app_settings values; the first enforcement timestamp is immutable so toggling cannot restart trials.
 - Support tickets are read through RLS (owner or is_support_staff) but written only by authenticated server functions using the service role, so rate limits, file checks and sender identity cannot be bypassed; the staff flag is protected by a profiles trigger.
 - App emails use the server-only managed email helper and React Email registry; do not add queues, cron, generic browser send endpoints, or unsubscribe pages because the platform handles delivery and opt-outs.
+- Signup confirmation returns through the public auth confirmation route, which validates the session then clears it before sign-in; never use a protected destination or assume signup creates a signed-in session.

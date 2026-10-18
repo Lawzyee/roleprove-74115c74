@@ -18,7 +18,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "Roleprove"
+const SITE_NAME = "RoleProve"
 const ROOT_DOMAIN = "roleprove.com"
 
 // Sample data for preview mode ONLY (not used in actual email sending).

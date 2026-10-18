@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Eye, EyeOff, Loader2, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,8 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { authErrorMessage, confirmationRedirect, CONFIRMATION_COOLDOWN_SECONDS, isDuplicateSignup, resendSecondsRemaining } from "@/lib/auth-flow";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { confirmed?: boolean; confirmationError?: boolean; mode?: "login" } => ({
+    confirmed: search.confirmed === true || search.confirmed === "true" ? true : undefined,
+    confirmationError: search.confirmationError === true || search.confirmationError === "true" ? true : undefined,
+    mode: search.mode === "login" ? "login" : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Log in or sign up | RoleProve" },
@@ -42,8 +48,18 @@ function AuthPage() {
   });
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"login" | "signup">("signup");
+  const search = Route.useSearch();
+  const [mode, setMode] = useState<"login" | "signup">(search.confirmed || search.confirmationError || search.mode === "login" ? "login" : "signup");
   const [submitting, setSubmitting] = useState(false);
+  const requestRunning = useRef(false);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [resending, setResending] = useState(false);
+  const resendRunning = useRef(false);
+  const [resendAvailableAt, setResendAvailableAt] = useState(0);
+  const [resendSeconds, setResendSeconds] = useState(0);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -58,50 +74,113 @@ function AuthPage() {
   });
 
   useEffect(() => {
-    if (!loading && user) router.navigate({ to: "/dashboard" });
-  }, [loading, user, router]);
+    if (!loading && user && !search.confirmed && !requestRunning.current && !confirmationEmail) router.navigate({ to: "/dashboard" });
+  }, [loading, user, router, search.confirmed, confirmationEmail]);
+
+  useEffect(() => {
+    const tick = () => setResendSeconds(resendSecondsRemaining(resendAvailableAt));
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [resendAvailableAt]);
+
+  function startCooldown() {
+    setResendAvailableAt(Date.now() + CONFIRMATION_COOLDOWN_SECONDS * 1000);
+    setResendSeconds(CONFIRMATION_COOLDOWN_SECONDS);
+  }
+
+  async function resendEmail() {
+    if (resendRunning.current || resendSecondsRemaining(resendAvailableAt) > 0) return;
+    resendRunning.current = true;
+    setResending(true);
+    setFormError(null);
+    setResendMessage(null);
+    startCooldown();
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: confirmationEmail ?? form.email.trim(),
+        options: { emailRedirectTo: confirmationRedirect(window.location.origin) },
+      });
+      if (error) throw error;
+      setResendMessage("Confirmation email sent. Please check your inbox and spam folder.");
+    } catch (error) {
+      setFormError(authErrorMessage(error));
+    } finally {
+      resendRunning.current = false;
+      setResending(false);
+    }
+  }
+
+  const resendControl = (
+    <Button type="button" variant="outline" className="w-full" disabled={resending || resendSeconds > 0} onClick={resendEmail}>
+      {resending && <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+      {resending ? "Sending…" : resendSeconds > 0 ? `Resend email in ${resendSeconds}s` : "Resend email"}
+    </Button>
+  );
 
   const update = (key: keyof typeof form, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
+    setFormError(null);
+    setNeedsConfirmation(false);
+    setResendMessage(null);
     if (key === "password" || key === "confirmPassword") setPasswordError(null);
   };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (requestRunning.current) return;
+    setFormError(null);
+    setResendMessage(null);
+    setNeedsConfirmation(false);
     if (mode === "signup" && form.password !== form.confirmPassword) {
       setPasswordError("Passwords don't match.");
       return;
     }
+    if (mode === "signup" && form.password.length < 6) {
+      setFormError("Please choose a stronger password with at least 6 characters.");
+      return;
+    }
+    requestRunning.current = true;
     setSubmitting(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email: form.email,
+        const { data, error } = await supabase.auth.signUp({
+          email: form.email.trim(),
           password: form.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: confirmationRedirect(window.location.origin),
             data: {
               name: form.name,
               headline: form.headline,
-              target_role_id: form.target_role_id,
+              target_role_id: form.target_role_id || null,
               location: form.location,
             },
           },
         });
         if (error) throw error;
-        toast.success("Account created. Welcome to RoleProve.");
+        if (isDuplicateSignup(data.user)) {
+          setFormError("This email is already registered. Please sign in instead.");
+          return;
+        }
+        if (data.session) await supabase.auth.signOut({ scope: "local" });
+        setConfirmationEmail(form.email.trim());
+        setForm((current) => ({ ...current, password: "", confirmPassword: "" }));
+        startCooldown();
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email: form.email,
+          email: form.email.trim(),
           password: form.password,
         });
         if (error) throw error;
         toast.success("Welcome back.");
+        router.navigate({ to: "/dashboard" });
       }
-      router.navigate({ to: "/dashboard" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Something went wrong");
+      setFormError(authErrorMessage(err));
+      setNeedsConfirmation((err as { code?: string })?.code === "email_not_confirmed");
     } finally {
+      requestRunning.current = false;
       setSubmitting(false);
     }
   }
@@ -114,15 +193,27 @@ function AuthPage() {
       <Card className="border-border shadow-none">
         <CardHeader>
           <CardTitle className="font-display text-2xl">
-            {mode === "signup" ? "Create your account" : "Log in"}
+            {confirmationEmail ? "Check your email" : mode === "signup" ? "Create your account" : "Log in"}
           </CardTitle>
           <CardDescription>
-            {mode === "signup"
+            {confirmationEmail ? "Activate your RoleProve account." : mode === "signup"
               ? "Start practising real job tasks and build a score you can show."
               : "Pick up where you left off."}
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {search.confirmed && <p role="status" className="mb-4 text-sm text-primary">Email confirmed. You can now sign in.</p>}
+          {search.confirmationError && <p role="alert" className="mb-4 text-sm text-destructive">This confirmation link is invalid or has expired. Sign in to request a new one.</p>}
+          {confirmationEmail ? (
+            <div className="space-y-4" aria-live="polite">
+              <MailCheck className="h-8 w-8 text-primary" aria-hidden="true" />
+              <p className="break-words text-sm">We've sent a confirmation link to <strong>{confirmationEmail}</strong>. Click it to activate your account.</p>
+              {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
+              {resendMessage && <p role="status" className="text-sm text-primary">{resendMessage}</p>}
+              {resendControl}
+              <Link to="/auth" search={{ mode: "login" }} className="block text-center text-sm text-primary hover:underline" onClick={() => { setConfirmationEmail(null); setFormError(null); setResendMessage(null); setMode("login"); }}>Back to sign in</Link>
+            </div>
+          ) : <>
           <form onSubmit={onSubmit} className="space-y-4">
             {mode === "signup" && (
               <>
@@ -192,7 +283,6 @@ function AuthPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  minLength={6}
                   className="pr-10"
                   value={form.password}
                   onChange={(e) => update("password", e.target.value)}
@@ -216,7 +306,6 @@ function AuthPage() {
                     id="confirmPassword"
                     type={showConfirm ? "text" : "password"}
                     required
-                    minLength={6}
                     className="pr-10"
                     aria-invalid={!!passwordError}
                     value={form.confirmPassword}
@@ -235,21 +324,27 @@ function AuthPage() {
                 {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
               </div>
             )}
+            {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
+            {needsConfirmation && resendControl}
+            {resendMessage && <p role="status" className="text-sm text-primary">{resendMessage}</p>}
             <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting && <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
               {submitting ? "Please wait…" : mode === "signup" ? "Create account" : "Log in"}
             </Button>
           </form>
 
           <p className="mt-5 text-center text-sm text-muted-foreground">
             {mode === "signup" ? "Already have an account?" : "New to RoleProve?"}{" "}
-            <button
+            <Button variant="link"
               type="button"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-              onClick={() => setMode(mode === "signup" ? "login" : "signup")}
+              disabled={submitting}
+              className="h-auto p-0 font-medium"
+              onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setFormError(null); setPasswordError(null); setNeedsConfirmation(false); setResendMessage(null); }}
             >
               {mode === "signup" ? "Log in" : "Create one"}
-            </button>
+            </Button>
           </p>
+          </>}
         </CardContent>
       </Card>
     </main>
