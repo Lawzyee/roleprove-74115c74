@@ -15,6 +15,13 @@
       "when": 1792329630492,
       "tag": "0001_subscription_access_and_launch_trials",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792338943842,
+      "tag": "0002_require_server_reserved_attempt_creation",
+      "breakpoints": true
     }
   ]
 }

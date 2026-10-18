@@ -1,0 +1,12 @@
+DROP POLICY "own attempts" ON public.simulation_attempts;
+CREATE POLICY attempts_owner_read ON public.simulation_attempts FOR SELECT TO authenticated USING(auth.uid()=user_id);
+CREATE POLICY attempts_owner_update ON public.simulation_attempts FOR UPDATE TO authenticated USING(auth.uid()=user_id) WITH CHECK(auth.uid()=user_id);
+CREATE POLICY attempts_owner_delete ON public.simulation_attempts FOR DELETE TO authenticated USING(auth.uid()=user_id);
+REVOKE INSERT ON public.simulation_attempts FROM authenticated,anon;
+GRANT ALL ON public.simulation_attempts TO service_role;
+DROP POLICY "own prep sessions" ON public.interview_prep_sessions;
+CREATE POLICY prep_owner_read ON public.interview_prep_sessions FOR SELECT TO authenticated USING(auth.uid()=user_id);
+CREATE POLICY prep_owner_update ON public.interview_prep_sessions FOR UPDATE TO authenticated USING(auth.uid()=user_id) WITH CHECK(auth.uid()=user_id);
+CREATE POLICY prep_owner_delete ON public.interview_prep_sessions FOR DELETE TO authenticated USING(auth.uid()=user_id);
+REVOKE INSERT ON public.interview_prep_sessions FROM authenticated,anon;
+GRANT ALL ON public.interview_prep_sessions TO service_role;
