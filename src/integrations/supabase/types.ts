@@ -401,6 +401,7 @@ export type Database = {
           github_url: string | null
           headline: string | null
           id: string
+          is_support_staff: boolean
           linkedin_url: string | null
           location: string | null
           name: string | null
@@ -416,6 +417,7 @@ export type Database = {
           github_url?: string | null
           headline?: string | null
           id: string
+          is_support_staff?: boolean
           linkedin_url?: string | null
           location?: string | null
           name?: string | null
@@ -431,6 +433,7 @@ export type Database = {
           github_url?: string | null
           headline?: string | null
           id?: string
+          is_support_staff?: boolean
           linkedin_url?: string | null
           location?: string | null
           name?: string | null
@@ -670,6 +673,123 @@ export type Database = {
         }
         Relationships: []
       }
+      support_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          message_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          message_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          message_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "support_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender: string
+          ticket_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender: string
+          ticket_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          attempt_id: string | null
+          category: string
+          created_at: string
+          data_request: string | null
+          id: string
+          staff_last_read_at: string | null
+          status: string
+          subject: string
+          tags: string[]
+          updated_at: string
+          user_id: string
+          user_last_read_at: string
+        }
+        Insert: {
+          attempt_id?: string | null
+          category: string
+          created_at?: string
+          data_request?: string | null
+          id?: string
+          staff_last_read_at?: string | null
+          status?: string
+          subject: string
+          tags?: string[]
+          updated_at?: string
+          user_id: string
+          user_last_read_at?: string
+        }
+        Update: {
+          attempt_id?: string | null
+          category?: string
+          created_at?: string
+          data_request?: string | null
+          id?: string
+          staff_last_read_at?: string | null
+          status?: string
+          subject?: string
+          tags?: string[]
+          updated_at?: string
+          user_id?: string
+          user_last_read_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -680,6 +800,7 @@ export type Database = {
         Returns: Json
       }
       get_billing_access: { Args: { p_env: string }; Returns: Json }
+      is_support_staff: { Args: { _user_id: string }; Returns: boolean }
       reserve_billing_usage: {
         Args: { p_env: string; p_kind: string; p_user: string }
         Returns: Json
