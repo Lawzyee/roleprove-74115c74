@@ -6,6 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { deleteAllRecordings } from "@/lib/proctoring";
+import { Link } from "@tanstack/react-router";
+
+async function deleteSupportFiles(userId: string) {
+  for (;;) {
+    const { data, error } = await supabase.storage.from("support-attachments").list(userId, { limit: 100 });
+    if (error) throw error;
+    if (!data?.length) return;
+    const { error: removeError } = await supabase.storage.from("support-attachments").remove(data.map((f) => `${userId}/${f.name}`));
+    if (removeError) throw removeError;
+  }
+}
 import { BillingStatus } from '@/components/BillingStatus';
 import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
 import { Button } from "@/components/ui/button";
@@ -88,14 +99,18 @@ function SettingsPage() {
 
   async function deleteData() {
     if (!user) return;
-    if (!window.confirm("This permanently deletes your profile, credentials, simulation history and any attempt recordings. Continue?")) return;
+    if (!window.confirm("This permanently deletes your profile, credentials, simulation history, support tickets and any attempt recordings. Continue?")) return;
     setBusy(true);
     try {
       await deleteAllRecordings(user.id);
+      await deleteSupportFiles(user.id);
     } catch (err) {
       setBusy(false);
-      return toast.error("Could not delete your recordings, so nothing was deleted. Please try again.");
+      return toast.error("Could not delete your files, so nothing else was deleted. Please try again.");
     }
+    // Ticket deletion cascades to messages and attachment records.
+    const { error: ticketError } = await supabase.from("support_tickets").delete().eq("user_id", user.id);
+    if (ticketError) { setBusy(false); return toast.error("Could not delete your support tickets. Please try again."); }
     await supabase.from("simulation_attempts").delete().eq("user_id", user.id);
     await supabase.from("credentials").delete().eq("user_id", user.id);
     await supabase.from("profiles").delete().eq("id", user.id);
@@ -114,6 +129,7 @@ function SettingsPage() {
       <main className="mx-auto max-w-3xl px-5 py-10">
         <h1 className="font-display text-3xl font-semibold">Settings</h1>
         <BillingStatus detailed />
+        <p className="mt-4 text-sm text-muted-foreground">Need help? Visit the <Link to="/help" className="text-primary underline">Help centre</Link> or <Link to="/support" className="text-primary underline">your support tickets</Link>.</p>
 
         <div className="mt-8 space-y-6">
           <Card className="border-border shadow-none">

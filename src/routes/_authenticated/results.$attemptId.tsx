@@ -219,6 +219,9 @@ function ResultsPage() {
               <Button asChild variant="outline">
                 <Link to="/dashboard">Back to dashboard</Link>
               </Button>
+              <Button asChild variant="link">
+                <Link to="/support/new" search={{ category: "scoring_dispute", attemptId: attempt.id }}>Dispute this score</Link>
+              </Button>
             </div>
           </>
         )}
