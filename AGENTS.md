@@ -13,3 +13,4 @@
 - Billing uses authenticated server functions, embedded Stripe checkout through the shared gateway utility, and signature-verified canonical subscription reconciliation; this prevents client-side fulfillment and stale webhook grants.
 - Generation access is atomically reserved in PostgreSQL before AI calls and committed only for successful resources; card-free trials retain email-hashed history independently of profile deletion.
 - Launch controls are service-role-only app_settings values; the first enforcement timestamp is immutable so toggling cannot restart trials.
+- Support tickets are read through RLS (owner or is_support_staff) but written only by authenticated server functions using the service role, so rate limits, file checks and sender identity cannot be bypassed; the staff flag is protected by a profiles trigger.
