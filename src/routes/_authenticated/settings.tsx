@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { deleteAllRecordings } from "@/lib/proctoring";
+import { BillingStatus } from '@/components/BillingStatus';
+import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -35,7 +37,8 @@ function SettingsPage() {
     queryKey: ["profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
+      if (!user) return null;
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -106,9 +109,11 @@ function SettingsPage() {
 
   return (
     <>
+      <PaymentTestModeBanner />
       <SiteHeader />
       <main className="mx-auto max-w-3xl px-5 py-10">
         <h1 className="font-display text-3xl font-semibold">Settings</h1>
+        <BillingStatus detailed />
 
         <div className="mt-8 space-y-6">
           <Card className="border-border shadow-none">

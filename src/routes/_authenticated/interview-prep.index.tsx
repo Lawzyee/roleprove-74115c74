@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createPrepSessionFn } from "@/lib/interview-prep.functions";
+import { getStripeEnvironment } from '@/lib/stripe';
 
 export const Route = createFileRoute("/_authenticated/interview-prep/")({
   head: () => ({
@@ -74,9 +75,11 @@ function InterviewPrepPage() {
     try {
       const cvFilePath = await uploadCv();
       const result = await createPrepSessionFn({
-        data: { ...(isUrl ? { url: trimmed } : { text: trimmed }), ...(cvFilePath ? { cvFilePath } : {}) },
+        data: { ...(isUrl ? { url: trimmed } : { text: trimmed }), ...(cvFilePath ? { cvFilePath } : {}), environment: getStripeEnvironment() },
       });
-      if (result.outcome === "too_vague") {
+      if (result.outcome === 'paywall') {
+        router.navigate({ to: '/subscribe' });
+      } else if (result.outcome === "too_vague") {
         setTooVague(result.message);
       } else {
         router.navigate({ to: "/interview-prep/$sessionId", params: { sessionId: result.sessionId } });

@@ -10,3 +10,6 @@
 <!-- LOVABLE:END -->
 
 - Proctoring recordings are composited client-side (screen + camera PiP + mic) and uploaded once on final submit to the private attempt-recordings bucket at {userId}/{attemptId}.webm — keeps storage paths user-scoped so RLS and data deletion can target a single folder.
+- Billing uses authenticated server functions, embedded Stripe checkout through the shared gateway utility, and signature-verified canonical subscription reconciliation; this prevents client-side fulfillment and stale webhook grants.
+- Generation access is atomically reserved in PostgreSQL before AI calls and committed only for successful resources; card-free trials retain email-hashed history independently of profile deletion.
+- Launch controls are service-role-only app_settings values; the first enforcement timestamp is immutable so toggling cannot restart trials.

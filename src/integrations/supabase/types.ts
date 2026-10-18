@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          free_interview_prep: number
+          free_simulations: number
+          id: boolean
+          paywall_enforced: boolean
+          paywall_enforced_since: string | null
+          recruiter_visibility_enabled: boolean
+          trial_days: number
+        }
+        Insert: {
+          free_interview_prep?: number
+          free_simulations?: number
+          id?: boolean
+          paywall_enforced?: boolean
+          paywall_enforced_since?: string | null
+          recruiter_visibility_enabled?: boolean
+          trial_days?: number
+        }
+        Update: {
+          free_interview_prep?: number
+          free_simulations?: number
+          id?: boolean
+          paywall_enforced?: boolean
+          paywall_enforced_since?: string | null
+          recruiter_visibility_enabled?: boolean
+          trial_days?: number
+        }
+        Relationships: []
+      }
       attempt_deliverables: {
         Row: {
           attempt_id: string
@@ -121,6 +151,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      billing_trial_history: {
+        Row: {
+          email_hash: string
+          first_signup_at: string
+          trial_ends_at: string | null
+        }
+        Insert: {
+          email_hash: string
+          first_signup_at: string
+          trial_ends_at?: string | null
+        }
+        Update: {
+          email_hash?: string
+          first_signup_at?: string
+          trial_ends_at?: string | null
+        }
+        Relationships: []
+      }
+      billing_usage: {
+        Row: {
+          environment: string
+          expires_at: string
+          id: string
+          kind: string
+          resource_id: string | null
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          environment: string
+          expires_at?: string
+          id?: string
+          kind: string
+          resource_id?: string | null
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          environment?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          resource_id?: string | null
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       credentials: {
         Row: {
@@ -544,12 +625,65 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          environment: string
+          id: string
+          past_due_since: string | null
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          environment: string
+          id?: string
+          past_due_since?: string | null
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          environment?: string
+          id?: string
+          past_due_since?: string | null
+          price_id?: string
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      billing_access_for: {
+        Args: { p_env: string; p_user: string }
+        Returns: Json
+      }
+      get_billing_access: { Args: { p_env: string }; Returns: Json }
+      reserve_billing_usage: {
+        Args: { p_env: string; p_kind: string; p_user: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

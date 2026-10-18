@@ -1,0 +1,47 @@
+CREATE TABLE public.app_settings (id boolean PRIMARY KEY DEFAULT true CHECK(id), paywall_enforced boolean NOT NULL DEFAULT false, paywall_enforced_since timestamptz, trial_days integer NOT NULL DEFAULT 21 CHECK(trial_days > 0), recruiter_visibility_enabled boolean NOT NULL DEFAULT false, free_simulations integer NOT NULL DEFAULT 3 CHECK(free_simulations >= 0), free_interview_prep integer NOT NULL DEFAULT 1 CHECK(free_interview_prep >= 0));
+GRANT SELECT ON public.app_settings TO authenticated; GRANT ALL ON public.app_settings TO service_role;
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY settings_read ON public.app_settings FOR SELECT TO authenticated USING(true);
+INSERT INTO public.app_settings(id) SELECT true WHERE NOT EXISTS (SELECT 1 FROM public.app_settings);
+CREATE FUNCTION public.capture_enforcement_start() RETURNS trigger LANGUAGE plpgsql SET search_path=public AS $$ BEGIN IF NEW.paywall_enforced AND OLD.paywall_enforced_since IS NULL THEN NEW.paywall_enforced_since=now(); ELSE NEW.paywall_enforced_since=OLD.paywall_enforced_since; END IF; RETURN NEW; END $$;
+CREATE TRIGGER capture_enforcement_start BEFORE UPDATE ON public.app_settings FOR EACH ROW EXECUTE FUNCTION public.capture_enforcement_start();
+CREATE TABLE public.subscriptions (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, stripe_subscription_id text NOT NULL, stripe_customer_id text NOT NULL, price_id text NOT NULL, status text NOT NULL, current_period_end timestamptz, cancel_at_period_end boolean NOT NULL DEFAULT false, past_due_since timestamptz, environment text NOT NULL CHECK(environment IN ('sandbox','live')), created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(), UNIQUE(environment,stripe_subscription_id));
+GRANT SELECT ON public.subscriptions TO authenticated; GRANT ALL ON public.subscriptions TO service_role;
+ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY subscription_owner_read ON public.subscriptions FOR SELECT TO authenticated USING(user_id=auth.uid());
+CREATE TABLE public.billing_trial_history (email_hash text PRIMARY KEY, first_signup_at timestamptz NOT NULL, trial_ends_at timestamptz);
+GRANT ALL ON public.billing_trial_history TO service_role;
+ALTER TABLE public.billing_trial_history ENABLE ROW LEVEL SECURITY;
+INSERT INTO public.billing_trial_history(email_hash,first_signup_at) SELECT md5(lower(trim(email))), min(created_at) FROM auth.users WHERE email IS NOT NULL GROUP BY md5(lower(trim(email))) ON CONFLICT DO NOTHING;
+CREATE FUNCTION public.register_billing_identity() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN INSERT INTO public.billing_trial_history(email_hash,first_signup_at) SELECT md5(lower(trim(email))),created_at FROM auth.users WHERE id=NEW.id AND email IS NOT NULL ON CONFLICT DO NOTHING; RETURN NEW; END $$;
+CREATE TRIGGER register_billing_identity AFTER INSERT ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.register_billing_identity();
+CREATE TABLE public.billing_usage (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, kind text NOT NULL CHECK(kind IN ('simulation','interview_prep')), environment text NOT NULL CHECK(environment IN ('sandbox','live')), status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','succeeded','released')), resource_id uuid, started_at timestamptz NOT NULL DEFAULT now(), expires_at timestamptz NOT NULL DEFAULT (now()+interval '30 minutes'));
+GRANT SELECT ON public.billing_usage TO authenticated; GRANT ALL ON public.billing_usage TO service_role;
+ALTER TABLE public.billing_usage ENABLE ROW LEVEL SECURITY;
+CREATE POLICY usage_owner_read ON public.billing_usage FOR SELECT TO authenticated USING(user_id=auth.uid());
+CREATE INDEX billing_usage_user ON public.billing_usage(user_id,environment,started_at);
+CREATE FUNCTION public.billing_access_for(p_user uuid,p_env text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+DECLARE cfg public.app_settings; ending timestamptz; signup timestamptz; identity text; sub public.subscriptions; paid boolean=false; sim_used integer; prep_used integer; BEGIN
+IF p_env NOT IN ('sandbox','live') THEN RAISE EXCEPTION 'Invalid payment environment'; END IF;
+SELECT * INTO cfg FROM public.app_settings WHERE id=true;
+SELECT md5(lower(trim(email))),created_at INTO identity,signup FROM auth.users WHERE id=p_user;
+IF identity IS NULL THEN RAISE EXCEPTION 'Account not found'; END IF;
+INSERT INTO public.billing_trial_history(email_hash,first_signup_at) VALUES(identity,signup) ON CONFLICT DO NOTHING;
+IF cfg.paywall_enforced_since IS NOT NULL THEN UPDATE public.billing_trial_history SET trial_ends_at=greatest(first_signup_at,cfg.paywall_enforced_since)+make_interval(days=>cfg.trial_days) WHERE email_hash=identity AND trial_ends_at IS NULL; END IF;
+SELECT trial_ends_at INTO ending FROM public.billing_trial_history WHERE email_hash=identity;
+SELECT * INTO sub FROM public.subscriptions WHERE user_id=p_user AND environment=p_env AND price_id='roleprove_practice_prep_monthly' ORDER BY (CASE WHEN status IN ('active','trialing','past_due') THEN 0 ELSE 1 END),created_at DESC LIMIT 1;
+paid=COALESCE((sub.status IN ('active','trialing') AND (sub.current_period_end IS NULL OR sub.current_period_end>now())) OR (sub.status='canceled' AND sub.current_period_end>now()) OR (sub.status='past_due' AND sub.past_due_since+interval '7 days'>now()),false);
+SELECT count(*) FILTER(WHERE kind='simulation'),count(*) FILTER(WHERE kind='interview_prep') INTO sim_used,prep_used FROM public.billing_usage WHERE user_id=p_user AND environment=p_env AND started_at>=ending AND started_at>=cfg.paywall_enforced_since AND (status='succeeded' OR (status='pending' AND expires_at>now()));
+RETURN jsonb_build_object('enforced',cfg.paywall_enforced,'trialEndsAt',ending,'trialDaysLeft',CASE WHEN ending>now() THEN ceil(extract(epoch FROM ending-now())/86400)::integer ELSE 0 END,'trialActive',COALESCE(ending>now(),false),'paid',paid,'subscriptionStatus',COALESCE(sub.status,'none'),'periodEnd',sub.current_period_end,'cancelAtPeriodEnd',COALESCE(sub.cancel_at_period_end,false),'simulationsLeft',greatest(0,cfg.free_simulations-sim_used),'interviewPrepLeft',greatest(0,cfg.free_interview_prep-prep_used)); END $$;
+REVOKE ALL ON FUNCTION public.billing_access_for(uuid,text) FROM PUBLIC,anon,authenticated; GRANT EXECUTE ON FUNCTION public.billing_access_for(uuid,text) TO service_role;
+CREATE FUNCTION public.get_billing_access(p_env text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ BEGIN IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in required'; END IF; RETURN public.billing_access_for(auth.uid(),p_env); END $$;
+REVOKE ALL ON FUNCTION public.get_billing_access(text) FROM PUBLIC,anon; GRANT EXECUTE ON FUNCTION public.get_billing_access(text) TO authenticated,service_role;
+CREATE FUNCTION public.reserve_billing_usage(p_user uuid,p_env text,p_kind text) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE access jsonb; reservation uuid; BEGIN
+IF p_kind NOT IN ('simulation','interview_prep') THEN RAISE EXCEPTION 'Invalid usage kind'; END IF;
+PERFORM pg_advisory_xact_lock(hashtextextended(p_user::text||p_env,0));
+access=public.billing_access_for(p_user,p_env);
+IF (access->>'enforced')::boolean AND NOT (access->>'paid')::boolean AND NOT (access->>'trialActive')::boolean AND (CASE WHEN p_kind='simulation' THEN (access->>'simulationsLeft')::integer ELSE (access->>'interviewPrepLeft')::integer END)<=0 THEN RETURN jsonb_build_object('allowed',false); END IF;
+INSERT INTO public.billing_usage(user_id,environment,kind) VALUES(p_user,p_env,p_kind) RETURNING id INTO reservation;
+RETURN jsonb_build_object('allowed',true,'reservationId',reservation); END $$;
+REVOKE ALL ON FUNCTION public.reserve_billing_usage(uuid,text,text) FROM PUBLIC,anon,authenticated; GRANT EXECUTE ON FUNCTION public.reserve_billing_usage(uuid,text,text) TO service_role;
+REVOKE ALL ON FUNCTION public.register_billing_identity() FROM PUBLIC,anon,authenticated;
