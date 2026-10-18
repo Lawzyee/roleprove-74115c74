@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/auth/confirm")({
+export const Route = createFileRoute("/auth_/confirm")({
   head: () => ({ meta: [
     { title: "Confirm your email | RoleProve" },
     { name: "description", content: "Activate your RoleProve account and return to sign in." },
