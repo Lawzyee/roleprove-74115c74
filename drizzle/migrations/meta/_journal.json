@@ -43,6 +43,13 @@
       "when": 1794601803431,
       "tag": "0005_tighten_catalog_read_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794604165164,
+      "tag": "0006_daily_generation_cap_and_launch_free_until",
+      "breakpoints": true
     }
   ]
 }
