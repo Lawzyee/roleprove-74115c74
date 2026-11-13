@@ -1,3 +1,4 @@
+import { listPublicRolesFn } from "@/lib/roles.functions";
 import { useQuery } from "@tanstack/react-query";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
@@ -41,9 +42,7 @@ function AuthPage() {
   const rolesQuery = useQuery({
     queryKey: ["roles-list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("roles").select("id, name").order("created_at");
-      if (error) throw error;
-      return data;
+      return listPublicRolesFn();
     },
   });
   const router = useRouter();
