@@ -1,10 +1,18 @@
 export const PRACTICE_PRICE = 'roleprove_practice_prep_monthly';
+export const DAILY_LIMIT_MESSAGE = "You've reached today's practice limit. Come back tomorrow.";
 export const RENEWAL_BUFFER_MS = 86400000;
 export type BillingAccess = {
   enforced: boolean; trialActive: boolean; trialDaysLeft: number; trialEndsAt: string | null;
   paid: boolean; subscriptionStatus: string; periodEnd: string | null; cancelAtPeriodEnd: boolean;
   simulationsLeft: number; interviewPrepLeft: number;
+  launchFreeUntil?: string | null;
 };
+// Display only: never affects access.
+export function launchFreeLabel(access: Pick<BillingAccess, 'enforced' | 'launchFreeUntil'>) {
+  if (access.enforced || !access.launchFreeUntil) return null;
+  const d = new Date(`${access.launchFreeUntil}T00:00:00Z`);
+  return `Free during launch, until ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}`;
+}
 export function subscriptionHasAccess(status: string, periodEnd: string | null, pastDueSince: string | null, now = Date.now()) {
   if (status === 'past_due') return pastDueSince !== null && new Date(pastDueSince).getTime() + 7 * 86400000 > now;
   if (status === 'canceled') return periodEnd !== null && new Date(periodEnd).getTime() > now;

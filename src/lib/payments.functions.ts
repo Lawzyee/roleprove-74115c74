@@ -39,7 +39,9 @@ export const getBillingAccessFn = createServerFn({ method: 'POST' }).middleware(
   .handler(async ({ data, context }): Promise<BillingAccess> => {
     const { data: access, error } = await context.supabase.rpc('get_billing_access', { p_env: data.environment });
     if (error) throw new Error(error.message);
-    return access as unknown as BillingAccess;
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { data: cfg } = await supabaseAdmin.from('app_settings').select('launch_free_until').limit(1).maybeSingle();
+    return { ...(access as unknown as BillingAccess), launchFreeUntil: cfg?.launch_free_until ?? null };
   });
 
 export const createCheckoutSession = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])

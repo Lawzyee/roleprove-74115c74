@@ -16,27 +16,33 @@ export type Database = {
     Tables: {
       app_settings: {
         Row: {
+          daily_generation_cap: number
           free_interview_prep: number
           free_simulations: number
           id: boolean
+          launch_free_until: string | null
           paywall_enforced: boolean
           paywall_enforced_since: string | null
           recruiter_visibility_enabled: boolean
           trial_days: number
         }
         Insert: {
+          daily_generation_cap?: number
           free_interview_prep?: number
           free_simulations?: number
           id?: boolean
+          launch_free_until?: string | null
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           recruiter_visibility_enabled?: boolean
           trial_days?: number
         }
         Update: {
+          daily_generation_cap?: number
           free_interview_prep?: number
           free_simulations?: number
           id?: boolean
+          launch_free_until?: string | null
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           recruiter_visibility_enabled?: boolean
@@ -802,6 +808,10 @@ export type Database = {
       get_billing_access: { Args: { p_env: string }; Returns: Json }
       is_support_staff: { Args: { _user_id: string }; Returns: boolean }
       reserve_billing_usage: {
+        Args: { p_env: string; p_kind: string; p_user: string }
+        Returns: Json
+      }
+      reserve_generation: {
         Args: { p_env: string; p_kind: string; p_user: string }
         Returns: Json
       }

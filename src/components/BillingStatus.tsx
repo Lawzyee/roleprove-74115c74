@@ -6,6 +6,7 @@ import { useBilling } from '@/hooks/useBilling';
 import { Button } from '@/components/ui/button';
 import { createPortalSession } from '@/lib/payments.functions';
 import { getStripeEnvironment } from '@/lib/stripe';
+import { launchFreeLabel } from '@/lib/billing';
 
 export function BillingStatus({ detailed = false }: { detailed?: boolean }) {
   const query = useBilling();
@@ -26,11 +27,12 @@ export function BillingStatus({ detailed = false }: { detailed?: boolean }) {
   }
   if (query.isPending) return <p className="text-sm text-muted-foreground">Loading plan…</p>;
   if (!access) return <p role="alert" className="text-sm text-destructive">{query.error?.message ?? 'Could not load your plan.'}</p>;
+  const launchLabel = launchFreeLabel(access);
   const title = access.paid ? 'Practice/Prep' : !access.enforced ? 'Launch access' : access.trialActive ? `Free trial · ${access.trialDaysLeft} days left` : 'Free';
   return <section aria-label="Your plan" className="flex flex-wrap items-center justify-between gap-4 border-b border-border py-5">
     <div className="space-y-1">
       <h2 className="flex items-center gap-2 font-display text-lg font-semibold"><CreditCard className="h-4 w-4" />{title}</h2>
-      <p className="text-sm text-muted-foreground">{access.paid ? '$15 USD / month · unlimited practice' : !access.enforced ? 'Unlimited practice while launch access is open.' : access.trialActive ? 'Unlimited practice · no card required' : `${access.simulationsLeft} simulations · ${access.interviewPrepLeft} interview prep session${access.interviewPrepLeft === 1 ? '' : 's'} remaining`}</p>
+      <p className="text-sm text-muted-foreground">{access.paid ? '$15 USD / month · unlimited practice' : !access.enforced ? (launchLabel ?? 'Unlimited practice while launch access is open.') : access.trialActive ? 'Unlimited practice · no card required' : `${access.simulationsLeft} simulations · ${access.interviewPrepLeft} interview prep session${access.interviewPrepLeft === 1 ? '' : 's'} remaining`}</p>
       {access.cancelAtPeriodEnd && access.periodEnd && <p className="text-sm text-muted-foreground">Cancelled · access until {new Date(access.periodEnd).toLocaleDateString()}</p>}
       {access.paid && !access.cancelAtPeriodEnd && access.periodEnd && <p className="text-sm text-muted-foreground">Renews {new Date(access.periodEnd).toLocaleDateString()}</p>}
       {access.subscriptionStatus === 'past_due' && <p className="text-sm text-destructive">Payment failed. Update your payment method within 7 days to keep access.</p>}

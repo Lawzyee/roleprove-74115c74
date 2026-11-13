@@ -1,14 +1,15 @@
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { createStripeClient, type StripeEnv } from './stripe.server';
-import { PRACTICE_PRICE } from './billing';
+import { DAILY_LIMIT_MESSAGE, PRACTICE_PRICE } from './billing';
 
 export async function withUsage<T>(userId: string, env: StripeEnv, kind: 'simulation' | 'interview_prep', run: () => Promise<T>, resource: (result: T) => string | undefined) {
   const token = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN;
   const configured = token?.startsWith('pk_test_') ? 'sandbox' : token?.startsWith('pk_live_') ? 'live' : null;
   if (!configured || env !== configured) throw new Error('Payments are not configured for this environment.');
-  const { data, error } = await supabaseAdmin.rpc('reserve_billing_usage', { p_user: userId, p_env: env, p_kind: kind });
+  const { data, error } = await supabaseAdmin.rpc('reserve_generation', { p_user: userId, p_env: env, p_kind: kind });
   if (error) throw new Error(error.message);
-  const reservation = data as { allowed: boolean; reservationId?: string };
+  const reservation = data as { allowed: boolean; reservationId?: string; reason?: string };
+  if (!reservation.allowed && reservation.reason === 'daily_cap') throw new Error(DAILY_LIMIT_MESSAGE);
   if (!reservation.allowed) return { outcome: 'paywall' as const };
   const id = reservation.reservationId;
   if (!id) throw new Error('Could not reserve practice access.');
