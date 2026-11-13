@@ -34,3 +34,12 @@ describe('confirmed subscription access', () => {
     expect(subscriptionHasAccess('active', '2026-10-17T13:17:00Z', null, now)).toBe(false);
   });
 });
+
+import { launchFreeLabel } from './billing';
+describe('launch free label', () => {
+  it('shows the date only when the paywall is off', () => {
+    expect(launchFreeLabel({ enforced: false, launchFreeUntil: '2027-01-31' })).toBe('Free during launch, until 31 January 2027');
+    expect(launchFreeLabel({ enforced: true, launchFreeUntil: '2027-01-31' })).toBeNull();
+    expect(launchFreeLabel({ enforced: false, launchFreeUntil: null })).toBeNull();
+  });
+});
