@@ -36,6 +36,13 @@
       "when": 1792342521567,
       "tag": "0004_renewal_buffer",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794601803431,
+      "tag": "0005_tighten_catalog_read_policies",
+      "breakpoints": true
     }
   ]
 }
