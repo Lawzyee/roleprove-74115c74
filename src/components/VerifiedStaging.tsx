@@ -164,8 +164,16 @@ export function VerifiedStaging({
             continuously until you submit.
           </p>
           <p>
-            The recording is stored privately, linked only to this attempt. Right now only you can watch it — no
-            recruiter or employer can access it. You can delete it at any time by deleting your data in Settings.
+            <span className="font-medium text-foreground">Who can view it:</span> only you. It is stored privately,
+            linked only to this attempt — no recruiter or employer can access it.
+          </p>
+          <p>
+            <span className="font-medium text-foreground">How long it's kept:</span> until you delete it.{" "}
+            <span className="font-medium text-foreground">How to delete it:</span> use "Delete my data" in Settings.
+          </p>
+          <p>
+            Read more in our{" "}
+            <a href="/privacy" target="_blank" rel="noopener" className="text-primary underline">Privacy Policy</a>.
           </p>
           <p>If you stop screen sharing or disconnect your camera or microphone, the verified attempt pauses and you can switch to practice instead.</p>
         </CardContent>

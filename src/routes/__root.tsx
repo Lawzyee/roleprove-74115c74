@@ -14,6 +14,10 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
+import { SiteFooter } from "@/components/legal/SiteFooter";
+import { CookieBanner } from "@/components/legal/CookieBanner";
+import { TermsUpdatePrompt } from "@/components/legal/TermsUpdatePrompt";
+import consentDefaults from "@/lib/consent-defaults.js?raw";
 
 function NotFoundComponent() {
   return (
@@ -100,6 +104,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
     ],
+    // Consent Mode defaults must run before any tag loads.
+    scripts: [{ children: consentDefaults }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -129,6 +135,9 @@ function RootComponent() {
       <AuthProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        <SiteFooter />
+        <CookieBanner />
+        <TermsUpdatePrompt />
       </AuthProvider>
       <Toaster />
     </QueryClientProvider>

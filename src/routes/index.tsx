@@ -154,11 +154,6 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-5 py-8 text-sm text-muted-foreground">
-          © {new Date().getFullYear()} RoleProve. Practice the job. Prove the skill.
-        </div>
-      </footer>
     </div>
   );
 }

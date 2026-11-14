@@ -164,6 +164,18 @@ function SettingsPage() {
 
           <Card className="border-border shadow-none">
             <CardHeader>
+              <CardTitle className="font-display text-lg">Legal</CardTitle>
+              <CardDescription>How RoleProve works, and how we handle your data.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              <Link to="/terms" className="text-primary underline">Terms of Service</Link>
+              <Link to="/privacy" className="text-primary underline">Privacy Policy</Link>
+              <Link to="/cookies" className="text-primary underline">Cookie Notice</Link>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border shadow-none">
+            <CardHeader>
               <CardTitle className="font-display text-lg">Your data</CardTitle>
               <CardDescription>Export a copy of everything, or delete it permanently.</CardDescription>
             </CardHeader>
