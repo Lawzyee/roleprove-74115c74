@@ -13,7 +13,7 @@ function apiKey() {
   return key;
 }
 
-async function callAi(system: string, user: string) {
+export async function callAi(system: string, user: string) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey()}` },
