@@ -216,17 +216,7 @@ function AuthPage() {
             <div className="space-y-4" aria-live="polite">
               <MailCheck className="h-8 w-8 text-primary" aria-hidden="true" />
               <p className="break-words text-sm">We've sent a confirmation link to <strong>{confirmationEmail}</strong>. Click it to activate your account.</p>
-              {mode === "signup" && (
-              <div className="flex items-start gap-3">
-                <Checkbox id="legal-consent" checked={agreedToTerms} onCheckedChange={(v) => setAgreedToTerms(v === true)} />
-                <Label htmlFor="legal-consent" className="text-sm font-normal leading-relaxed">
-                  I am 18 or over and I agree to the{" "}
-                  <Link to="/terms" target="_blank" rel="noopener" className="text-primary underline">Terms of Service</Link> and{" "}
-                  <Link to="/privacy" target="_blank" rel="noopener" className="text-primary underline">Privacy Policy</Link>
-                </Label>
-              </div>
-            )}
-            {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
+              {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
               {resendMessage && <p role="status" className="text-sm text-primary">{resendMessage}</p>}
               {resendControl}
               <Link to="/auth" search={{ mode: "login" }} className="block text-center text-sm text-primary hover:underline" onClick={() => { setConfirmationEmail(null); setFormError(null); setResendMessage(null); setMode("login"); }}>Back to sign in</Link>
@@ -340,6 +330,16 @@ function AuthPage() {
                   </button>
                 </div>
                 {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
+              </div>
+            )}
+            {mode === "signup" && (
+              <div className="flex items-start gap-3">
+                <Checkbox id="legal-consent" checked={agreedToTerms} onCheckedChange={(v) => setAgreedToTerms(v === true)} />
+                <Label htmlFor="legal-consent" className="text-sm font-normal leading-relaxed">
+                  I am 18 or over and I agree to the{" "}
+                  <Link to="/terms" target="_blank" rel="noopener" className="text-primary underline">Terms of Service</Link> and{" "}
+                  <Link to="/privacy" target="_blank" rel="noopener" className="text-primary underline">Privacy Policy</Link>
+                </Label>
               </div>
             )}
             {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
