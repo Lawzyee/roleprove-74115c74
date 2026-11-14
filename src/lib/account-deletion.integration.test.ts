@@ -38,6 +38,10 @@ async function seedAccount() {
     const q = must(await admin.from('interview_prep_questions').insert({ session_id: sess.id, category: 'can_do_job', question_text: 'Q', order_index: 0 }).select('id').single(), 'question');
     { const r = await admin.from('interview_prep_responses').insert({ question_id: q.id, response_text: 'my reply' }); if (r.error) throw new Error('response' + ": " + r.error.message); }
 
+    const live = must(await admin.from('live_interviews').insert({ user_id: uid, prep_session_id: sess.id, role_key: 'data_analyst', length: 'short', plan: [{ pillar: 'can_do_job', question: 'Live Q' }] }).select('id').single(), 'live interview');
+    const liveMsg = must(await admin.from('live_interview_messages').insert({ interview_id: live.id, role: 'candidate', content: 'my live answer', msg_type: 'answer', pillar: 'can_do_job', question_index: 0 }).select('id').single(), 'live message');
+    { const r = await admin.from('live_interview_flags').insert({ interview_id: live.id, user_id: uid, reason: 'steering test' }); if (r.error) throw new Error('live flag' + ": " + r.error.message); }
+
     must(await admin.storage.from('attempt-recordings').upload(`${uid}/${attempt.id}.webm`, file('webm', 'video/webm')), 'recording');
     must(await admin.storage.from('credentials').upload(`${uid}/cert.pdf`, file('%PDF-1.4', 'application/pdf')), 'credential file');
     { const r = await admin.from('credentials').insert({ user_id: uid, title: 'Cert', issuer: 'X', file_path: `${uid}/cert.pdf` }); if (r.error) throw new Error('credential' + ": " + r.error.message); }
