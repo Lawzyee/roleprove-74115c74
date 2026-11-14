@@ -539,7 +539,7 @@ async function generateFoundation(extracted: Extracted) {
       written: [written],
       deliverable: {
         label: "Upload your cleaned dataset (optional)",
-        hint: "CSV or XLSX. Stored as a work sample — it does not change your score.",
+        hint: "CSV or XLSX. Optional — graded after you submit; it adds evidence to your score and skipping it never lowers it.",
         accept: [".csv", ".xlsx"],
       },
     },
@@ -740,7 +740,7 @@ async function generatePipelineStages(
   const stage6 = simpleStage(parsed.executive_review, "executive_review", "Executive review", {
     deliverable: {
       label: "Upload your findings deck, summary or dashboard export (optional)",
-      hint: "PDF, PPTX, PNG or JPG. Stored as a work sample; decks and PDFs get written feedback, images are marked pending review.",
+      hint: "PDF, PPTX, PNG or JPG. Optional — graded after you submit; it adds evidence to your score and skipping it never lowers it.",
       accept: [".pdf", ".pptx", ".png", ".jpg", ".jpeg"],
     },
   });

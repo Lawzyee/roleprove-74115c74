@@ -48,6 +48,7 @@ export const privacy: LegalDocument = {
       heading: "4. How we use AI",
       blocks: [
         p("To generate simulations and to score your work and give feedback, relevant content (such as job descriptions, your answers and your CV) is sent to our AI providers."),
+        p("Work you upload during a simulation (spreadsheets, slide decks, documents and images) is sent to an AI provider for grading. Text we read from your files is kept only as long as the file itself. [[PLACEHOLDER: confirm provider data-use terms]]"),
         p("Whether providers may use this content to train their models: [[PLACEHOLDER: confirm provider's data-use terms]]."),
         p("Scores should never be the only basis for an employment decision. You can ask for a human review of any score through support."),
       ],

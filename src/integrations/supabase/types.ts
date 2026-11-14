@@ -17,10 +17,13 @@ export type Database = {
       app_settings: {
         Row: {
           daily_generation_cap: number
+          daily_grading_cap: number
           free_interview_prep: number
+          free_regrades: number
           free_simulations: number
           id: boolean
           launch_free_until: string | null
+          max_upload_mb: number
           paywall_enforced: boolean
           paywall_enforced_since: string | null
           recruiter_visibility_enabled: boolean
@@ -28,10 +31,13 @@ export type Database = {
         }
         Insert: {
           daily_generation_cap?: number
+          daily_grading_cap?: number
           free_interview_prep?: number
+          free_regrades?: number
           free_simulations?: number
           id?: boolean
           launch_free_until?: string | null
+          max_upload_mb?: number
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           recruiter_visibility_enabled?: boolean
@@ -39,10 +45,13 @@ export type Database = {
         }
         Update: {
           daily_generation_cap?: number
+          daily_grading_cap?: number
           free_interview_prep?: number
+          free_regrades?: number
           free_simulations?: number
           id?: boolean
           launch_free_until?: string | null
+          max_upload_mb?: number
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           recruiter_visibility_enabled?: boolean
@@ -53,10 +62,18 @@ export type Database = {
       attempt_deliverables: {
         Row: {
           attempt_id: string
+          criteria: Json
+          extracted_text: string | null
+          extraction_preview: Json | null
+          failure_reason: string | null
           feedback: string | null
           file_name: string
           file_path: string
+          file_size: number | null
           file_type: string
+          graded_at: string | null
+          grading_started_at: string | null
+          grading_status: string
           id: string
           status: string
           task_id: string | null
@@ -65,10 +82,18 @@ export type Database = {
         }
         Insert: {
           attempt_id: string
+          criteria?: Json
+          extracted_text?: string | null
+          extraction_preview?: Json | null
+          failure_reason?: string | null
           feedback?: string | null
           file_name: string
           file_path: string
+          file_size?: number | null
           file_type: string
+          graded_at?: string | null
+          grading_started_at?: string | null
+          grading_status?: string
           id?: string
           status?: string
           task_id?: string | null
@@ -77,10 +102,18 @@ export type Database = {
         }
         Update: {
           attempt_id?: string
+          criteria?: Json
+          extracted_text?: string | null
+          extraction_preview?: Json | null
+          failure_reason?: string | null
           feedback?: string | null
           file_name?: string
           file_path?: string
+          file_size?: number | null
           file_type?: string
+          graded_at?: string | null
+          grading_started_at?: string | null
+          grading_status?: string
           id?: string
           status?: string
           task_id?: string | null
@@ -247,6 +280,83 @@ export type Database = {
           year?: number | null
         }
         Relationships: []
+      }
+      deliverable_flags: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          deliverable_id: string
+          excerpt: string | null
+          id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          deliverable_id: string
+          excerpt?: string | null
+          id?: string
+          reason: string
+          user_id: string
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          deliverable_id?: string
+          excerpt?: string | null
+          id?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverable_flags_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliverable_flags_deliverable_id_fkey"
+            columns: ["deliverable_id"]
+            isOneToOne: false
+            referencedRelation: "attempt_deliverables"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deliverable_gradings: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          id: string
+          task_id: string | null
+          user_id: string
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          id?: string
+          task_id?: string | null
+          user_id: string
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          id?: string
+          task_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverable_gradings_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "simulation_attempts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       interview_prep_questions: {
         Row: {

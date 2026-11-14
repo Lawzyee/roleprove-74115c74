@@ -196,7 +196,7 @@ export async function generateSupportCaseStudy(extracted: Extracted, allowBonus 
           "Notes any data problem that could change the order.",
         ]),
       ],
-      deliverable: { label: "Upload your cleaned ticket list (optional)", hint: "CSV or XLSX. Stored as a work sample — it does not change your score.", accept: [".csv", ".xlsx"] },
+      deliverable: { label: "Upload your cleaned ticket list (optional)", hint: "CSV or XLSX. Optional — graded after you submit; it adds evidence to your score and skipping it never lowers it.", accept: [".csv", ".xlsx"] },
     },
   };
 
@@ -273,7 +273,7 @@ export async function generateSupportCaseStudy(extracted: Extracted, allowBonus 
       max_score: 10,
       stage_kind: "support_manager_review",
       written: [written(parsed.manager_question, "manager_summary", "Your summary", "Summarise what is wrong, what to fix first, and what you need from the team.", 10)],
-      deliverable: { label: "Upload a summary document (optional)", hint: "PDF or DOCX. Stored as a work sample — it does not change your score.", accept: [".pdf", ".docx"] },
+      deliverable: { label: "Upload a summary document (optional)", hint: "PDF or DOCX. Optional — graded after you submit; it adds evidence to your score and skipping it never lowers it.", accept: [".pdf", ".docx"] },
     },
   };
 
