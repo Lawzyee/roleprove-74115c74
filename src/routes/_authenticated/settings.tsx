@@ -39,6 +39,12 @@ function SettingsPage() {
   const qc = useQueryClient();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [reauthOpen, setReauthOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const [exportBlob, setExportBlob] = useState<Blob | null>(null);
+  const requestExport = useServerFn(requestDataExport);
+  const confirmDownloaded = useServerFn(confirmExportDownloaded);
 
   const profileQuery = useQuery({
     queryKey: ["profile", user?.id],
