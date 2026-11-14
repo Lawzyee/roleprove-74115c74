@@ -113,3 +113,71 @@ export function rollUp(criteria: CriterionResult[]) {
 
   return { overall, pillarScores, evaluatedCount: evaluated.length, skippedCount: criteria.length - evaluated.length };
 }
+
+/* ---------------- Uploaded deliverables ---------------- */
+
+export type DeliverableCategory = "slides" | "document" | "image" | "spreadsheet";
+
+/**
+ * Judgement criteria for uploaded work, graded by AI with cited evidence.
+ * They are added on top of the stage's existing criteria (whose weights are
+ * unchanged). No upload = no deliverable criteria, so skipping is never penalised.
+ */
+export const DELIVERABLE_RUBRICS: Record<DeliverableCategory, { pillar: Pillar; tier: Tier; criteria: string[] }> = {
+  slides: {
+    pillar: "communication",
+    tier: "good_to_have",
+    criteria: [
+      "A clear headline message the audience can repeat",
+      "One idea per slide",
+      "Charts are readable and labelled",
+      "A recommendation with a concrete next step",
+      "Suitable for non-technical stakeholders",
+    ],
+  },
+  document: {
+    pillar: "communication",
+    tier: "good_to_have",
+    criteria: [
+      "A clear headline message up front",
+      "Logical structure that is easy to follow",
+      "Uses specific numbers from the case as evidence",
+      "A recommendation with a concrete next step",
+      "Suitable for non-technical stakeholders",
+    ],
+  },
+  image: {
+    pillar: "communication",
+    tier: "good_to_have",
+    criteria: [
+      "The right chart type for the question",
+      "A clear title",
+      "Axis labels and units",
+      "No misleading scales (e.g. truncated axes)",
+      "Readable: legible text, sensible colours, not cluttered",
+    ],
+  },
+  spreadsheet: {
+    pillar: "decision_making",
+    tier: "good_to_have",
+    criteria: [
+      "Tidy, consistent structure (one header row, one record per row, consistent formats)",
+      "Changes are documented (a notes sheet, a flag column or similar)",
+      "Formulas are used where a calculation is expected, not hard-coded numbers",
+    ],
+  },
+};
+
+/** Measured cleaning checks for the Data Analyst cleaning upload. */
+export const CLEANING_CHECK_SCORING: { pillar: Pillar; tier: Tier } = { pillar: "decision_making", tier: "must_have" };
+
+/** Points available per deliverable criterion. */
+export const DELIVERABLE_CRITERION_MAX = 2;
+
+export function deliverableCategory(kind: string): DeliverableCategory | null {
+  if (kind === "pptx") return "slides";
+  if (kind === "pdf" || kind === "docx") return "document";
+  if (kind === "png" || kind === "jpg") return "image";
+  if (kind === "csv" || kind === "xlsx") return "spreadsheet";
+  return null;
+}
