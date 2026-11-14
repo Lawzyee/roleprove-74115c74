@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { extractJobPosting, fetchJobPostingText, wordCount } from "./jd.server";
+import { extractJobPosting, fetchJobPostingText, matchRole, wordCount } from "./jd.server";
+import { ROLE_REGISTRY } from "./role-registry";
 import { extractCvText } from "./interview-prep-cv.server";
 
 import type { PrepCategory } from "./interview-prep";
@@ -75,6 +76,14 @@ export async function createPrepSession(
     can_trust: "ownership, accountability, integrity — mistakes, difficult trade-offs, professional judgement",
     will_grow: "motivation, learning agility, culture and values fit",
   };
+
+  // Role-aware steer for live roles (e.g. de-escalation for Customer Support).
+  const roleKey = matchRole(extracted);
+  if (roleKey) {
+    for (const [pillar, focus] of Object.entries(ROLE_REGISTRY[roleKey].interviewFocus)) {
+      if (focus) pillarBriefs[pillar as PrepCategory] += `; ${focus}`;
+    }
+  }
 
   const pillarOrder: PrepCategory[] = [
     "can_do_job",
