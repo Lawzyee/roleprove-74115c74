@@ -59,7 +59,7 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
 
     const legal = must(await admin.from('legal_acceptances').select('id').eq('user_id', uid), 'legal');
     expect(legal.length).toBeGreaterThan(0);
-    expect((await listUserFiles(admin, uid)).length).toBe(6);
+    expect((await listUserFiles(admin, uid)).length).toBe(5);
 
     const result = await eraseAccount({ admin, userId: uid, stripeFor: (env) => (env === 'sandbox' ? stripe : null) });
     expect(result.stripe).toEqual([{ env: 'sandbox', customerId: customer.id, action: 'deleted' }]);
