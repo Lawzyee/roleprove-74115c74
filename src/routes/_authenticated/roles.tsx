@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
 import { useServerFn } from "@tanstack/react-start";
 import { generateGenericSimulationFn } from "@/lib/jd.functions";
+import { ROLE_REGISTRY, roleKeyForId, type RoleKey } from "@/lib/role-registry";
 import { getStripeEnvironment } from '@/lib/stripe';
 
 export const Route = createFileRoute("/_authenticated/roles")({
@@ -61,14 +62,15 @@ function RolesPage() {
 
   const completedCount = (attemptsQuery.data ?? []).filter((a) => a.status === "completed").length;
 
-  async function onStart(simulationId: string) {
+  async function onStart(roleKey: RoleKey) {
+    const simulationId = roleKey;
     if (!user) {
       toast.error("Please log in again to start a simulation.");
       return;
     }
     setStartingId(simulationId);
     try {
-      const result = await generateGeneric({ data: { environment: getStripeEnvironment() } });
+      const result = await generateGeneric({ data: { environment: getStripeEnvironment(), roleKey } });
       if ('outcome' in result) { router.navigate({ to: '/subscribe' }); return; }
       const { attemptId } = result;
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId } });
@@ -91,8 +93,7 @@ function RolesPage() {
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {(rolesQuery.data ?? []).map((role: any) => {
-            const isDataAnalyst = role.name === "Data Analyst";
-            const sim = (role.simulations ?? []).find((s: any) => !s.is_personalized && !s.owner_user_id);
+            const live = roleKeyForId(role.id) ? ROLE_REGISTRY[roleKeyForId(role.id)!] : null;
             return (
               <Card key={role.id} className="flex flex-col border-border shadow-none">
                 <CardHeader className="pb-3">
@@ -100,25 +101,17 @@ function RolesPage() {
                     {role.category}
                   </Badge>
                   <CardTitle className="font-display text-lg">
-                    {isDataAnalyst ? "Data Analyst — Case Study Practice" : role.name}
+                    {live ? live.cardTitle : role.name}
                   </CardTitle>
                   <CardDescription>
-                    {isDataAnalyst
-                      ? "Work through a full case study from business framing through executive presentation. A new scenario is generated each time you start."
-                      : role.description}
+                    {live ? live.cardDescription : role.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="mt-auto flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    {isDataAnalyst ? "~45-60 min" : sim ? `~${sim.estimated_minutes} min` : "In authoring"}
-                  </span>
-                  {isDataAnalyst ? (
-                    <Button size="sm" onClick={() => onStart("data-analyst")} disabled={startingId === "data-analyst"}>
-                      {startingId === "data-analyst" ? "Building your case study…" : "Start simulation"}
-                    </Button>
-                  ) : sim ? (
-                    <Button size="sm" onClick={() => onStart(sim.id)} disabled={startingId === sim.id}>
-                      {startingId === sim.id ? "Building your case study…" : "Start simulation"}
+                  <span className="text-xs text-muted-foreground">{live ? live.minutes : "In authoring"}</span>
+                  {live ? (
+                    <Button size="sm" onClick={() => onStart(live.key)} disabled={startingId === live.key}>
+                      {startingId === live.key ? "Building your simulation…" : "Start simulation"}
                     </Button>
                   ) : (
                     <Button size="sm" variant="outline" disabled>

@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PILLARS, PILLAR_LABELS, TIER_LABELS, type Pillar } from "@/lib/scoring-config";
 import { useServerFn } from "@tanstack/react-start";
 import { generateGenericSimulationFn, retakeSimulationFn } from "@/lib/jd.functions";
+import { roleKeyForId } from "@/lib/role-registry";
 import { getStripeEnvironment } from '@/lib/stripe';
 
 export const Route = createFileRoute("/_authenticated/results/$attemptId")({
@@ -40,7 +41,7 @@ function ResultsPage() {
     queryFn: async () => {
       const { data: attempt, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, overall_score, completed_at, simulation_id, simulation_type, pillar_scores, proctoring_mode, recording_file_path, recording_consent_given_at, simulations(title, description)")
+        .select("id, status, overall_score, completed_at, simulation_id, simulation_type, pillar_scores, proctoring_mode, recording_file_path, recording_consent_given_at, simulations(title, description, role_id)")
         .eq("id", attemptId)
         .single();
       if (error) throw error;
@@ -73,7 +74,8 @@ function ResultsPage() {
     try {
       const current = query.data.attempt as any;
       if (current.simulation_type === "generic") {
-        const result = await generateGeneric({ data: { environment: getStripeEnvironment() } });
+        const roleKey = roleKeyForId(current.simulations?.role_id) ?? "data_analyst";
+        const result = await generateGeneric({ data: { environment: getStripeEnvironment(), roleKey } });
         if ('outcome' in result) { router.navigate({ to: '/subscribe' }); return; }
         const freshId = result.attemptId;
         router.navigate({ to: "/simulate/$attemptId", params: { attemptId: freshId } });

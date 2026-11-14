@@ -15,7 +15,16 @@ type WrittenQuestion = { key: string; label: string; prompt: string; criteria: s
 type Rubric = {
   max_score?: number;
   stage_kind?: string;
-  fields?: Array<{ key: string; label: string; answer: number; tolerance?: number; points: number }>;
+  fields?: Array<{
+    key: string;
+    label: string;
+    type?: string;
+    answer: number | string;
+    accepted?: string[];
+    answer_list?: string[];
+    tolerance?: number;
+    points: number;
+  }>;
   written?: WrittenQuestion[];
   options?: string[];
   answer?: number;
@@ -45,6 +54,37 @@ function criterion(
   };
 }
 
+const normText = (v: string) => v.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+/**
+ * Text answers (e.g. a category name) match any accepted value case-insensitively.
+ * Ordered id lists earn full marks for the exact order, half for the right set in the wrong order.
+ */
+export function gradeTextField(
+  field: { type?: string; answer: number | string; accepted?: string[]; answer_list?: string[]; points: number },
+  text: string,
+): { score: number; justification: string } {
+  if (field.type === "id_list") {
+    const expected = (field.answer_list ?? []).map((v) => v.toLowerCase());
+    const given = (text.toLowerCase().match(/[a-z]*-?\d+/g) ?? []).filter((t) => expected.includes(t));
+    const seen = [...new Set(given)];
+    const sameSet = seen.length === expected.length && expected.every((e) => seen.includes(e));
+    if (sameSet && seen.every((v, i) => v === expected[i])) {
+      return { score: field.points, justification: `You listed ${field.answer} in the right order.` };
+    }
+    if (sameSet) {
+      return { score: field.points / 2, justification: `You found the right tickets, but the expected order was ${field.answer}.` };
+    }
+    return { score: 0, justification: `You answered "${text}"; the data gives ${field.answer}.` };
+  }
+  const accepted = [String(field.answer), ...(field.accepted ?? [])].map(normText).filter(Boolean);
+  const given = normText(text);
+  const ok = accepted.some((a) => given === a || given.includes(a));
+  return ok
+    ? { score: field.points, justification: `You answered "${text}", which matches ${field.answer}.` }
+    : { score: 0, justification: `You answered "${text}"; the data gives ${field.answer}.` };
+}
+
 function gradeStructured(rubric: Rubric, response: Record<string, unknown>, ctx: { pillar: Pillar; tier: Tier }): Graded {
   const fields = rubric.fields ?? [];
   const criteria: CriterionResult[] = [];
@@ -67,8 +107,16 @@ function gradeStructured(rubric: Rubric, response: Record<string, unknown>, ctx:
       continue;
     }
 
+    if (field.type === "text" || field.type === "id_list") {
+      const graded = gradeTextField(field, text);
+      criteria.push(criterion(field.label, ctx, graded.score, field.points, graded.justification));
+      if (graded.score < field.points) notes.push(`${field.label}: expected ${field.answer}.`);
+      continue;
+    }
+
+    const answerNum = Number(field.answer);
     const tolerance = field.tolerance ?? 0;
-    const correct = Number.isFinite(value) && Math.abs(value - field.answer) <= tolerance;
+    const correct = Number.isFinite(value) && Math.abs(value - answerNum) <= tolerance;
     if (correct) {
       criteria.push(criterion(field.label, ctx, field.points, field.points, `You answered "${text}", which matches the expected value of ${field.answer}.`));
     } else {
