@@ -71,6 +71,13 @@
       "when": 1794692149987,
       "tag": "0009_trial_hmac_and_data_exports",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794694599957,
+      "tag": "0010_live_mock_interviews",
+      "breakpoints": true
     }
   ]
 }

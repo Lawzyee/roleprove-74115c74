@@ -18,11 +18,15 @@ export type Database = {
         Row: {
           daily_generation_cap: number
           daily_grading_cap: number
+          daily_interview_turns: number
+          daily_interviews: number
           free_interview_prep: number
           free_regrades: number
           free_simulations: number
           id: boolean
+          interview_answer_chars: number
           launch_free_until: string | null
+          max_interview_turns: number
           max_upload_mb: number
           paywall_enforced: boolean
           paywall_enforced_since: string | null
@@ -32,11 +36,15 @@ export type Database = {
         Insert: {
           daily_generation_cap?: number
           daily_grading_cap?: number
+          daily_interview_turns?: number
+          daily_interviews?: number
           free_interview_prep?: number
           free_regrades?: number
           free_simulations?: number
           id?: boolean
+          interview_answer_chars?: number
           launch_free_until?: string | null
+          max_interview_turns?: number
           max_upload_mb?: number
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
@@ -46,11 +54,15 @@ export type Database = {
         Update: {
           daily_generation_cap?: number
           daily_grading_cap?: number
+          daily_interview_turns?: number
+          daily_interviews?: number
           free_interview_prep?: number
           free_regrades?: number
           free_simulations?: number
           id?: boolean
+          interview_answer_chars?: number
           launch_free_until?: string | null
+          max_interview_turns?: number
           max_upload_mb?: number
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
@@ -568,6 +580,144 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      live_interview_flags: {
+        Row: {
+          created_at: string
+          excerpt: string | null
+          id: string
+          interview_id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          interview_id: string
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          interview_id?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_interview_flags_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "live_interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_interview_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          interview_id: string
+          msg_type: string
+          pillar: string | null
+          question_index: number | null
+          role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          interview_id: string
+          msg_type: string
+          pillar?: string | null
+          question_index?: number | null
+          role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          interview_id?: string
+          msg_type?: string
+          pillar?: string | null
+          question_index?: number | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_interview_messages_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "live_interviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_interviews: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_index: number
+          followups_used: number
+          id: string
+          length: string
+          plan: Json
+          prep_session_id: string | null
+          role_key: string | null
+          scorecard: Json | null
+          status: string
+          title: string | null
+          turn_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_index?: number
+          followups_used?: number
+          id?: string
+          length?: string
+          plan?: Json
+          prep_session_id?: string | null
+          role_key?: string | null
+          scorecard?: Json | null
+          status?: string
+          title?: string | null
+          turn_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_index?: number
+          followups_used?: number
+          id?: string
+          length?: string
+          plan?: Json
+          prep_session_id?: string | null
+          role_key?: string | null
+          scorecard?: Json | null
+          status?: string
+          title?: string | null
+          turn_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_interviews_prep_session_id_fkey"
+            columns: ["prep_session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_prep_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
