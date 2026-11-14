@@ -22,7 +22,7 @@ export type DeliverableRow = {
 };
 
 /** Uploads a file to the user's private folder, then asks the server to validate and record it. */
-export function useDeliverableUploader(attemptId: string, taskId: string, onDone: (r: { attemptCompleted: boolean }) => void) {
+export function useDeliverableUploader(attemptId: string, taskId: string, onDone: (r: { attemptCompleted: boolean; fileName: string }) => void) {
   const { user } = useAuth();
   const record = useServerFn(recordDeliverableFn);
   const [busy, setBusy] = useState(false);
@@ -41,7 +41,7 @@ export function useDeliverableUploader(attemptId: string, taskId: string, onDone
       const result = await record({ data: { attemptId, taskId, filePath: path, fileName: safeName } });
       if (!result.ok) { toast.error(result.error); return; }
       toast.success("File uploaded");
-      onDone({ attemptCompleted: result.record.attemptCompleted });
+      onDone({ attemptCompleted: result.record.attemptCompleted, fileName: file.name });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not upload that file");
     } finally {
@@ -131,8 +131,7 @@ export function DeliverableResult({ d, children }: { d: DeliverableRow; children
 /** Upload box shown inside a simulation stage. Files are graded after the attempt is submitted. */
 export function DeliverableUpload({ attemptId, taskId, label, accept }: { attemptId: string; taskId: string; label: string; hint?: string; accept: string[] }) {
   const [name, setName] = useState<string | null>(null);
-  const [pending, setPending] = useState<File | null>(null);
-  const { busy, upload } = useDeliverableUploader(attemptId, taskId, () => pending && setName(pending.name));
+  const { busy, upload } = useDeliverableUploader(attemptId, taskId, (r) => setName(r.fileName));
   return (
     <div className="rounded-xl border border-dashed border-border p-4">
       <p className="text-sm font-medium">{label}</p>
@@ -140,7 +139,7 @@ export function DeliverableUpload({ attemptId, taskId, label, accept }: { attemp
         {accept.join(", ").replace(/\./g, "").toUpperCase()}, up to {CLIENT_MAX_MB} MB. Graded after you submit and adds evidence to your score; skipping it never lowers your score. A new upload replaces the previous one.
       </p>
       <div className="mt-3">
-        <FilePickButton accept={accept} busy={busy} label={name ? "Replace file" : "Choose file"} onFile={(f) => { setPending(f); void upload(f); }} />
+        <FilePickButton accept={accept} busy={busy} label={name ? "Replace file" : "Choose file"} onFile={(f) => void upload(f)} />
       </div>
       {name && <p className="mt-2 text-xs text-muted-foreground"><CheckCircle2 className="mr-1 inline h-3 w-3 text-primary" />{name} — will be graded when you submit.</p>}
     </div>
