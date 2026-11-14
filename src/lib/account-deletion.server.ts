@@ -12,6 +12,7 @@ export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings'
 export const USER_TABLES: Array<{ table: string; column: string }> = [
   { table: 'support_tickets', column: 'user_id' },
   { table: 'simulation_attempts', column: 'user_id' },
+  { table: 'live_interviews', column: 'user_id' },
   { table: 'interview_prep_sessions', column: 'user_id' },
   { table: 'job_postings', column: 'user_id' },
   { table: 'credentials', column: 'user_id' },
@@ -52,7 +53,11 @@ export async function eraseStripeCustomer(stripe: Stripe, env: StripeEnvName, us
     const customer = await stripe.customers.retrieve(id).catch((e: { code?: string }) => { if (e?.code === 'resource_missing') return null; throw e; });
     if (!customer || customer.deleted) continue;
     const subs = await stripe.subscriptions.list({ customer: id, status: 'all', limit: 100 });
-    for (const s of subs.data) if (!DONE.includes(s.status)) await stripe.subscriptions.cancel(s.id, { invoice_now: false, prorate: false });
+    for (const s of subs.data) {
+      if (DONE.includes(s.status)) continue;
+      // Stripe test mode is eventually consistent: a just-created subscription can 404 on cancel.
+      await stripe.subscriptions.cancel(s.id, { invoice_now: false, prorate: false }).catch((e: { code?: string }) => { if (e?.code !== 'resource_missing') throw e; });
+    }
     const hold = await stripeHoldReason(stripe, id);
     if (hold) {
       await stripe.customers.update(id, { name: '', email: '', description: '', phone: '', metadata: { userId: '' } });

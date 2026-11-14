@@ -32,6 +32,7 @@ import { Route as AuthenticatedSimulateAttemptIdRouteImport } from './routes/_au
 import { Route as AuthenticatedSupportIndexRouteImport } from './routes/_authenticated/support.index'
 import { Route as AuthenticatedSupportTicketIdRouteImport } from './routes/_authenticated/support.$ticketId'
 import { Route as AuthenticatedSupportNewRouteImport } from './routes/_authenticated/support.new'
+import { Route as AuthenticatedInterviewPrepLiveInterviewIdRouteImport } from './routes/_authenticated/interview-prep.live.$interviewId'
 import { Route as ApiPublicHooksPurgeExportsRouteImport } from './routes/api/public/hooks/purge-exports'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -161,6 +162,12 @@ const AuthenticatedSupportNewRoute = AuthenticatedSupportNewRouteImport.update({
   path: '/support/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInterviewPrepLiveInterviewIdRoute =
+  AuthenticatedInterviewPrepLiveInterviewIdRouteImport.update({
+    id: '/interview-prep/live/$interviewId',
+    path: '/interview-prep/live/$interviewId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicHooksPurgeExportsRoute =
   ApiPublicHooksPurgeExportsRouteImport.update({
     id: '/api/public/hooks/purge-exports',
@@ -213,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
   '/support/': typeof AuthenticatedSupportIndexRoute
+  '/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -242,6 +250,7 @@ export interface FileRoutesByTo {
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/interview-prep': typeof AuthenticatedInterviewPrepIndexRoute
   '/support': typeof AuthenticatedSupportIndexRoute
+  '/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -273,6 +282,7 @@ export interface FileRoutesById {
   '/_authenticated/support/new': typeof AuthenticatedSupportNewRoute
   '/_authenticated/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
   '/_authenticated/support/': typeof AuthenticatedSupportIndexRoute
+  '/_authenticated/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -304,6 +314,7 @@ export interface FileRouteTypes {
     | '/support/new'
     | '/interview-prep/'
     | '/support/'
+    | '/interview-prep/live/$interviewId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/support/new'
     | '/interview-prep'
     | '/support'
+    | '/interview-prep/live/$interviewId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
@@ -363,6 +375,7 @@ export interface FileRouteTypes {
     | '/_authenticated/support/new'
     | '/_authenticated/interview-prep/'
     | '/_authenticated/support/'
+    | '/_authenticated/interview-prep/live/$interviewId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
@@ -549,6 +562,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSupportNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/interview-prep/live/$interviewId': {
+      id: '/_authenticated/interview-prep/live/$interviewId'
+      path: '/interview-prep/live/$interviewId'
+      fullPath: '/interview-prep/live/$interviewId'
+      preLoaderRoute: typeof AuthenticatedInterviewPrepLiveInterviewIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/hooks/purge-exports': {
       id: '/api/public/hooks/purge-exports'
       path: '/api/public/hooks/purge-exports'
@@ -603,6 +623,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSupportNewRoute: typeof AuthenticatedSupportNewRoute
   AuthenticatedInterviewPrepIndexRoute: typeof AuthenticatedInterviewPrepIndexRoute
   AuthenticatedSupportIndexRoute: typeof AuthenticatedSupportIndexRoute
+  AuthenticatedInterviewPrepLiveInterviewIdRoute: typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -622,6 +643,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSupportNewRoute: AuthenticatedSupportNewRoute,
   AuthenticatedInterviewPrepIndexRoute: AuthenticatedInterviewPrepIndexRoute,
   AuthenticatedSupportIndexRoute: AuthenticatedSupportIndexRoute,
+  AuthenticatedInterviewPrepLiveInterviewIdRoute:
+    AuthenticatedInterviewPrepLiveInterviewIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

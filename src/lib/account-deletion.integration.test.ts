@@ -38,6 +38,10 @@ async function seedAccount() {
     const q = must(await admin.from('interview_prep_questions').insert({ session_id: sess.id, category: 'can_do_job', question_text: 'Q', order_index: 0 }).select('id').single(), 'question');
     { const r = await admin.from('interview_prep_responses').insert({ question_id: q.id, response_text: 'my reply' }); if (r.error) throw new Error('response' + ": " + r.error.message); }
 
+    const live = must(await admin.from('live_interviews').insert({ user_id: uid, prep_session_id: sess.id, role_key: 'data_analyst', length: 'short', plan: [{ pillar: 'can_do_job', question: 'Live Q' }] }).select('id').single(), 'live interview');
+    const liveMsg = must(await admin.from('live_interview_messages').insert({ interview_id: live.id, role: 'candidate', content: 'my live answer', msg_type: 'answer', pillar: 'can_do_job', question_index: 0 }).select('id').single(), 'live message');
+    { const r = await admin.from('live_interview_flags').insert({ interview_id: live.id, user_id: uid, reason: 'steering test' }); if (r.error) throw new Error('live flag' + ": " + r.error.message); }
+
     must(await admin.storage.from('attempt-recordings').upload(`${uid}/${attempt.id}.webm`, file('webm', 'video/webm')), 'recording');
     must(await admin.storage.from('credentials').upload(`${uid}/cert.pdf`, file('%PDF-1.4', 'application/pdf')), 'credential file');
     { const r = await admin.from('credentials').insert({ user_id: uid, title: 'Cert', issuer: 'X', file_path: `${uid}/cert.pdf` }); if (r.error) throw new Error('credential' + ": " + r.error.message); }
@@ -55,12 +59,12 @@ async function seedAccount() {
     const sub = await stripe.subscriptions.create({ customer: customer.id, items: [{ price: price.id }], trial_period_days: 7, metadata: { userId: uid } });
     { const r = await admin.from('subscriptions').insert({ user_id: uid, stripe_subscription_id: sub.id, stripe_customer_id: customer.id, price_id: 'roleprove_practice_prep_monthly', status: sub.status, environment: 'sandbox' }); if (r.error) throw new Error('subscription' + ": " + r.error.message); }
 
-    return { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, sim, task, attempt, sess, q, ticket, msg, customer };
+    return { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg };
 }
 
 describe.skipIf(!ready)('account deletion removes everything', () => {
   it('leaves no rows, files, sign-in account or Stripe customer behind', async () => {
-    const { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, sim, task, attempt, sess, q, ticket, msg, customer } = await seedAccount();
+    const { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg } = await seedAccount();
     const legal = must(await admin.from('legal_acceptances').select('id').eq('user_id', uid), 'legal');
     expect(legal.length).toBeGreaterThan(0);
     expect((await listUserFiles(admin, uid)).length).toBe(5);
@@ -70,7 +74,7 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
 
     for (const { table, column } of USER_TABLES) expect(must(await admin.from(table as never).select('*').eq(column, uid), table), table).toEqual([]);
     expect(must(await admin.from('simulations').select('id').eq('id', sim.id), 'sim')).toEqual([]);
-    for (const [t, c, v] of [['attempt_task_results', 'attempt_id', attempt.id], ['attempt_deliverables', 'user_id', uid], ['deliverable_flags', 'user_id', uid], ['interview_prep_questions', 'session_id', sess.id], ['interview_prep_responses', 'question_id', q.id], ['support_messages', 'ticket_id', ticket.id], ['support_attachments', 'message_id', msg.id], ['simulation_tasks', 'id', task.id]] as const)
+    for (const [t, c, v] of [['attempt_task_results', 'attempt_id', attempt.id], ['attempt_deliverables', 'user_id', uid], ['deliverable_flags', 'user_id', uid], ['interview_prep_questions', 'session_id', sess.id], ['interview_prep_responses', 'question_id', q.id], ['support_messages', 'ticket_id', ticket.id], ['support_attachments', 'message_id', msg.id], ['simulation_tasks', 'id', task.id], ['live_interview_messages', 'interview_id', live.id], ['live_interview_flags', 'interview_id', live.id]] as const)
       expect(must(await admin.from(t as never).select('*').eq(c, v), t), t).toEqual([]);
     expect(await listUserFiles(admin, uid)).toEqual([]);
     expect((await admin.auth.admin.getUserById(uid)).data.user).toBeNull();
@@ -102,6 +106,8 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
       expect(all.attempt_answers[0].response).toEqual({ a: 'my answer' });
       expect(all.interview_prep_sessions[0].cv_extracted_text).toBe('CV text');
       expect(all.interview_prep_replies[0].response_text).toBe('my reply');
+      expect(all.live_interviews[0].role_key).toBe('data_analyst');
+      expect(all.live_interview_messages[0].content).toBe('my live answer');
       expect(all.support_messages[0].body).toBe('hi');
       expect(all.job_postings[0].raw_text).toBe('JD text');
       expect(all.subscriptions[0].status).toBe('trialing');
@@ -110,6 +116,7 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
       expect(all.support_tickets[0]).not.toHaveProperty('staff_last_read_at');
       expect(names.some((n) => n.includes('flag'))).toBe(false);
       expect(JSON.stringify(all)).not.toContain('"reason":"test"');
+      expect(JSON.stringify(all)).not.toContain('steering test');
       // All five files are inside the zip.
       for (const prefix of ['files/deliverables/', 'files/deliverables/interview-prep-cv/', 'files/attempt-recordings/', 'files/credentials/', 'files/support-attachments/'])
         expect(names.some((n) => n.startsWith(prefix)), prefix).toBe(true);
