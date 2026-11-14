@@ -57,6 +57,13 @@
       "when": 1794616268608,
       "tag": "0007_legal_acceptances",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794690190255,
+      "tag": "0008_grade_uploaded_deliverables",
+      "breakpoints": true
     }
   ]
 }
