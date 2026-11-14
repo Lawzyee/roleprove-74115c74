@@ -79,9 +79,10 @@ function normaliseTickets(raw: any): Dataset {
 
 const minsLabel = (m: number) => (m % 60 === 0 ? `${m / 60} hour${m === 60 ? "" : "s"}` : `${m} minutes`);
 
-export async function generateSupportCaseStudy(extracted: Extracted): Promise<GeneratedSimulation> {
+export async function generateSupportCaseStudy(extracted: Extracted, allowBonus = true): Promise<GeneratedSimulation> {
   const themes = extracted.emphasis_themes.length ? extracted.emphasis_themes : extracted.skills.slice(0, 5);
-  const bonus = detectSupportBonusStages(extracted);
+  // Bonus stages only when a real job description emphasises them, never for generic practice.
+  const bonus = allowBonus ? detectSupportBonusStages(extracted) : [];
 
   const parsed = await callAi(
     "You design realistic, hands-on Customer Support Representative assessments. Every generation must be original: new company, product, customers, ticket ids, dates and numbers. Reply with JSON only.",
@@ -294,12 +295,12 @@ export async function generateSupportCaseStudy(extracted: Extracted): Promise<Ge
   };
 }
 
-export async function generateSupportCaseStudyWithRetry(extracted: Extracted): Promise<GeneratedSimulation> {
+export async function generateSupportCaseStudyWithRetry(extracted: Extracted, allowBonus = true): Promise<GeneratedSimulation> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt++) {
     if (attempt > 0) await new Promise((r) => setTimeout(r, 500 * attempt));
     try {
-      return await generateSupportCaseStudy(extracted);
+      return await generateSupportCaseStudy(extracted, allowBonus);
     } catch (error) {
       lastError = error;
       console.error(`[support] generation attempt ${attempt + 1} failed:`, error instanceof Error ? error.message : error);

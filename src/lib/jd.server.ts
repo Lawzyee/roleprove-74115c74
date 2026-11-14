@@ -935,7 +935,7 @@ export async function generateGenericSimulation(userId: string, roleKey: RoleKey
 
   const generated =
     roleKey === "customer_support"
-      ? await generateSupportCaseStudyWithRetry(extracted)
+      ? await generateSupportCaseStudyWithRetry(extracted, false)
       : await generateCaseStudyWithRetry(extracted);
 
   const { data: newSim, error: simError } = await supabaseAdmin
