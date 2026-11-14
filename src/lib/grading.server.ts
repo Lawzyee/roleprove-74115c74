@@ -7,6 +7,7 @@ import {
   type Pillar,
   type Tier,
 } from "./scoring-config";
+import { deliverableCriteria } from "./deliverables.server";
 
 type AnyClient = SupabaseClient<any, any, any>;
 
@@ -354,6 +355,8 @@ export async function gradeAttempt(supabase: AnyClient, userId: string, attemptI
     if (updateError) throw new Error(updateError.message);
   }
 
+  // Graded uploads add their own criteria; ungraded or missing uploads add none, so skipping is never penalised.
+  allCriteria.push(...(await deliverableCriteria(supabase, attemptId)));
   const { overall, pillarScores } = rollUp(allCriteria);
 
   const { error: finishError } = await supabase

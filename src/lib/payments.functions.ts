@@ -114,9 +114,19 @@ export const deleteAccountFn = createServerFn({ method: 'POST' }).middleware([re
         const live = await stripe.subscriptions.retrieve(s.stripe_subscription_id);
         if (!['canceled', 'incomplete_expired'].includes(live.status)) await stripe.subscriptions.cancel(live.id, { invoice_now: false, prorate: false });
       }
-      for (const bucket of ['credentials', 'deliverables']) {
-        const { data: files } = await supabaseAdmin.storage.from(bucket).list(userId, { limit: 1000 });
-        if (files?.length) await supabaseAdmin.storage.from(bucket).remove(files.map((f) => `${userId}/${f.name}`));
+      // Files live in nested folders ({userId}/{attemptId}/...), so walk every level before removing.
+      const listAll = async (bucket: string, prefix: string): Promise<string[]> => {
+        const { data: entries } = await supabaseAdmin.storage.from(bucket).list(prefix, { limit: 1000 });
+        const out: string[] = [];
+        for (const e of entries ?? []) {
+          const path = `${prefix}/${e.name}`;
+          if (e.id) out.push(path); else out.push(...(await listAll(bucket, path)));
+        }
+        return out;
+      };
+      for (const bucket of ['credentials', 'deliverables', 'attempt-recordings']) {
+        const paths = await listAll(bucket, userId);
+        for (let i = 0; i < paths.length; i += 100) await supabaseAdmin.storage.from(bucket).remove(paths.slice(i, i + 100));
       }
       await supabaseAdmin.from('support_tickets').delete().eq('user_id', userId);
       await supabaseAdmin.from('simulation_attempts').delete().eq('user_id', userId);
