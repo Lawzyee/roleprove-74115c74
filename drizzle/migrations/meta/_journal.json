@@ -64,6 +64,13 @@
       "when": 1794690190255,
       "tag": "0008_grade_uploaded_deliverables",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794692149987,
+      "tag": "0009_trial_hmac_and_data_exports",
+      "breakpoints": true
     }
   ]
 }

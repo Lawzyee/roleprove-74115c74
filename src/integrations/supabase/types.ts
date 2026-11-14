@@ -281,6 +281,39 @@ export type Database = {
         }
         Relationships: []
       }
+      data_exports: {
+        Row: {
+          created_at: string
+          downloaded_at: string | null
+          expires_at: string
+          failed_section: string | null
+          file_path: string | null
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          downloaded_at?: string | null
+          expires_at?: string
+          failed_section?: string | null
+          file_path?: string | null
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          downloaded_at?: string | null
+          expires_at?: string
+          failed_section?: string | null
+          file_path?: string | null
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       deliverable_flags: {
         Row: {
           attempt_id: string
@@ -942,6 +975,8 @@ export type Database = {
         Args: { p_env: string; p_user: string }
         Returns: Json
       }
+      billing_email_hash: { Args: { p_email: string }; Returns: string }
+      billing_hmac_of_md5: { Args: { p_md5: string }; Returns: string }
       get_billing_access: { Args: { p_env: string }; Returns: Json }
       is_support_staff: { Args: { _user_id: string }; Returns: boolean }
       reserve_billing_usage: {

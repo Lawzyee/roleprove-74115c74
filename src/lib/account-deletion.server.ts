@@ -3,7 +3,7 @@ import type Stripe from 'stripe';
 
 export type StripeEnvName = 'sandbox' | 'live';
 /** Every private file store whose paths start with {userId}/. */
-export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings', 'support-attachments'] as const;
+export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings', 'support-attachments', 'data-exports'] as const;
 /**
  * Rows keyed by user, deleted parent-first so child rows go with them
  * (task results, uploads, gradings, flags, prep questions/answers, ticket messages/attachments).
@@ -18,6 +18,7 @@ export const USER_TABLES: Array<{ table: string; column: string }> = [
   { table: 'billing_usage', column: 'user_id' },
   { table: 'deliverable_gradings', column: 'user_id' },
   { table: 'legal_acceptances', column: 'user_id' },
+  { table: 'data_exports', column: 'user_id' },
   { table: 'subscriptions', column: 'user_id' },
   { table: 'profiles', column: 'id' },
 ];
@@ -65,13 +66,18 @@ export async function eraseStripeCustomer(stripe: Stripe, env: StripeEnvName, us
 }
 
 async function listAll(admin: SupabaseClient, bucket: string, prefix: string): Promise<string[]> {
-  const out: string[] = [];
+  return (await listAllSized(admin, bucket, prefix)).map((f) => f.path);
+}
+
+async function listAllSized(admin: SupabaseClient, bucket: string, prefix: string): Promise<Array<{ path: string; size: number }>> {
+  const out: Array<{ path: string; size: number }> = [];
   for (let offset = 0; ; offset += 1000) {
     const { data, error } = await admin.storage.from(bucket).list(prefix, { limit: 1000, offset });
     if (error) throw new Error(`Could not list ${bucket}: ${error.message}`);
     for (const e of data ?? []) {
       const path = `${prefix}/${e.name}`;
-      if (e.id) out.push(path); else out.push(...(await listAll(admin, bucket, path)));
+      if (e.id) out.push({ path, size: Number((e.metadata as { size?: number } | null)?.size ?? 0) });
+      else out.push(...(await listAllSized(admin, bucket, path)));
     }
     if (!data || data.length < 1000) return out;
   }
@@ -81,6 +87,11 @@ export async function listUserFiles(admin: SupabaseClient, userId: string) {
   const all: Array<{ bucket: string; path: string }> = [];
   for (const bucket of USER_BUCKETS) for (const path of await listAll(admin, bucket, userId)) all.push({ bucket, path });
   return all;
+}
+
+/** Files in one bucket under {userId}/, with sizes (used by the data export). */
+export function listUserBucketFiles(admin: SupabaseClient, bucket: string, userId: string) {
+  return listAllSized(admin, bucket, userId);
 }
 
 /**

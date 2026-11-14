@@ -1,12 +1,10 @@
 // Real end-to-end erasure check against the backend and Stripe test mode.
 // Skips automatically where backend keys are absent (e.g. CI without secrets).
 import { describe, expect, it } from 'vitest';
-import { createHash } from 'node:crypto';
 
 const ready = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.STRIPE_SANDBOX_API_KEY && process.env.LOVABLE_API_KEY);
 
-describe.skipIf(!ready)('account deletion removes everything', () => {
-  it('leaves no rows, files, sign-in account or Stripe customer behind', async () => {
+async function seedAccount() {
     const { supabaseAdmin: admin } = await import('@/integrations/supabase/client.server');
     const { createStripeClient } = await import('./stripe.server');
     const { eraseAccount, listUserFiles, USER_TABLES } = await import('./account-deletion.server');
@@ -57,6 +55,12 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
     const sub = await stripe.subscriptions.create({ customer: customer.id, items: [{ price: price.id }], trial_period_days: 7, metadata: { userId: uid } });
     { const r = await admin.from('subscriptions').insert({ user_id: uid, stripe_subscription_id: sub.id, stripe_customer_id: customer.id, price_id: 'roleprove_practice_prep_monthly', status: sub.status, environment: 'sandbox' }); if (r.error) throw new Error('subscription' + ": " + r.error.message); }
 
+    return { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, sim, task, attempt, sess, q, ticket, msg, customer };
+}
+
+describe.skipIf(!ready)('account deletion removes everything', () => {
+  it('leaves no rows, files, sign-in account or Stripe customer behind', async () => {
+    const { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, sim, task, attempt, sess, q, ticket, msg, customer } = await seedAccount();
     const legal = must(await admin.from('legal_acceptances').select('id').eq('user_id', uid), 'legal');
     expect(legal.length).toBeGreaterThan(0);
     expect((await listUserFiles(admin, uid)).length).toBe(5);
@@ -73,8 +77,80 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
     expect((await stripe.customers.retrieve(customer.id)).deleted).toBe(true);
 
     // Deliberately kept: the hashed email that blocks a second free trial.
-    const kept = must(await admin.from('billing_trial_history').select('email_hash').eq('email_hash', createHash('md5').update(email.toLowerCase()).digest('hex')), 'trial');
+    const hash = must(await admin.rpc('billing_email_hash', { p_email: email }), 'hash');
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+    const kept = must(await admin.from('billing_trial_history').select('email_hash').eq('email_hash', hash), 'trial');
     expect(kept.length).toBe(1);
     { const r = await admin.from('billing_trial_history').delete().eq('email_hash', kept[0].email_hash); if (r.error) throw new Error('cleanup test trial row' + ": " + r.error.message); }
   }, 120_000);
+
+  it('exports every data type the account holds, then the export is deleted with the account', async () => {
+    const { admin, stripe, eraseAccount, uid, email } = await seedAccount();
+    try {
+      const { unzipSync, strFromU8 } = await import('fflate');
+      const { buildExport, SECTIONS, NOT_INCLUDED } = await import('./data-export.server');
+      const { zip, counts } = await buildExport(admin, uid, { email, createdAt: new Date().toISOString() });
+      const files = unzipSync(zip);
+      const names = Object.keys(files);
+      // Every data section is present and holds this account's rows.
+      for (const s of SECTIONS) {
+        expect(counts[s.file], s.label).toBeGreaterThan(0);
+        expect(strFromU8(files[`data/${s.file}.csv`]).split('\n').length, s.file).toBeGreaterThan(2);
+      }
+      const all = JSON.parse(strFromU8(files['data/all_data.json']));
+      expect(all.account.email).toBe(email);
+      expect(all.attempt_answers[0].response).toEqual({ a: 'my answer' });
+      expect(all.interview_prep_sessions[0].cv_extracted_text).toBe('CV text');
+      expect(all.interview_prep_replies[0].response_text).toBe('my reply');
+      expect(all.support_messages[0].body).toBe('hi');
+      expect(all.job_postings[0].raw_text).toBe('JD text');
+      expect(all.subscriptions[0].status).toBe('trialing');
+      // Staff-only data stays out.
+      expect(all.support_tickets[0]).not.toHaveProperty('tags');
+      expect(all.support_tickets[0]).not.toHaveProperty('staff_last_read_at');
+      expect(names.some((n) => n.includes('flag'))).toBe(false);
+      expect(JSON.stringify(all)).not.toContain('"reason":"test"');
+      // All five files are inside the zip.
+      for (const prefix of ['files/deliverables/', 'files/deliverables/interview-prep-cv/', 'files/attempt-recordings/', 'files/credentials/', 'files/support-attachments/'])
+        expect(names.some((n) => n.startsWith(prefix)), prefix).toBe(true);
+      expect(names.filter((n) => n.startsWith('files/')).length).toBe(5);
+      const readme = strFromU8(files['README.txt']);
+      for (const s of SECTIONS) expect(readme).toContain(`data/${s.file}.csv`);
+      expect(readme).toContain(NOT_INCLUDED[0]);
+      // A stored export zip is removed by account deletion.
+      { const r = await admin.storage.from('data-exports').upload(`${uid}/e.zip`, new Blob([zip as BlobPart])); if (r.error) throw r.error; }
+      { const r = await admin.from('data_exports').insert({ user_id: uid, status: 'ready', file_path: `${uid}/e.zip` }); if (r.error) throw r.error; }
+    } finally {
+      await eraseAccount({ admin, userId: uid, stripeFor: (env) => (env === 'sandbox' ? stripe : null) });
+      const hash = (await admin.rpc('billing_email_hash', { p_email: email })).data;
+      if (hash) await admin.from('billing_trial_history').delete().eq('email_hash', hash);
+    }
+    expect((await admin.storage.from('data-exports').list(uid)).data).toEqual([]);
+    expect((await admin.from('data_exports').select('id').eq('user_id', uid)).data).toEqual([]);
+  }, 120_000);
+
+  it('a deleted email signing up again keeps its original trial record (keyed hash, no plain MD5)', async () => {
+    const { supabaseAdmin: admin } = await import('@/integrations/supabase/client.server');
+    const { eraseAccount } = await import('./account-deletion.server');
+    const { createHash } = await import('node:crypto');
+    const email = `trial-test-${crypto.randomUUID()}@example.com`;
+    const make = async () => { const r = await admin.auth.admin.createUser({ email, password: crypto.randomUUID(), email_confirm: true, user_metadata: { name: 'T', terms_version: 't', privacy_version: 'p' } }); if (r.error) throw r.error; return r.data.user.id; };
+    const hash = (await admin.rpc('billing_email_hash', { p_email: `  ${email.toUpperCase()} ` })).data as string;
+    try {
+      const first = await make();
+      const before = (await admin.from('billing_trial_history').select('first_signup_at').eq('email_hash', hash)).data;
+      expect(before?.length).toBe(1);
+      expect((await admin.from('billing_trial_history').select('email_hash').eq('email_hash', createHash('md5').update(email).digest('hex'))).data).toEqual([]);
+      await eraseAccount({ admin, userId: first, stripeFor: () => null });
+      await new Promise((r) => setTimeout(r, 1100));
+      const second = await make();
+      const access = await admin.rpc('billing_access_for', { p_user: second, p_env: 'sandbox' });
+      expect(access.error).toBeNull();
+      const after = (await admin.from('billing_trial_history').select('first_signup_at').eq('email_hash', hash)).data;
+      expect(after).toEqual(before);
+      await eraseAccount({ admin, userId: second, stripeFor: () => null });
+    } finally {
+      await admin.from('billing_trial_history').delete().eq('email_hash', hash);
+    }
+  }, 60_000);
 });
