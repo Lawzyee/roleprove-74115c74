@@ -215,7 +215,7 @@ export function buildGraderPrompt(opts: { criteria: string[]; stageBrief: string
   ].join("\n");
 }
 
-async function callGrader(prompt: string, count: number, image?: { mime: string; base64: string }) {
+export async function callGrader(prompt: string, count: number, image?: { mime: string; base64: string }) {
   const { generateResponse, GatewayError, RateLimitError, PaymentRequiredError } = await import("@lovable.dev/ai-gateway");
   const content: Array<{ type: "input_text"; text: string } | { type: "input_image"; image_url: string; detail: "high" }> = [{ type: "input_text", text: prompt }];
   if (image) content.push({ type: "input_image", image_url: `data:${image.mime};base64,${image.base64}`, detail: "high" });
