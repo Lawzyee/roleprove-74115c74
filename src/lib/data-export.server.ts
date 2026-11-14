@@ -85,7 +85,7 @@ export async function buildExport(admin: SupabaseClient, userId: string, account
   const counts: Record<string, number> = {};
   for (const s of SECTIONS) {
     let rows: Row[];
-    try { rows = strip(s.file === 'support_tickets' ? 'support_tickets' : s.file, await s.load(ctx)); }
+    try { rows = strip(s.file, await s.load(ctx)); }
     catch (e) { throw new ExportSectionError(s.label, (e as Error).message); }
     if (s.keep) ctx.ids[s.keep] = rows.map((r) => String(r.id));
     data[s.file] = rows; counts[s.file] = rows.length;
