@@ -222,6 +222,109 @@ function InterviewPrepPage() {
           </CardContent>
         </Card>
 
+        <Card className="mt-8 border-border shadow-none">
+          <CardHeader className="pb-3">
+            <Badge variant="secondary" className="w-fit gap-1.5">
+              <MessagesSquare className="h-3.5 w-3.5" /> Live practice
+            </Badge>
+            <CardTitle className="font-display text-lg">Practice live interview</CardTitle>
+            <CardDescription>
+              A live text interview: one question at a time, follow-ups when answers are vague, and private
+              practice feedback at the end.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div>
+              <p className="text-sm font-medium">What should it be based on?</p>
+              <select
+                value={liveSource}
+                disabled={liveLoading}
+                onChange={(e) => setLiveSource(e.target.value)}
+                className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Choose a prep session or a role…</option>
+                {(sessionsQuery.data ?? []).map((s) => (
+                  <option key={s.id} value={s.id}>
+                    Prep session: {s.title ?? "Interview prep"}
+                  </option>
+                ))}
+                {LIVE_ROLES.map((r) => (
+                  <option key={r.key} value={`role:${r.key}`}>
+                    Fresh start: {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <p className="text-sm font-medium">Length</p>
+              <div className="mt-2 flex gap-2">
+                {(
+                  [
+                    { value: "short", label: "Short — 5 questions" },
+                    { value: "standard", label: "Standard — 8 questions" },
+                  ] as const
+                ).map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    disabled={liveLoading}
+                    onClick={() => setLiveLength(o.value)}
+                    className={`rounded-lg border px-3 py-2 text-sm ${
+                      liveLength === o.value ? "border-primary bg-primary/5 font-medium" : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <p className="rounded-xl bg-muted p-3 text-xs text-muted-foreground">
+              Your answers are sent to an AI provider to run this interview. Read how we handle your data in the{" "}
+              <a href="/privacy" target="_blank" rel="noopener" className="text-primary underline">
+                Privacy Policy
+              </a>
+              . Starting counts as one interview prep use.
+            </p>
+            <div className="flex justify-end">
+              <Button onClick={onStartLive} disabled={liveLoading || !liveSource}>
+                {liveLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Preparing your interview…
+                  </>
+                ) : (
+                  "Start live interview"
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {(liveQuery.data ?? []).length > 0 && (
+          <section className="mt-8">
+            <h2 className="mb-3 font-display text-xl font-semibold">Live interviews</h2>
+            <Card className="border-border shadow-none">
+              <CardContent className="divide-y divide-border p-0">
+                {(liveQuery.data ?? []).map((i) => (
+                  <div key={i.id} className="flex items-center justify-between gap-4 p-4">
+                    <div>
+                      <p className="font-medium">{i.title ?? "Live mock interview"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {i.status === "active" ? "In progress — resume anytime" : "Finished"} ·{" "}
+                        {new Date(i.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Button asChild size="sm" variant="outline">
+                      <Link to="/interview-prep/live/$interviewId" params={{ interviewId: i.id }}>
+                        {i.status === "active" ? "Resume" : "Review"}
+                      </Link>
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </section>
+        )}
+
         <section className="mt-8">
           <h2 className="mb-3 font-display text-xl font-semibold">Past prep sessions</h2>
           <Card className="border-border shadow-none">
