@@ -1,7 +1,6 @@
 // Real end-to-end erasure check against the backend and Stripe test mode.
 // Skips automatically where backend keys are absent (e.g. CI without secrets).
 import { describe, expect, it } from 'vitest';
-import { createHash } from 'node:crypto';
 
 const ready = !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.STRIPE_SANDBOX_API_KEY && process.env.LOVABLE_API_KEY);
 
@@ -73,7 +72,9 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
     expect((await stripe.customers.retrieve(customer.id)).deleted).toBe(true);
 
     // Deliberately kept: the hashed email that blocks a second free trial.
-    const kept = must(await admin.from('billing_trial_history').select('email_hash').eq('email_hash', createHash('md5').update(email.toLowerCase()).digest('hex')), 'trial');
+    const hash = must(await admin.rpc('billing_email_hash', { p_email: email }), 'hash');
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+    const kept = must(await admin.from('billing_trial_history').select('email_hash').eq('email_hash', hash), 'trial');
     expect(kept.length).toBe(1);
     { const r = await admin.from('billing_trial_history').delete().eq('email_hash', kept[0].email_hash); if (r.error) throw new Error('cleanup test trial row' + ": " + r.error.message); }
   }, 120_000);
