@@ -2,8 +2,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const FREE_ATTEMPT_LIMIT = 3;
 
-/** Roles that currently have a live simulation pipeline. */
-export const LIVE_ROLE_IDS = ["11111111-1111-1111-1111-111111111101"];
+import { LIVE_ROLE_IDS } from "./role-registry";
+
+/** Roles that currently have a live simulation pipeline (see role-registry.ts). */
+export { LIVE_ROLE_IDS };
 export const isLiveRole = (roleId: string | null | undefined) => !!roleId && LIVE_ROLE_IDS.includes(roleId);
 
 export type DatasetColumn = { key: string; label: string };
@@ -21,7 +23,7 @@ export type WrittenQuestion = {
 export type Rubric = {
   max_score?: number;
   stage_kind?: string;
-  fields?: Array<{ key: string; label: string; type?: string; answer: number; tolerance?: number; points: number }>;
+  fields?: Array<{ key: string; label: string; type?: string; answer: number | string; tolerance?: number; points: number }>;
   dataset?: Dataset;
   datasets?: Dataset[];
   tables?: SummaryTable[];
@@ -48,6 +50,18 @@ export const STAGE_LABELS: Record<string, string> = {
   dashboard_build: "Bonus — Dashboard design",
   automation: "Bonus — Automation",
   data_modelling: "Bonus — Data modelling",
+  support_situation: "Stage 1 — Understand the situation",
+  support_data_review: "Stage 2 — Review the support data",
+  support_triage: "Stage 3 — Triage and prepare",
+  support_analysis: "Stage 4 — Analyse",
+  support_responses: "Stage 5 — Customer responses & recommendations",
+  support_manager_review: "Stage 6 — Manager review",
+  escalation_handling: "Bonus — Escalation handling",
+  live_chat_multitasking: "Bonus — Live-chat multitasking",
+  technical_troubleshooting: "Bonus — Technical troubleshooting",
+  billing_disputes: "Bonus — Refund & billing disputes",
+  multilingual_support: "Bonus — Multilingual support",
+  customer_success: "Bonus — Onboarding & customer success",
   // legacy stage kinds from earlier generations
   sql_reasoning: "SQL & analytical reasoning",
   commercial_interpretation: "Commercial interpretation",
