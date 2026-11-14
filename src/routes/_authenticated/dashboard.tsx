@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { compositeScore, compositeContributors, roleBestScore, isLiveRole, FREE_ATTEMPT_LIMIT } from "@/lib/simulations";
 import { useServerFn } from "@tanstack/react-start";
 import { generateGenericSimulationFn } from "@/lib/jd.functions";
+import { LIVE_ROLES, type RoleKey } from "@/lib/role-registry";
 import { getStripeEnvironment } from '@/lib/stripe';
 import { BillingStatus } from '@/components/BillingStatus';
 
@@ -102,14 +103,15 @@ function Dashboard() {
   const visibleAttempts =
     historyFilter === "all" ? attempts : attempts.filter((a) => a.status === historyFilter);
 
-  async function onStart(simulationId: string) {
+  async function onStart(roleKey: RoleKey) {
+    const simulationId = roleKey;
     if (!user) {
       toast.error("Please log in again to start a simulation.");
       return;
     }
     setStartingId(simulationId);
     try {
-      const result = await generateGeneric({ data: { environment: getStripeEnvironment() } });
+      const result = await generateGeneric({ data: { environment: getStripeEnvironment(), roleKey } });
       if ('outcome' in result) { router.navigate({ to: '/subscribe' }); return; }
       const { attemptId } = result;
       router.navigate({ to: "/simulate/$attemptId", params: { attemptId } });
@@ -204,7 +206,7 @@ function Dashboard() {
 
 
           <div className="space-y-6">
-            <JobDescriptionPaste onStartGeneric={() => onStart("data-analyst")} />
+            <JobDescriptionPaste onStartGeneric={() => onStart("data_analyst")} />
 
             <section>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -214,24 +216,23 @@ function Dashboard() {
                 </Button>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Card className="border-border shadow-none">
-                  <CardHeader className="pb-3">
-                    <Badge variant="secondary" className="w-fit">
-                      Data Analyst
-                    </Badge>
-                    <CardTitle className="font-display text-base">Data Analyst — Case Study Practice</CardTitle>
-                    <CardDescription className="line-clamp-3">
-                      Work through a full case study from business framing through executive presentation. A new scenario
-                      is generated each time you start.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">~45-60 min</span>
-                    <Button size="sm" onClick={() => onStart("data-analyst")} disabled={startingId === "data-analyst"}>
-                      {startingId === "data-analyst" ? "Building your case study…" : "Start simulation"}
-                    </Button>
-                  </CardContent>
-                </Card>
+                {LIVE_ROLES.map((role) => (
+                  <Card key={role.key} className="border-border shadow-none">
+                    <CardHeader className="pb-3">
+                      <Badge variant="secondary" className="w-fit">
+                        {role.name}
+                      </Badge>
+                      <CardTitle className="font-display text-base">{role.cardTitle}</CardTitle>
+                      <CardDescription className="line-clamp-3">{role.cardDescription}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{role.minutes}</span>
+                      <Button size="sm" onClick={() => onStart(role.key)} disabled={startingId === role.key}>
+                        {startingId === role.key ? "Building your simulation…" : "Start simulation"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </section>
 
