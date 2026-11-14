@@ -21,6 +21,7 @@ export function BillingUpdateEmail({ kind = 'started', name, accessUntil, siteUr
           <Text style={{ fontSize: '15px', color: '#55575d', lineHeight: '1.5' }}>{c.body({ accessUntil })}</Text>
           <Button href={`${siteUrl}${c.path}`} style={{ backgroundColor: '#1f7a68', color: '#ffffff', borderRadius: '8px', padding: '12px 20px', fontSize: '15px' }}>{c.cta}</Button>
           <Text style={{ fontSize: '12px', color: '#999999', marginTop: '30px' }}>RoleProve · Practice/Prep billing</Text>
+          <Text style={{ fontSize: '12px', color: '#999999', margin: '4px 0 0' }}>Questions? Contact <a href="mailto:support@roleprove.com" style={{ color: '#1f7a68' }}>support@roleprove.com</a></Text>
         </Container>
       </Body>
     </Html>
