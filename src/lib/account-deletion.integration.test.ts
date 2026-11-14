@@ -128,5 +128,29 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
     expect((await admin.storage.from('data-exports').list(uid)).data).toEqual([]);
     expect((await admin.from('data_exports').select('id').eq('user_id', uid)).data).toEqual([]);
   }, 120_000);
-});
 
+  it('a deleted email signing up again keeps its original trial record (keyed hash, no plain MD5)', async () => {
+    const { supabaseAdmin: admin } = await import('@/integrations/supabase/client.server');
+    const { eraseAccount } = await import('./account-deletion.server');
+    const { createHash } = await import('node:crypto');
+    const email = `trial-test-${crypto.randomUUID()}@example.com`;
+    const make = async () => { const r = await admin.auth.admin.createUser({ email, password: crypto.randomUUID(), email_confirm: true, user_metadata: { name: 'T', terms_version: 't', privacy_version: 'p' } }); if (r.error) throw r.error; return r.data.user.id; };
+    const hash = (await admin.rpc('billing_email_hash', { p_email: `  ${email.toUpperCase()} ` })).data as string;
+    try {
+      const first = await make();
+      const before = (await admin.from('billing_trial_history').select('first_signup_at').eq('email_hash', hash)).data;
+      expect(before?.length).toBe(1);
+      expect((await admin.from('billing_trial_history').select('email_hash').eq('email_hash', createHash('md5').update(email).digest('hex'))).data).toEqual([]);
+      await eraseAccount({ admin, userId: first, stripeFor: () => null });
+      await new Promise((r) => setTimeout(r, 1100));
+      const second = await make();
+      const access = await admin.rpc('billing_access_for', { p_user: second, p_env: 'sandbox' });
+      expect(access.error).toBeNull();
+      const after = (await admin.from('billing_trial_history').select('first_signup_at').eq('email_hash', hash)).data;
+      expect(after).toEqual(before);
+      await eraseAccount({ admin, userId: second, stripeFor: () => null });
+    } finally {
+      await admin.from('billing_trial_history').delete().eq('email_hash', hash);
+    }
+  }, 60_000);
+});
