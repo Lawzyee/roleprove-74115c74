@@ -5,20 +5,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SiteHeader } from "@/components/SiteHeader";
-import { deleteAllRecordings } from "@/lib/proctoring";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { deleteAccountFn } from "@/lib/payments.functions";
 import { Link } from "@tanstack/react-router";
 
-async function deleteSupportFiles(userId: string) {
-  for (;;) {
-    const { data, error } = await supabase.storage.from("support-attachments").list(userId, { limit: 100 });
-    if (error) throw error;
-    if (!data?.length) return;
-    const { error: removeError } = await supabase.storage.from("support-attachments").remove(data.map((f) => `${userId}/${f.name}`));
-    if (removeError) throw removeError;
-  }
-}
 import { BillingStatus } from '@/components/BillingStatus';
 import { PaymentTestModeBanner } from '@/components/PaymentTestModeBanner';
 import { Button } from "@/components/ui/button";
@@ -103,18 +93,12 @@ function SettingsPage() {
     if (!user) return;
     if (!window.confirm("This cancels any subscription immediately (no refund) and permanently deletes your account, profile, credentials, simulation history, support tickets and any attempt recordings. Continue?")) return;
     setBusy(true);
-    try {
-      await deleteAllRecordings(user.id);
-      await deleteSupportFiles(user.id);
-    } catch (err) {
-      setBusy(false);
-      return toast.error("Could not delete your files, so nothing else was deleted. Please try again.");
-    }
     const result = await deleteAccountFn({ data: { environment: getStripeEnvironment() } });
     if ('error' in result) { setBusy(false); return toast.error(`Could not delete your account: ${result.error}`); }
     await supabase.auth.signOut();
     setBusy(false);
     toast.success("Your data has been deleted");
+    if (result.keptForBilling.length) toast.info("Because of an unpaid invoice or open payment dispute, our payment provider keeps a record of that payment, with your name, email and account ID removed.");
     router.navigate({ to: "/" });
   }
 

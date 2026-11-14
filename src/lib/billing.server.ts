@@ -35,6 +35,10 @@ export async function syncSubscription(id: string, env: StripeEnv, expectedUserI
   if (!item) throw new Error('Subscription has no items.');
   const priceId = item.price.lookup_key || item.price.metadata.lovable_external_id || item.price.id;
   if (priceId !== PRACTICE_PRICE) throw new Error('Unsupported subscription plan.');
+  // A late webhook for a deleted account must not recreate its billing row.
+  const { data: owner, error: ownerError } = await supabaseAdmin.from('profiles').select('id').eq('id', userId).maybeSingle();
+  if (ownerError) throw ownerError;
+  if (!owner) return sub;
   const { data: previous, error: readError } = await supabaseAdmin.from('subscriptions').select('past_due_since').eq('stripe_subscription_id', id).eq('environment', env).maybeSingle();
   if (readError) throw readError;
   // Use the first failed invoice timestamp, not webhook arrival, to prevent extending the grace period.
