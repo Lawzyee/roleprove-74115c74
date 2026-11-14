@@ -50,6 +50,13 @@
       "when": 1794604165164,
       "tag": "0006_daily_generation_cap_and_launch_free_until",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794616268608,
+      "tag": "0007_legal_acceptances",
+      "breakpoints": true
     }
   ]
 }

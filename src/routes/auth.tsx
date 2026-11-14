@@ -10,7 +10,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from "@/lib/legal";
 import { authErrorMessage, confirmationRedirect, CONFIRMATION_COOLDOWN_SECONDS, isDuplicateSignup, resendSecondsRemaining } from "@/lib/auth-flow";
 
 export const Route = createFileRoute("/auth")({
@@ -51,6 +53,7 @@ function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">(search.confirmed || search.confirmationError || search.mode === "login" ? "login" : "signup");
   const [submitting, setSubmitting] = useState(false);
   const requestRunning = useRef(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
@@ -132,6 +135,10 @@ function AuthPage() {
     setFormError(null);
     setResendMessage(null);
     setNeedsConfirmation(false);
+    if (mode === "signup" && !agreedToTerms) {
+      setFormError("Please confirm you are 18 or over and agree to the Terms and Privacy Policy.");
+      return;
+    }
     if (mode === "signup" && form.password !== form.confirmPassword) {
       setPasswordError("Passwords don't match.");
       return;
@@ -154,6 +161,8 @@ function AuthPage() {
               headline: form.headline,
               target_role_id: form.target_role_id || null,
               location: form.location,
+              terms_version: CURRENT_TERMS_VERSION,
+              privacy_version: CURRENT_PRIVACY_VERSION,
             },
           },
         });
@@ -323,10 +332,20 @@ function AuthPage() {
                 {passwordError && <p className="text-sm text-destructive">{passwordError}</p>}
               </div>
             )}
+            {mode === "signup" && (
+              <div className="flex items-start gap-3">
+                <Checkbox id="legal-consent" checked={agreedToTerms} onCheckedChange={(v) => setAgreedToTerms(v === true)} />
+                <Label htmlFor="legal-consent" className="text-sm font-normal leading-relaxed">
+                  I am 18 or over and I agree to the{" "}
+                  <Link to="/terms" target="_blank" rel="noopener" className="text-primary underline">Terms of Service</Link> and{" "}
+                  <Link to="/privacy" target="_blank" rel="noopener" className="text-primary underline">Privacy Policy</Link>
+                </Label>
+              </div>
+            )}
             {formError && <p role="alert" className="text-sm text-destructive">{formError}</p>}
             {needsConfirmation && resendControl}
             {resendMessage && <p role="status" className="text-sm text-primary">{resendMessage}</p>}
-            <Button type="submit" className="w-full" disabled={submitting}>
+            <Button type="submit" className="w-full" disabled={submitting || (mode === "signup" && !agreedToTerms)}>
               {submitting && <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />}
               {submitting ? "Please wait…" : mode === "signup" ? "Create account" : "Log in"}
             </Button>
@@ -342,6 +361,9 @@ function AuthPage() {
             >
               {mode === "signup" ? "Log in" : "Create one"}
             </Button>
+          </p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            <Link to="/terms" className="hover:text-foreground">Terms</Link> · <Link to="/privacy" className="hover:text-foreground">Privacy</Link> · <Link to="/cookies" className="hover:text-foreground">Cookies</Link>
           </p>
           </>}
         </CardContent>

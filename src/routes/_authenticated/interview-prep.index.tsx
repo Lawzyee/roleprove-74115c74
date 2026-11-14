@@ -124,6 +124,10 @@ function InterviewPrepPage() {
               <p className="mt-1 text-xs text-muted-foreground">
                 PDF or DOCX. We&apos;ll ground questions in your real experience and probe gaps against this job.
               </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Your CV is used only to tailor your questions, and you can delete it anytime in Settings.{" "}
+                <a href="/privacy" target="_blank" rel="noopener" className="text-primary underline">Privacy Policy</a>
+              </p>
               <input
                 ref={cvInputRef}
                 type="file"
