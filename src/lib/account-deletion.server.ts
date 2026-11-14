@@ -12,6 +12,7 @@ export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings'
 export const USER_TABLES: Array<{ table: string; column: string }> = [
   { table: 'support_tickets', column: 'user_id' },
   { table: 'simulation_attempts', column: 'user_id' },
+  { table: 'live_interviews', column: 'user_id' },
   { table: 'interview_prep_sessions', column: 'user_id' },
   { table: 'job_postings', column: 'user_id' },
   { table: 'credentials', column: 'user_id' },

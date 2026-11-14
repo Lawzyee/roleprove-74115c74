@@ -58,6 +58,8 @@ export const SECTIONS: Array<{ label: string; file: string; about: string; load:
   { label: 'interview prep sessions', file: 'interview_prep_sessions', about: 'Your interview prep sessions, including the job ad and the text read from your CV. CV files are in files/deliverables/interview-prep-cv/.', load: by('interview_prep_sessions', 'user_id'), keep: 'sessions' },
   { label: 'interview prep questions', file: 'interview_prep_questions', about: 'Questions generated for your interview prep.', load: by('interview_prep_questions', 'session_id', 'sessions'), keep: 'questions' },
   { label: 'interview prep replies', file: 'interview_prep_replies', about: 'Your replies to interview prep questions, with feedback.', load: by('interview_prep_responses', 'question_id', 'questions') },
+  { label: 'live interviews', file: 'live_interviews', about: 'Your live mock interviews, with the question plan and practice scorecard.', load: by('live_interviews', 'user_id'), keep: 'interviews' },
+  { label: 'live interview transcripts', file: 'live_interview_messages', about: 'The full transcript of each live mock interview.', load: by('live_interview_messages', 'interview_id', 'interviews') },
   { label: 'support tickets', file: 'support_tickets', about: 'Your support tickets.', load: by('support_tickets', 'user_id'), keep: 'tickets' },
   { label: 'support messages', file: 'support_messages', about: 'Messages in your tickets, from you and from our support team.', load: by('support_messages', 'ticket_id', 'tickets'), keep: 'messages' },
   { label: 'support screenshots', file: 'support_attachments', about: 'Screenshots attached to support messages. The files are in files/support-attachments/.', load: by('support_attachments', 'message_id', 'messages') },
@@ -72,6 +74,7 @@ const FILE_BUCKETS: Array<{ bucket: string; label: string }> = [
 
 export const NOT_INCLUDED = [
   'Suspicious-content flags on uploads: notes for our support staff when an upload seemed to try to influence grading. They are staff review notes, not data you provided.',
+  'Steering-attempt flags on live interviews: notes for our support staff when a message tried to change the interviewer\'s rules or the scoring. They are staff review notes, not interview content.',
   'Ticket tags and staff read times on support tickets: internal routing and workload markers for our support team.',
   'The scrambled email used to stop repeat free trials: it is a keyed one-way hash that cannot be turned back into your email or reliably linked to you.',
 ];
