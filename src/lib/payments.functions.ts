@@ -104,40 +104,11 @@ export const deleteAccountFn = createServerFn({ method: 'POST' }).middleware([re
   .handler(async ({ data, context }) => {
     try {
       const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-      const userId = context.userId;
-      // Cancel billing first: if Stripe fails, nothing is deleted and the customer is never charged for a deleted account.
-      const { data: subs, error } = await supabaseAdmin.from('subscriptions').select('stripe_subscription_id, status').eq('user_id', userId).eq('environment', data.environment);
-      if (error) throw error;
-      const stripe = createStripeClient(data.environment);
-      for (const s of subs ?? []) {
-        if (['canceled', 'incomplete_expired'].includes(s.status)) continue;
-        const live = await stripe.subscriptions.retrieve(s.stripe_subscription_id);
-        if (!['canceled', 'incomplete_expired'].includes(live.status)) await stripe.subscriptions.cancel(live.id, { invoice_now: false, prorate: false });
-      }
-      // Files live in nested folders ({userId}/{attemptId}/...), so walk every level before removing.
-      const listAll = async (bucket: string, prefix: string): Promise<string[]> => {
-        const { data: entries } = await supabaseAdmin.storage.from(bucket).list(prefix, { limit: 1000 });
-        const out: string[] = [];
-        for (const e of entries ?? []) {
-          const path = `${prefix}/${e.name}`;
-          if (e.id) out.push(path); else out.push(...(await listAll(bucket, path)));
-        }
-        return out;
-      };
-      for (const bucket of ['credentials', 'deliverables', 'attempt-recordings']) {
-        const paths = await listAll(bucket, userId);
-        for (let i = 0; i < paths.length; i += 100) await supabaseAdmin.storage.from(bucket).remove(paths.slice(i, i + 100));
-      }
-      await supabaseAdmin.from('support_tickets').delete().eq('user_id', userId);
-      await supabaseAdmin.from('simulation_attempts').delete().eq('user_id', userId);
-      await supabaseAdmin.from('interview_prep_sessions').delete().eq('user_id', userId);
-      await supabaseAdmin.from('job_postings').delete().eq('user_id', userId);
-      await supabaseAdmin.from('credentials').delete().eq('user_id', userId);
-      await supabaseAdmin.from('billing_usage').delete().eq('user_id', userId);
-      await supabaseAdmin.from('subscriptions').delete().eq('user_id', userId);
-      await supabaseAdmin.from('profiles').delete().eq('id', userId);
-      const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId);
-      if (authError) throw authError;
-      return { ok: true as const };
+      const { eraseAccount } = await import('./account-deletion.server');
+      // Both payment modes are checked; a mode without a configured key is skipped.
+      const stripeFor = (env: 'sandbox' | 'live') => { try { return createStripeClient(env); } catch (e) { if (/not configured/.test(String(e))) return null; throw e; } };
+      const { stripe } = await eraseAccount({ admin: supabaseAdmin, userId: context.userId, stripeFor });
+      const keptForBilling = stripe.filter((s) => s.action === 'redacted').map((s) => s.reason ?? 'billing');
+      return { ok: true as const, keptForBilling };
     } catch (error) { return { error: getStripeErrorMessage(error) }; }
   });
