@@ -1,9 +1,12 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildMonthlyTrendTable, buildSegmentTable, summariseTable } from "./jd-aggregates";
 import { pickGenericScenario } from "./generic-scenarios";
+import { pickSupportScenario } from "./support-scenarios";
+import { ROLE_REGISTRY, matchRoleKey, type RoleKey } from "./role-registry";
+import { generateSupportCaseStudyWithRetry } from "./support.server";
 
 
-type Extracted = {
+export type Extracted = {
   role_type: string;
   seniority: string;
   skills: string[];
@@ -13,15 +16,6 @@ type Extracted = {
   confidence: number;
 };
 
-const DATA_ANALYST_KEYWORDS = [
-  "data analyst",
-  "analytics analyst",
-  "business intelligence",
-  "bi analyst",
-  "insights analyst",
-  "reporting analyst",
-  "data analytics",
-];
 
 function apiKey() {
   const key = process.env["LOVABLE_API_KEY"];
@@ -29,7 +23,7 @@ function apiKey() {
   return key;
 }
 
-async function callAi(system: string, user: string) {
+export async function callAi(system: string, user: string) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey()}` },
@@ -130,10 +124,9 @@ export async function extractJobPosting(text: string): Promise<Extracted> {
   };
 }
 
-export function matchesDataAnalyst(extracted: Extracted) {
-  const role = extracted.role_type.toLowerCase();
-  const keywordHit = DATA_ANALYST_KEYWORDS.some((k) => role.includes(k));
-  return keywordHit && extracted.confidence >= 0.5;
+/** Which live role a posting maps to — delegates to the single matcher in role-registry.ts. */
+export function matchRole(extracted: Extracted): RoleKey | null {
+  return matchRoleKey(extracted.role_type, extracted.confidence);
 }
 
 export type DatasetColumn = { key: string; label: string };
@@ -179,14 +172,23 @@ export type StageRubric = {
   datasets?: Dataset[];
   tables?: SummaryTable[];
   question_text?: string;
-  fields?: Array<{ key: string; label: string; type: "number"; answer: number; points: number; tolerance?: number }>;
+  fields?: Array<{
+    key: string;
+    label: string;
+    type: "number" | "text" | "id_list";
+    answer: number | string;
+    accepted?: string[];
+    answer_list?: string[];
+    points: number;
+    tolerance?: number;
+  }>;
   written?: WrittenQuestion[];
   deliverable?: Deliverable;
 };
 
-type GeneratedStage = { title: string; brief: string; task_type: "case"; rubric_criteria: StageRubric };
+export type GeneratedStage = { title: string; brief: string; task_type: "case"; rubric_criteria: StageRubric };
 
-type GeneratedSimulation = { title: string; description: string; tasks: GeneratedStage[] };
+export type GeneratedSimulation = { title: string; description: string; tasks: GeneratedStage[] };
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -807,7 +809,8 @@ export async function generatePersonalisedSimulation(
   }
 
   const extracted = await extractJobPosting(rawText);
-  const matched = matchesDataAnalyst(extracted);
+  const roleKey = matchRole(extracted);
+  const matched = roleKey !== null;
 
   const { data: posting, error: postingError } = await supabaseAdmin
     .from("job_postings")
@@ -834,30 +837,43 @@ export async function generatePersonalisedSimulation(
     };
   }
 
-  const { data: baseSim, error: baseError } = await supabaseAdmin
-    .from("simulations")
-    .select("id, title, description, estimated_minutes, role_id")
-    .eq("is_personalized", false)
-    .order("created_at")
-    .limit(1)
-    .maybeSingle();
-  if (baseError) throw new Error(baseError.message);
-  if (!baseSim) throw new Error("The base Data Analyst simulation is unavailable.");
-
-  const personalised = await generateCaseStudyWithRetry(extracted);
+  let roleId: string;
+  let sourceSimulationId: string | null = null;
+  let baseMinutes = 30;
+  let personalised: GeneratedSimulation;
+  if (roleKey === "customer_support") {
+    roleId = ROLE_REGISTRY.customer_support.id;
+    personalised = await generateSupportCaseStudyWithRetry(extracted);
+  } else {
+    const { data: baseSim, error: baseError } = await supabaseAdmin
+      .from("simulations")
+      .select("id, title, description, estimated_minutes, role_id")
+      .eq("is_personalized", false)
+      .eq("role_id", ROLE_REGISTRY.data_analyst.id)
+      .order("created_at")
+      .limit(1)
+      .maybeSingle();
+    if (baseError) throw new Error(baseError.message);
+    if (!baseSim) throw new Error("The base Data Analyst simulation is unavailable.");
+    roleId = baseSim.role_id;
+    sourceSimulationId = baseSim.id;
+    baseMinutes = baseSim.estimated_minutes;
+    personalised = await generateCaseStudyWithRetry(extracted);
+  }
+  const roleName = ROLE_REGISTRY[roleKey!].name;
 
   const { data: newSim, error: simError } = await supabaseAdmin
     .from("simulations")
     .insert({
-      role_id: baseSim.role_id,
+      role_id: roleId,
       title: personalised.title || `${extracted.role_type} — tailored case study`,
       description:
         personalised.description ||
-        `A multi-stage Data Analyst case study generated around the job description you pasted for ${extracted.role_type}.`,
-      estimated_minutes: Math.max(baseSim.estimated_minutes, personalised.tasks.length * 12),
+        `A multi-stage ${roleName} simulation generated around the job description you pasted for ${extracted.role_type}.`,
+      estimated_minutes: Math.max(baseMinutes, personalised.tasks.length * 12),
       is_personalized: true,
       owner_user_id: userId,
-      source_simulation_id: baseSim.id,
+      source_simulation_id: sourceSimulationId,
     } as any)
     .select("id")
     .single();
@@ -892,21 +908,23 @@ export async function generatePersonalisedSimulation(
     attemptId: attempt.id as string,
     simulationId: newSim.id as string,
     roleType: extracted.role_type,
+    roleKey,
     skills: extracted.skills.slice(0, 8),
   };
 }
 
 /**
- * Generic (non-JD) Data Analyst simulation.
- * Runs the exact same canonical 6-stage generation pipeline as the JD path,
- * seeded with a randomly picked business scenario instead of parsed JD text.
+ * Generic (non-JD) simulation for a live role.
+ * Runs the same canonical pipeline as the JD path for that role, seeded with a
+ * randomly picked business scenario instead of parsed JD text.
  * Produces a brand-new is_personalized = false simulation record on every call.
  */
-export async function generateGenericSimulation(userId: string) {
-  const scenario = pickGenericScenario();
+export async function generateGenericSimulation(userId: string, roleKey: RoleKey = "data_analyst") {
+  const role = ROLE_REGISTRY[roleKey];
+  const scenario = roleKey === "customer_support" ? pickSupportScenario() : pickGenericScenario();
 
   const extracted: Extracted = {
-    role_type: "Data Analyst",
+    role_type: role.name,
     seniority: "junior",
     skills: scenario.skills,
     responsibilities: scenario.responsibilities,
@@ -915,25 +933,17 @@ export async function generateGenericSimulation(userId: string) {
     confidence: 1,
   };
 
-  const { data: role, error: roleError } = await supabaseAdmin
-    .from("roles")
-    .select("id")
-    .ilike("name", "%data analyst%")
-    .limit(1)
-    .maybeSingle();
-  if (roleError) throw new Error(roleError.message);
-  if (!role) throw new Error("The Data Analyst role is unavailable.");
-
-  const generated = await generateCaseStudyWithRetry(extracted);
+  const generated =
+    roleKey === "customer_support"
+      ? await generateSupportCaseStudyWithRetry(extracted)
+      : await generateCaseStudyWithRetry(extracted);
 
   const { data: newSim, error: simError } = await supabaseAdmin
     .from("simulations")
     .insert({
       role_id: role.id,
-      title: generated.title || "Data Analyst case study",
-      description:
-        generated.description ||
-        "A multi-stage Data Analyst case study generated for this attempt.",
+      title: generated.title || `${role.name} case study`,
+      description: generated.description || `A multi-stage ${role.name} simulation generated for this attempt.`,
       estimated_minutes: Math.max(30, generated.tasks.length * 12),
       is_personalized: false,
       owner_user_id: userId,
@@ -941,7 +951,6 @@ export async function generateGenericSimulation(userId: string) {
     .select("id")
     .single();
   if (simError) throw new Error(simError.message);
-
   const { error: tasksError } = await supabaseAdmin.from("simulation_tasks").insert(
     generated.tasks.map((t, i) => ({
       simulation_id: newSim.id,

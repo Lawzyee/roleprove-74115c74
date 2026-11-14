@@ -18,9 +18,13 @@ export const generateJdSimulationFn = createServerFn({ method: "POST" })
 
 export const generateGenericSimulationFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ environment: z.enum(['sandbox', 'live']) }).parse(data))
+  .inputValidator((data: unknown) =>
+    z
+      .object({ environment: z.enum(['sandbox', 'live']), roleKey: z.enum(['data_analyst', 'customer_support']).default('data_analyst') })
+      .parse(data),
+  )
   .handler(async ({ data, context }) => {
-    return withUsage(context.userId, data.environment, 'simulation', () => generateGenericSimulation(context.userId), (result) => result.attemptId);
+    return withUsage(context.userId, data.environment, 'simulation', () => generateGenericSimulation(context.userId, data.roleKey), (result) => result.attemptId);
   });
 
 export const retakeSimulationFn = createServerFn({ method: 'POST' })
