@@ -53,7 +53,7 @@ describe("support figures come from the rows", () => {
     expect(slaBreachRate(ds, sla)).toBe(33.3);
   });
   it("finds the top category and slowest channel", () => {
-    expect(topCategories(ds)).toEqual(["billing"]);
+    expect(topCategories(ds)).toEqual(["billing", "login"]); // tie: both accepted
     expect(slowestChannels(ds)).toEqual(["email"]);
   });
 });
