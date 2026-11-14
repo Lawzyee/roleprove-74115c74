@@ -7,6 +7,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { deleteAccountFn } from "@/lib/payments.functions";
+import { confirmExportDownloaded, requestDataExport } from "@/lib/data-export.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Link } from "@tanstack/react-router";
 
 import { BillingStatus } from '@/components/BillingStatus';
@@ -56,37 +60,41 @@ function SettingsPage() {
     qc.invalidateQueries({ queryKey: ["profile", user.id] });
   }
 
-  async function exportData() {
+  async function exportData(password?: string) {
     if (!user) return;
     setBusy(true);
-    const [profile, credentials, attempts, results] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id),
-      supabase.from("credentials").select("*").eq("user_id", user.id),
-      supabase.from("simulation_attempts").select("*").eq("user_id", user.id),
-      supabase.from("attempt_task_results").select("*"),
-    ]);
-    const blob = new Blob(
-      [
-        JSON.stringify(
-          {
-            profile: profile.data,
-            credentials: credentials.data,
-            attempts: attempts.data,
-            task_results: results.data,
-          },
-          null,
-          2,
-        ),
-      ],
-      { type: "application/json" },
-    );
-    const url = URL.createObjectURL(blob);
+    try {
+      if (password) {
+        const { error } = await supabase.auth.signInWithPassword({ email: user.email ?? "", password });
+        if (error) return toast.error("That password is not correct.");
+        setReauthOpen(false); setPassword("");
+      }
+      setExportStatus("Building your export… this can take a minute.");
+      const result = await requestExport();
+      if ("error" in result) {
+        if (result.code === "reauth") { setExportStatus(null); setReauthOpen(true); return; }
+        setExportStatus(null);
+        return toast.error(result.error, { duration: 12000 });
+      }
+      const res = await fetch(result.url);
+      if (!res.ok) { setExportStatus(null); return toast.error("Your export was created but could not be fetched. Please contact support."); }
+      const blob = await res.blob();
+      await confirmDownloaded({ data: { exportId: result.exportId } });
+      setExportBlob(blob);
+      setExportStatus(result.largeRecordings ? `Ready. ${result.largeRecordings} large recording(s) are links inside the zip that stop working in 1 hour.` : "Your export is ready.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function saveExport() {
+    if (!exportBlob) return;
+    const url = URL.createObjectURL(exportBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "roleprove-data.json";
-    a.click();
-    URL.revokeObjectURL(url);
-    setBusy(false);
+    a.download = `roleprove-data-${new Date().toISOString().slice(0, 10)}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
   }
 
   async function deleteData() {
@@ -164,16 +172,31 @@ function SettingsPage() {
               <CardDescription>Export a copy of everything, or delete it permanently.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
-              <Button variant="outline" onClick={exportData} disabled={busy}>
+              <Button variant="outline" onClick={() => exportData()} disabled={busy}>
                 Export my data
               </Button>
+              {exportBlob && <Button onClick={saveExport}>Download zip</Button>}
               <Button variant="destructive" onClick={deleteData} disabled={busy}>
                 Delete my data
               </Button>
+              {exportStatus && <p className="w-full text-sm text-muted-foreground" role="status">{exportStatus}</p>}
             </CardContent>
           </Card>
         </div>
       </main>
+      <Dialog open={reauthOpen} onOpenChange={setReauthOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm it's you</DialogTitle>
+            <DialogDescription>Enter your password to export your data. We'll email you to say an export was requested.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); void exportData(password); }} className="space-y-3">
+            <Label htmlFor="reauth-password">Password</Label>
+            <Input id="reauth-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <DialogFooter><Button type="submit" disabled={busy || !password}>Confirm and export</Button></DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

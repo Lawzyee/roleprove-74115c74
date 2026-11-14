@@ -32,6 +32,7 @@ import { Route as AuthenticatedSimulateAttemptIdRouteImport } from './routes/_au
 import { Route as AuthenticatedSupportIndexRouteImport } from './routes/_authenticated/support.index'
 import { Route as AuthenticatedSupportTicketIdRouteImport } from './routes/_authenticated/support.$ticketId'
 import { Route as AuthenticatedSupportNewRouteImport } from './routes/_authenticated/support.new'
+import { Route as ApiPublicHooksPurgeExportsRouteImport } from './routes/api/public/hooks/purge-exports'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -160,6 +161,12 @@ const AuthenticatedSupportNewRoute = AuthenticatedSupportNewRouteImport.update({
   path: '/support/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksPurgeExportsRoute =
+  ApiPublicHooksPurgeExportsRouteImport.update({
+    id: '/api/public/hooks/purge-exports',
+    path: '/api/public/hooks/purge-exports',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -206,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
   '/support/': typeof AuthenticatedSupportIndexRoute
+  '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -234,6 +242,7 @@ export interface FileRoutesByTo {
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/interview-prep': typeof AuthenticatedInterviewPrepIndexRoute
   '/support': typeof AuthenticatedSupportIndexRoute
+  '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -264,6 +273,7 @@ export interface FileRoutesById {
   '/_authenticated/support/new': typeof AuthenticatedSupportNewRoute
   '/_authenticated/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
   '/_authenticated/support/': typeof AuthenticatedSupportIndexRoute
+  '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/support/new'
     | '/interview-prep/'
     | '/support/'
+    | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/support/new'
     | '/interview-prep'
     | '/support'
+    | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -351,6 +363,7 @@ export interface FileRouteTypes {
     | '/_authenticated/support/new'
     | '/_authenticated/interview-prep/'
     | '/_authenticated/support/'
+    | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -366,6 +379,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  ApiPublicHooksPurgeExportsRoute: typeof ApiPublicHooksPurgeExportsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -535,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSupportNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/purge-exports': {
+      id: '/api/public/hooks/purge-exports'
+      path: '/api/public/hooks/purge-exports'
+      fullPath: '/api/public/hooks/purge-exports'
+      preLoaderRoute: typeof ApiPublicHooksPurgeExportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -615,6 +636,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  ApiPublicHooksPurgeExportsRoute: ApiPublicHooksPurgeExportsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
