@@ -16,3 +16,4 @@
 - Support tickets are read through RLS (owner or is_support_staff) but written only by authenticated server functions using the service role, so rate limits, file checks and sender identity cannot be bypassed; the staff flag is protected by a profiles trigger.
 - App emails use the server-only managed email helper and React Email registry; do not add queues, cron, generic browser send endpoints, or unsubscribe pages because the platform handles delivery and opt-outs.
 - Signup confirmation returns through the public auth confirmation route, which validates the session then clears it before sign-in; never use a protected destination or assume signup creates a signed-in session.
+- Legal wording lives in src/content/legal/*.ts with a version string; sign-up acceptance is recorded by an auth.users trigger from signup metadata into legal_acceptances, and a version change prompts signed-in users to re-accept — keeps legal text editable without code changes.
