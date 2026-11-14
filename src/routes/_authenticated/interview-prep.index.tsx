@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createPrepSessionFn } from "@/lib/interview-prep.functions";
+import { startLiveInterviewFn } from "@/lib/live-interview.functions";
+import { LIVE_ROLES } from "@/lib/role-registry";
 import { getStripeEnvironment } from '@/lib/stripe';
 
 export const Route = createFileRoute("/_authenticated/interview-prep/")({
@@ -58,6 +60,47 @@ function InterviewPrepPage() {
       return data;
     },
   });
+
+  const liveQuery = useQuery({
+    queryKey: ["live-interviews", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("live_interviews")
+        .select("id, title, status, created_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const [liveSource, setLiveSource] = useState("");
+  const [liveLength, setLiveLength] = useState<"short" | "standard">("short");
+  const [liveLoading, setLiveLoading] = useState(false);
+
+  async function onStartLive() {
+    if (!liveSource || liveLoading) return;
+    setLiveLoading(true);
+    try {
+      const input = liveSource.startsWith("role:")
+        ? { roleKey: liveSource.slice(5) as "data_analyst" | "customer_support" }
+        : { prepSessionId: liveSource };
+      const result = await startLiveInterviewFn({
+        data: { ...input, length: liveLength, environment: getStripeEnvironment() },
+      });
+      if (result.outcome === "paywall") {
+        router.navigate({ to: "/subscribe" });
+      } else if (result.outcome === "daily_limit") {
+        toast.info(result.message);
+      } else {
+        router.navigate({ to: "/interview-prep/live/$interviewId", params: { interviewId: result.interviewId } });
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not start the interview");
+    } finally {
+      setLiveLoading(false);
+    }
+  }
 
   async function uploadCv(): Promise<string | undefined> {
     if (!cvFile || !user) return undefined;
