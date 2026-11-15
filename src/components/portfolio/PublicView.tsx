@@ -12,7 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PRACTICE_DISCLAIMER, VERIFIED_MEANING } from "@/lib/portfolio";
-import { reportPortfolioFn } from "@/lib/portfolio.functions";
+import { reportPortfolioFn, reportPortfolioPublicFn } from "@/lib/portfolio.functions";
+import { REPORT_REASONS, validatePublicReport } from "@/lib/portfolio";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { PublicCard, PublicPortfolio, PublicProject } from "@/lib/portfolio";
 
 export type Cta = { body: string; note: string | null; button: string };
@@ -271,7 +275,7 @@ function ReportLink({ slug }: { slug: string }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
-  if (!user) return <Link to="/auth" search={{ mode: "login" }} className="hover:underline">Sign in to report this portfolio</Link>;
+  if (!user) return <PublicReportLink slug={slug} />;
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className="hover:underline">Report this portfolio</button>
@@ -289,6 +293,61 @@ function ReportLink({ slug }: { slug: string }) {
               finally { setBusy(false); }
             }}>Send report</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function PublicReportLink({ slug }: { slug: string }) {
+  const report = useServerFn(reportPortfolioPublicFn);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [details, setDetails] = useState("");
+  const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState(""); // hidden spam trap
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    const v = validatePublicReport({ slug, reason, details, email, website });
+    if (!v.ok) { setErr(v.error); return; }
+    setErr(null); setBusy(true);
+    try {
+      const r = await report({ data: { slug, reason, details, email, website } });
+      if ("error" in r && r.error) setErr(r.error);
+      else { toast.success("Thanks — our team will review it."); setOpen(false); setReason(""); setDetails(""); setEmail(""); }
+    } catch { setErr("Could not send the report."); }
+    finally { setBusy(false); }
+  };
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="hover:underline">Report this portfolio</button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Report this portfolio</DialogTitle><DialogDescription>Only RoleProve support staff see reports. The portfolio owner is not told who reported it.</DialogDescription></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="report-reason">Reason</Label>
+              <Select value={reason} onValueChange={setReason}>
+                <SelectTrigger id="report-reason"><SelectValue placeholder="Choose a reason" /></SelectTrigger>
+                <SelectContent>{REPORT_REASONS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="report-details">Details {reason === "other" ? "" : "(optional)"}</Label>
+              <Textarea id="report-details" value={details} onChange={(e) => setDetails(e.target.value)} maxLength={1000} rows={3} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="report-email">Your email (optional, only if you want a reply)</Label>
+              <Input id="report-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={255} autoComplete="email" />
+            </div>
+            <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+              <label htmlFor="report-website">Website</label>
+              <input id="report-website" name="website" tabIndex={-1} autoComplete="off" value={website} onChange={(e) => setWebsite(e.target.value)} />
+            </div>
+            {err && <p role="alert" className="text-sm text-destructive">{err}</p>}
+          </div>
+          <DialogFooter><Button disabled={busy} onClick={send}>Send report</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </>

@@ -20,3 +20,7 @@
 - [x] Deletion: portfolios, portfolio_projects, photo bucket; export: settings, projects, photo; Privacy/Terms placeholder lines
 - [x] Unit tests 13; full suite 77 pass incl. deletion + export integration tests
 - [x] Real browser run: photo upload + crop + save, two role folders (Customer Support + Data Analyst), project editor, publish, public page signed-in (no sign-up prompt, report link works) and signed-out (sign-up prompt shows); test state restored afterwards
+
+## Portfolio follow-up — done
+- [x] Signed-out report form (reason, details, email, honeypot, 5/hour per address) + staff list in support inbox
+- [x] Share buttons, QR download, "Where to use your link" card

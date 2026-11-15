@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Copy, Eye, Globe, Lock, Plus, Trash2, Upload } from "lucide-react";
+import { Eye, Globe, Lock, Plus, Trash2, Upload } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProjectCard, RoleFolder, VerifiedBadge } from "@/components/portfolio/PublicView";
+import { ShareTools } from "@/components/portfolio/ShareTools";
 import { PhotoCropper } from "@/components/portfolio/PhotoCropper";
 import { BIO_MAX, PHOTO_MAX_BYTES, PHOTO_TYPES, slugProblem } from "@/lib/portfolio";
 import {
@@ -126,10 +127,10 @@ function VisibilityPanel({ data, onChange }: { data: Data; onChange: () => void 
           {s.is_public && url && (
             <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto">
               <a href={url.replace("https://roleprove.com", "")} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">{url}</a>
-              <Button size="icon" variant="ghost" aria-label="Copy link" onClick={() => { navigator.clipboard.writeText(url); toast.success("Link copied."); }}><Copy className="h-4 w-4" /></Button>
             </div>
           )}
         </div>
+        {s.is_public && url && s.slug && <ShareTools url={url} slug={s.slug} name={data.settings.display_name || data.profile?.name || ""} />}
       </CardContent>
       <Dialog open={consentOpen} onOpenChange={setConsentOpen}>
         <DialogContent>

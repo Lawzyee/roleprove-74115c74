@@ -125,3 +125,33 @@ export type PublicProject = {
   insight: string; score: number | null; pillars: Array<{ label: string; score: number }> | null; stages: PublicStage[]; indexable: boolean; photoUrl: string | null;
 };
 
+
+// ---------- Signed-out portfolio reports ----------
+export const REPORT_REASONS = [
+  { value: 'offensive', label: 'Offensive or abusive content' },
+  { value: 'impersonation', label: 'Impersonating someone' },
+  { value: 'confidential', label: 'Confidential or employer information' },
+  { value: 'false_claims', label: 'False or misleading claims' },
+  { value: 'spam', label: 'Spam or advertising' },
+  { value: 'other', label: 'Something else' },
+] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number]['value'];
+export const PUBLIC_REPORTS_PER_HOUR = 5;
+export type PublicReportInput = { slug: string; reason: string; details?: string; email?: string; website?: string };
+export type PublicReportResult =
+  | { ok: true; spam: boolean; value: { slug: string; reason: ReportReason; details: string | null; email: string | null } }
+  | { ok: false; error: string };
+const EMAIL_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[^\s@<>()",;:]{2,}$/;
+/** Validates a signed-out report. `website` is the hidden honeypot field: humans leave it empty. */
+export function validatePublicReport(d: PublicReportInput): PublicReportResult {
+  if (typeof d.website === 'string' && d.website.trim() !== '') return { ok: true, spam: true, value: { slug: '', reason: 'other', details: null, email: null } };
+  const slug = String(d.slug ?? '').trim().toLowerCase();
+  if (!/^[a-z0-9-]{1,40}$/.test(slug)) return { ok: false, error: 'This portfolio link is not valid.' };
+  const reason = REPORT_REASONS.find((r) => r.value === d.reason)?.value;
+  if (!reason) return { ok: false, error: 'Please choose a reason.' };
+  const details = cleanText(String(d.details ?? ''), 1000) || null;
+  if (reason === 'other' && (!details || details.length < 10)) return { ok: false, error: 'Please describe the problem (at least 10 characters).' };
+  const email = String(d.email ?? '').trim().toLowerCase() || null;
+  if (email && (email.length > 255 || !EMAIL_RE.test(email))) return { ok: false, error: 'Please enter a valid email address, or leave it blank.' };
+  return { ok: true, spam: false, value: { slug, reason, details, email } };
+}

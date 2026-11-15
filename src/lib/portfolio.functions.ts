@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
-import { BIO_MAX, INSIGHT_MAX, MAX_INSIGHT_GENERATIONS, PHOTO_MAX_BYTES, cleanText, ctaCopy, safeUrl, slugProblem } from './portfolio';
+import { BIO_MAX, INSIGHT_MAX, MAX_INSIGHT_GENERATIONS, PHOTO_MAX_BYTES, cleanText, ctaCopy, safeUrl, slugProblem, validatePublicReport, PUBLIC_REPORTS_PER_HOUR } from './portfolio';
 import {
   PHOTO_BUCKET, buildPublicPortfolio, groupFolders, loadOwnPortfolioRow, loadProject, loadPublicPortfolioRow, ownerName, rateOk, shapeProject, writeInsight,
   type OwnerStage, type PublicProject,
@@ -263,6 +263,33 @@ export const reportPortfolioFn = createServerFn({ method: 'POST' }).middleware([
     const { error: mErr } = await a.from('support_messages').insert({ ticket_id: ticket.id, sender: 'user', body: `Reported portfolio: /p/${data.slug}\n\n${cleanText(data.reason, 1000)}` });
     if (mErr) return { error: 'Could not send the report.' };
     return { ok: true };
+  });
+
+// Signed-out visitors: no account needed. Staff-only table; the owner is never told.
+async function ipHash(): Promise<string> {
+  const req = getRequest();
+  const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`roleprove-portfolio-report:${ip}`));
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('');
+}
+export const reportPortfolioPublicFn = createServerFn({ method: 'POST' })
+  .inputValidator((d: unknown) => z.object({
+    slug: z.string().max(60), reason: z.string().max(40), details: z.string().max(2000).optional(),
+    email: z.string().max(300).optional(), website: z.string().max(300).optional(),
+  }).parse(d))
+  .handler(async ({ data }) => {
+    const v = validatePublicReport(data);
+    if (!v.ok) return { error: v.error };
+    if (v.spam) return { ok: true as const }; // honeypot filled: pretend success, store nothing
+    const a = await admin();
+    const hash = await ipHash();
+    const since = new Date(Date.now() - 3600_000).toISOString();
+    const { count, error: cErr } = await a.from('portfolio_reports').select('id', { count: 'exact', head: true }).eq('ip_hash', hash).gte('created_at', since);
+    if (cErr) return { error: 'Could not send the report.' };
+    if ((count ?? 0) >= PUBLIC_REPORTS_PER_HOUR) return { error: 'You\u2019ve sent several reports recently. Please try again later.' };
+    const { error } = await a.from('portfolio_reports').insert({ slug: v.value.slug, reason: v.value.reason, details: v.value.details, contact_email: v.value.email, ip_hash: hash });
+    if (error) return { error: 'Could not send the report.' };
+    return { ok: true as const };
   });
 
 export const staffUnpublishFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
