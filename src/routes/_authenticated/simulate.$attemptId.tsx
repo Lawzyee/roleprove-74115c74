@@ -356,6 +356,7 @@ function SimulationRunner() {
         <SiteHeader />
         <main className="mx-auto max-w-3xl px-5 py-10">
           <h1 className="font-display text-2xl font-semibold">Review your answers</h1>
+          {attemptRow.job_center_id && <p className="mt-2 text-sm text-muted-foreground">Practice simulation based on this job's requirements.</p>}
           <p className="mt-2 text-sm text-muted-foreground">
             Check everything below before final submission. You can edit any stage, then come back here.
           </p>
@@ -441,6 +442,7 @@ function SimulationRunner() {
             <h1 className="font-display text-2xl font-semibold">
               Stage {index + 1} of {tasks.length}: {task.title}
             </h1>
+            {attemptRow.job_center_id && <p className="mt-2 text-sm text-muted-foreground">Practice simulation based on this job's requirements.</p>}
             {stageLabel && (
               <Badge variant="secondary" className="mt-2">
                 {stageLabel}
