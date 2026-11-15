@@ -23,6 +23,7 @@ import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authenticated/subscribe'
 import { Route as AuthConfirmRouteImport } from './routes/auth_.confirm'
+import { Route as AuthenticatedAdminJobsRouteImport } from './routes/_authenticated/admin.jobs'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedCheckoutReturnRouteImport } from './routes/_authenticated/checkout.return'
 import { Route as AuthenticatedInterviewPrepIndexRouteImport } from './routes/_authenticated/interview-prep.index'
@@ -118,6 +119,11 @@ const AuthConfirmRoute = AuthConfirmRouteImport.update({
   id: '/auth_/confirm',
   path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminJobsRoute = AuthenticatedAdminJobsRouteImport.update({
+  id: '/admin/jobs',
+  path: '/admin/jobs',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminSupportRoute =
   AuthenticatedAdminSupportRouteImport.update({
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
@@ -317,6 +324,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
@@ -359,6 +367,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
   '/auth_/confirm': typeof AuthConfirmRoute
+  '/_authenticated/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/_authenticated/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
@@ -401,6 +410,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscribe'
     | '/auth/confirm'
+    | '/admin/jobs'
     | '/admin/support'
     | '/checkout/return'
     | '/interview-prep/$sessionId'
@@ -441,6 +451,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscribe'
     | '/auth/confirm'
+    | '/admin/jobs'
     | '/admin/support'
     | '/checkout/return'
     | '/interview-prep/$sessionId'
@@ -482,6 +493,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/subscribe'
     | '/auth_/confirm'
+    | '/_authenticated/admin/jobs'
     | '/_authenticated/admin/support'
     | '/_authenticated/checkout/return'
     | '/_authenticated/interview-prep/$sessionId'
@@ -627,6 +639,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/confirm'
       preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/jobs': {
+      id: '/_authenticated/admin/jobs'
+      path: '/admin/jobs'
+      fullPath: '/admin/jobs'
+      preLoaderRoute: typeof AuthenticatedAdminJobsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/support': {
       id: '/_authenticated/admin/support'
@@ -813,6 +832,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSubscribeRoute: typeof AuthenticatedSubscribeRoute
+  AuthenticatedAdminJobsRoute: typeof AuthenticatedAdminJobsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedCheckoutReturnRoute: typeof AuthenticatedCheckoutReturnRoute
   AuthenticatedInterviewPrepSessionIdRoute: typeof AuthenticatedInterviewPrepSessionIdRoute
@@ -839,6 +859,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSubscribeRoute: AuthenticatedSubscribeRoute,
+  AuthenticatedAdminJobsRoute: AuthenticatedAdminJobsRoute,
   AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
   AuthenticatedCheckoutReturnRoute: AuthenticatedCheckoutReturnRoute,
   AuthenticatedInterviewPrepSessionIdRoute:
