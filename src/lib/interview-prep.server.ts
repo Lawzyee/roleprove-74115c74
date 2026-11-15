@@ -150,7 +150,7 @@ export async function createPrepSession(
     .insert({
       user_id: userId,
       title,
-      source_jd_text: text.slice(0, 20000),
+      source_jd_text: input.privateSource ? 'Practice based on a staff-curated external listing.' : text.slice(0, 20000),
       source_url: sourceUrl,
       extracted_role_context: extracted as unknown as never,
       cv_file_path: cvFilePath,

@@ -62,14 +62,14 @@ export const practiceJobFn=createServerFn({method:'POST'}).middleware([requireSu
   return withUsage(context.userId,data.environment,data.kind,async()=>{
     if(data.kind==='simulation') {
       const {generatePersonalisedSimulation}=await import('./jd.server');
-      const r=await generatePersonalisedSimulation(context.userId,{text:privateJob.practice_text,roleKey});
+      const r=await generatePersonalisedSimulation(context.userId,{text:privateJob.practice_text,roleKey,privateSource:true});
       if(r.outcome!=='matched')throw new Error('Could not generate this practice simulation.');
       const {data:attempt,error:a}=await supabaseAdmin.from('simulation_attempts').update({job_center_id:job.id}).eq('id',r.attemptId).eq('user_id',context.userId).select('job_posting_id').single();if(a)throw a;
       if(attempt.job_posting_id){const {error:redact}=await supabaseAdmin.from('job_postings').update({raw_text:'Practice based on a staff-curated external listing.'}).eq('id',attempt.job_posting_id).eq('user_id',context.userId);if(redact)throw redact;}
       return {kind:'simulation' as const,resourceId:r.attemptId};
     }
     const {createPrepSession}=await import('./interview-prep.server');
-    const r=await createPrepSession(context.userId,{text:privateJob.practice_text,roleName});if(r.outcome!=='ready')throw new Error('Could not generate interview prep.');
+    const r=await createPrepSession(context.userId,{text:privateJob.practice_text,roleName,privateSource:true});if(r.outcome!=='ready')throw new Error('Could not generate interview prep.');
     const {error:redact}=await supabaseAdmin.from('interview_prep_sessions').update({source_jd_text:'Practice based on a staff-curated external listing.'}).eq('id',r.sessionId).eq('user_id',context.userId);if(redact)throw redact;
     return {kind:'interview_prep' as const,resourceId:r.sessionId};
   },r=>r.resourceId);
