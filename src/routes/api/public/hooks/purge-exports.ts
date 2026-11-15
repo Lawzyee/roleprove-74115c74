@@ -14,7 +14,9 @@ export const Route = createFileRoute('/api/public/hooks/purge-exports')({
           const { purgeOldReports } = await import('@/lib/portfolio.server')
           const removed = await purgeExpiredExports(supabaseAdmin)
           const reportsRemoved = await purgeOldReports(supabaseAdmin)
-          return Response.json({ removed, reportsRemoved })
+          const { cleanJobCenter } = await import('@/lib/job-center.server')
+          const jobs = await cleanJobCenter(supabaseAdmin)
+          return Response.json({ removed, reportsRemoved, jobs })
         } catch (e) {
           console.error('purge exports', e)
           return new Response('Purge failed', { status: 500 })
