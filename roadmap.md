@@ -24,3 +24,11 @@
 ## Portfolio follow-up — done
 - [x] Signed-out report form (reason, details, email, honeypot, 5/hour per address) + staff list in support inbox
 - [x] Share buttons, QR download, "Where to use your link" card
+
+## Job center v1
+- [ ] Staff-curated jobs, private practice text, staff RLS and management page
+- [ ] Safe HTTPS validation, daily checks, automatic expiry and broken-link hiding
+- [ ] Signed-in browsing, filters, preferences, tracker, apply and reports
+- [ ] Existing capped/paywalled simulation and interview practice integration
+- [ ] Deletion/export coverage, legal placeholders and tests
+- [ ] Full tests and authenticated desktop/mobile verification
