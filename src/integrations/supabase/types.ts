@@ -31,6 +31,8 @@ export type Database = {
           paywall_enforced: boolean
           paywall_enforced_since: string | null
           recruiter_visibility_enabled: boolean
+          report_open_retention_days: number
+          report_resolved_retention_days: number
           trial_days: number
         }
         Insert: {
@@ -49,6 +51,8 @@ export type Database = {
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           recruiter_visibility_enabled?: boolean
+          report_open_retention_days?: number
+          report_resolved_retention_days?: number
           trial_days?: number
         }
         Update: {
@@ -67,6 +71,8 @@ export type Database = {
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           recruiter_visibility_enabled?: boolean
+          report_open_retention_days?: number
+          report_resolved_retention_days?: number
           trial_days?: number
         }
         Relationships: []
@@ -793,6 +799,7 @@ export type Database = {
           id: string
           ip_hash: string
           reason: string
+          resolved_at: string | null
           slug: string
           status: string
         }
@@ -803,6 +810,7 @@ export type Database = {
           id?: string
           ip_hash: string
           reason: string
+          resolved_at?: string | null
           slug: string
           status?: string
         }
@@ -813,6 +821,7 @@ export type Database = {
           id?: string
           ip_hash?: string
           reason?: string
+          resolved_at?: string | null
           slug?: string
           status?: string
         }
@@ -1315,6 +1324,7 @@ export type Database = {
         Args: { p_key: string; p_limit: number }
         Returns: boolean
       }
+      portfolio_report_ip_hash: { Args: { p_ip: string }; Returns: string }
       reserve_billing_usage: {
         Args: { p_env: string; p_kind: string; p_user: string }
         Returns: Json
