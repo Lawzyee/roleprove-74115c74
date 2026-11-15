@@ -7,6 +7,12 @@ import { StatusBadge } from '@/components/support/SupportParts';
 import { TicketThread } from '@/components/support/TicketThread';
 import { categoryLabel, SUPPORT_CATEGORIES } from '@/lib/support';
 import { getDisputeAttemptFn, getIsSupportStaffFn } from '@/lib/support.functions';
+import { staffUnpublishFn } from '@/lib/portfolio.functions';
+import { useServerFn } from '@tanstack/react-start';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 type Search = { status?: string; category?: string; ticket?: string };
 export const Route = createFileRoute('/_authenticated/admin/support')({
