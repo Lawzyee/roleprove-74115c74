@@ -40,13 +40,14 @@ function OwnerProjectPage() {
   useEffect(() => {
     if (q.data?.found) {
       setInsight(q.data.project.insight);
-      setVis(Object.fromEntries(q.data.project.stages.map((s) => [s.taskId, s.visibility])));
+      setVis(Object.fromEntries((q.data.project.stages as unknown as Array<{ taskId: string; visibility: StageVisibility }>).map((s) => [s.taskId, s.visibility])));
     }
   }, [q.data]);
 
   if (q.isLoading) return <Shell><p className="text-sm text-muted-foreground">Loading…</p></Shell>;
   if (!q.data?.found) return <Shell><p>This project isn’t in your portfolio.</p><Button asChild variant="outline" className="mt-3"><Link to="/portfolio">Back to portfolio</Link></Button></Shell>;
-  const { project, generationsLeft, showScores } = q.data;
+  const { generationsLeft, showScores } = q.data;
+  const project = q.data.project as typeof q.data.project & { stages: Array<typeof q.data.project.stages[number] & { taskId: string; visibility: StageVisibility }> };
 
   async function save() {
     setBusy(true);
