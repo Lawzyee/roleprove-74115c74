@@ -58,6 +58,10 @@ async function seedAccount() {
     must(await admin.storage.from('portfolio-photos').upload(`${uid}/photo-1.jpg`, file('jpg', 'image/jpeg')), 'portfolio photo');
     { const r = await admin.from('portfolios').insert({ user_id: uid, slug, is_public: true, consented_at: new Date().toISOString(), bio: 'Portfolio bio', photo_path: `${uid}/photo-1.jpg` }); if (r.error) throw new Error('portfolio: ' + r.error.message); }
     { const r = await admin.from('portfolio_projects').insert({ user_id: uid, attempt_id: attempt.id, insight: 'Portfolio insight' }); if (r.error) throw new Error('portfolio project: ' + r.error.message); }
+    const listing = must(await admin.from('job_center_jobs').insert({ title:'Deletion test job',company:'Test',arrangement:'remote',employment:'full-time',role_key:'data_analyst',seniority:'entry',summary:'Test',apply_url:'https://example.com',status:'published' }).select('id').single(),'job listing');
+    must(await admin.from('job_center_private').insert({job_id:listing.id,practice_text:'STAFF PRIVATE',staff_notes:'STAFF NOTE'}).select('job_id').single(),'private listing');
+    must(await admin.from('job_tracker').insert({user_id:uid,job_id:listing.id,status:'applied',notes:'My job note'}).select('id').single(),'tracker');
+    must(await admin.from('job_preferences').insert({user_id:uid,roles:['data_analyst'],countries:['Nigeria']}).select('user_id').single(),'preferences');
 
     // Real Stripe test-mode subscription (trial, so no card needed).
     const customer = await stripe.customers.create({ email, name: 'Erasure Test', metadata: { userId: uid } });
@@ -65,12 +69,12 @@ async function seedAccount() {
     const sub = await stripe.subscriptions.create({ customer: customer.id, items: [{ price: price.id }], trial_period_days: 7, metadata: { userId: uid } });
     { const r = await admin.from('subscriptions').insert({ user_id: uid, stripe_subscription_id: sub.id, stripe_customer_id: customer.id, price_id: 'roleprove_practice_prep_monthly', status: sub.status, environment: 'sandbox' }); if (r.error) throw new Error('subscription' + ": " + r.error.message); }
 
-    return { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, slug, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg };
+    return { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, slug, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg, listing };
 }
 
 describe.skipIf(!ready)('account deletion removes everything', () => {
   it('leaves no rows, files, sign-in account or Stripe customer behind', async () => {
-    const { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, slug, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg } = await seedAccount();
+    const { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, slug, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg, listing } = await seedAccount();
     const legal = must(await admin.from('legal_acceptances').select('id').eq('user_id', uid), 'legal');
     expect(legal.length).toBeGreaterThan(0);
     expect((await listUserFiles(admin, uid)).length).toBe(6);
@@ -85,6 +89,9 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
     for (const [t, c, v] of [['attempt_task_results', 'attempt_id', attempt.id], ['attempt_deliverables', 'user_id', uid], ['deliverable_flags', 'user_id', uid], ['interview_prep_questions', 'session_id', sess.id], ['interview_prep_responses', 'question_id', q.id], ['support_messages', 'ticket_id', ticket.id], ['support_attachments', 'message_id', msg.id], ['simulation_tasks', 'id', task.id], ['live_interview_messages', 'interview_id', live.id], ['live_interview_flags', 'interview_id', live.id]] as const)
       expect(must(await admin.from(t as never).select('*').eq(c, v), t), t).toEqual([]);
     expect(await listUserFiles(admin, uid)).toEqual([]);
+    expect((await admin.from('job_tracker').select('id').eq('user_id',uid)).data).toEqual([]);
+    expect((await admin.from('job_preferences').select('user_id').eq('user_id',uid)).data).toEqual([]);
+    await admin.from('job_center_jobs').delete().eq('id',listing.id);
     // The public page and photo now resolve to "not found" (same lookup the page and photo address use).
     expect(await loadPublicPortfolioRow(admin, slug)).toBeNull();
     expect((await admin.storage.from('portfolio-photos').list(uid)).data).toEqual([]);
@@ -100,7 +107,7 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
   }, 120_000);
 
   it('exports every data type the account holds, then the export is deleted with the account', async () => {
-    const { admin, stripe, eraseAccount, uid, email } = await seedAccount();
+    const { admin, stripe, eraseAccount, uid, email, listing } = await seedAccount();
     try {
       const { unzipSync, strFromU8 } = await import('fflate');
       const { buildExport, SECTIONS, NOT_INCLUDED } = await import('./data-export.server');
@@ -125,6 +132,11 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
       expect(all.portfolio[0].bio).toBe('Portfolio bio');
       expect(all.portfolio[0].is_public).toBe(true);
       expect(all.portfolio_projects[0].insight).toBe('Portfolio insight');
+      expect(all.job_tracker[0].status).toBe('applied');
+      expect(all.job_tracker[0].notes).toBe('My job note');
+      expect(all.job_preferences[0].countries).toEqual(['Nigeria']);
+      expect(JSON.stringify(all)).not.toContain('STAFF PRIVATE');
+      expect(JSON.stringify(all)).not.toContain('STAFF NOTE');
       // Staff-only data stays out.
       expect(all.support_tickets[0]).not.toHaveProperty('tags');
       expect(all.support_tickets[0]).not.toHaveProperty('staff_last_read_at');
@@ -143,6 +155,7 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
       { const r = await admin.from('data_exports').insert({ user_id: uid, status: 'ready', file_path: `${uid}/e.zip` }); if (r.error) throw r.error; }
     } finally {
       await eraseAccount({ admin, userId: uid, stripeFor: (env) => (env === 'sandbox' ? stripe : null) });
+      await admin.from('job_center_jobs').delete().eq('id',listing.id);
       const hash = (await admin.rpc('billing_email_hash', { p_email: email })).data;
       if (hash) await admin.from('billing_trial_history').delete().eq('email_hash', hash);
     }
