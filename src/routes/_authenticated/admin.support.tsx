@@ -59,6 +59,7 @@ function AdminSupport() {
           <p className="text-xs text-muted-foreground">{categoryLabel(t.category)}{t.tags.includes('legal_deadline') ? ' · Legal deadline' : ''} · {new Date(t.updated_at).toLocaleDateString()}</p>
         </Link></li>;
       })}{tickets.data?.length === 0 && <li className="p-3 text-sm text-muted-foreground">No tickets.</li>}</ul>
+      <UnpublishPortfolio />
     </aside>
     <section>{search.ticket ? <><TicketThread key={search.ticket} ticketId={search.ticket} staff /><DisputePanel ticketId={search.ticket} /></> : <p className="text-muted-foreground">Select a ticket.</p>}</section>
   </main></>;
@@ -80,4 +81,14 @@ function DisputePanel({ ticketId }: { ticketId: string }) {
       {Array.isArray(r.criteria_breakdown) && <ul className="ml-4 mt-1 list-disc text-muted-foreground">{(r.criteria_breakdown as Criterion[]).map((c, i) => <li key={i}>{c.criterion ?? c.name}: {c.score ?? 'Cannot evaluate'}{c.justification ? ` — ${c.justification}` : ''}</li>)}</ul>}
     </li>)}</ul>
   </section>;
+}
+
+function UnpublishPortfolio() {
+  const unpublish = useServerFn(staffUnpublishFn);
+  const [slug, setSlug] = useState('');
+  return <div className="mt-6 space-y-2 rounded-lg border border-border p-3">
+    <p className="text-sm font-medium">Unpublish a reported portfolio</p>
+    <div className="flex gap-2"><Input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} placeholder="link name" aria-label="Portfolio link name" />
+      <Button size="sm" variant="destructive" disabled={!slug} onClick={async () => { const r = await unpublish({ data: { slug } }); if ('error' in r && r.error) toast.error(r.error); else { toast.success('Portfolio made private.'); setSlug(''); } }}>Unpublish</Button></div>
+  </div>;
 }
