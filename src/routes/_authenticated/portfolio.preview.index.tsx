@@ -1,8 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Button } from "@/components/ui/button";
-import { PortfolioView } from "@/components/portfolio/PublicView";
+import { PortfolioView, PreviewBar } from "@/components/portfolio/PublicView";
 import { previewPortfolioFn } from "@/lib/portfolio.functions";
 
 export const Route = createFileRoute("/_authenticated/portfolio/preview/")({
@@ -19,15 +18,6 @@ export const Route = createFileRoute("/_authenticated/portfolio/preview/")({
   }),
   component: PreviewPage,
 });
-
-export function PreviewBar() {
-  return (
-    <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-accent px-5 py-2 text-sm">
-      <span className="font-medium">Preview — this is what visitors with your link see.</span>
-      <Button asChild size="sm" variant="outline" className="ml-auto"><Link to="/portfolio">Back to editing</Link></Button>
-    </div>
-  );
-}
 
 function PreviewPage() {
   const get = useServerFn(previewPortfolioFn);
