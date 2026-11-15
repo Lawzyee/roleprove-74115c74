@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { BIO_MAX, INSIGHT_MAX, MAX_INSIGHT_GENERATIONS, PHOTO_MAX_BYTES, cleanText, ctaCopy, safeUrl, slugProblem } from './portfolio';
 import {
   PHOTO_BUCKET, buildPublicPortfolio, groupFolders, loadOwnPortfolioRow, loadProject, loadPublicPortfolioRow, ownerName, rateOk, shapeProject, writeInsight,
+  type OwnerStage, type PublicProject,
 } from './portfolio.server';
 import { sniffImage, stripImageMetadata } from './image-meta';
 
@@ -206,7 +207,7 @@ export const getMyProjectFn = createServerFn({ method: 'POST' }).middleware([req
     const l = await loadProject(a, context.userId, data.projectId);
     if (!l) return { found: false as const };
     const row = await loadOwnPortfolioRow(a, context.userId);
-    return { found: true as const, project: shapeProject(l, row, origin(), ownerName(await profileName(context.userId), row), 'owner'), generationsLeft: MAX_INSIGHT_GENERATIONS - l.project.insight_generations, showScores: !!row?.show_scores };
+    return { found: true as const, project: shapeProject(l, row, origin(), ownerName(await profileName(context.userId), row), 'owner') as PublicProject & { stages: OwnerStage[] }, generationsLeft: MAX_INSIGHT_GENERATIONS - l.project.insight_generations, showScores: !!row?.show_scores };
   });
 
 const vis = z.object({ summary: z.boolean(), replies: z.boolean(), data: z.boolean() });
