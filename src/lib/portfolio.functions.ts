@@ -266,11 +266,12 @@ export const reportPortfolioFn = createServerFn({ method: 'POST' }).middleware([
   });
 
 // Signed-out visitors: no account needed. Staff-only table; the owner is never told.
-async function ipHash(): Promise<string> {
+// Keyed hash (HMAC-SHA256, key in private.app_keys) so stored values can't be reversed by guessing addresses.
+async function ipHash(a: Awaited<ReturnType<typeof admin>>): Promise<string | null> {
   const req = getRequest();
   const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || req.headers.get('x-real-ip') || 'unknown';
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`roleprove-portfolio-report:${ip}`));
-  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, '0')).join('');
+  const { data, error } = await a.rpc('portfolio_report_ip_hash', { p_ip: ip });
+  return error || typeof data !== 'string' ? null : data;
 }
 export const reportPortfolioPublicFn = createServerFn({ method: 'POST' })
   .inputValidator((d: unknown) => z.object({
@@ -282,7 +283,8 @@ export const reportPortfolioPublicFn = createServerFn({ method: 'POST' })
     if (!v.ok) return { error: v.error };
     if (v.spam) return { ok: true as const }; // honeypot filled: pretend success, store nothing
     const a = await admin();
-    const hash = await ipHash();
+    const hash = await ipHash(a);
+    if (!hash) return { error: 'Could not send the report.' };
     const since = new Date(Date.now() - 3600_000).toISOString();
     const { count, error: cErr } = await a.from('portfolio_reports').select('id', { count: 'exact', head: true }).eq('ip_hash', hash).gte('created_at', since);
     if (cErr) return { error: 'Could not send the report.' };

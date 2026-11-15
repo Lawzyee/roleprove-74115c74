@@ -155,3 +155,9 @@ export function validatePublicReport(d: PublicReportInput): PublicReportResult {
   if (email && (email.length > 255 || !EMAIL_RE.test(email))) return { ok: false, error: 'Please enter a valid email address, or leave it blank.' };
   return { ok: true, spam: false, value: { slug, reason, details, email } };
 }
+
+/** Cut-off timestamps for visitor-report retention (resolved by resolved_at, unresolved by created_at). */
+export function reportRetentionCutoffs(now: Date, resolvedDays: number, openDays: number) {
+  const ago = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
+  return { resolvedBefore: ago(resolvedDays), openBefore: ago(openDays) };
+}
