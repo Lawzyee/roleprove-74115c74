@@ -32,6 +32,8 @@ import { Route as AuthenticatedSimulateAttemptIdRouteImport } from './routes/_au
 import { Route as AuthenticatedSupportIndexRouteImport } from './routes/_authenticated/support.index'
 import { Route as AuthenticatedSupportTicketIdRouteImport } from './routes/_authenticated/support.$ticketId'
 import { Route as AuthenticatedSupportNewRouteImport } from './routes/_authenticated/support.new'
+import { Route as PSlugIndexRouteImport } from './routes/p/$slug.index'
+import { Route as PSlugProjectIdRouteImport } from './routes/p/$slug.$projectId'
 import { Route as AuthenticatedInterviewPrepLiveInterviewIdRouteImport } from './routes/_authenticated/interview-prep.live.$interviewId'
 import { Route as ApiPublicHooksPurgeExportsRouteImport } from './routes/api/public/hooks/purge-exports'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -163,6 +165,16 @@ const AuthenticatedSupportNewRoute = AuthenticatedSupportNewRouteImport.update({
   path: '/support/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const PSlugIndexRoute = PSlugIndexRouteImport.update({
+  id: '/p/$slug/',
+  path: '/p/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugProjectIdRoute = PSlugProjectIdRouteImport.update({
+  id: '/p/$slug/$projectId',
+  path: '/p/$slug/$projectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedInterviewPrepLiveInterviewIdRoute =
   AuthenticatedInterviewPrepLiveInterviewIdRouteImport.update({
     id: '/interview-prep/live/$interviewId',
@@ -225,8 +237,10 @@ export interface FileRoutesByFullPath {
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
   '/support/$ticketId': typeof AuthenticatedSupportTicketIdRoute
   '/support/new': typeof AuthenticatedSupportNewRoute
+  '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
   '/support/': typeof AuthenticatedSupportIndexRoute
+  '/p/$slug/': typeof PSlugIndexRoute
   '/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -256,8 +270,10 @@ export interface FileRoutesByTo {
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
   '/support/$ticketId': typeof AuthenticatedSupportTicketIdRoute
   '/support/new': typeof AuthenticatedSupportNewRoute
+  '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/interview-prep': typeof AuthenticatedInterviewPrepIndexRoute
   '/support': typeof AuthenticatedSupportIndexRoute
+  '/p/$slug': typeof PSlugIndexRoute
   '/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -289,8 +305,10 @@ export interface FileRoutesById {
   '/_authenticated/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
   '/_authenticated/support/$ticketId': typeof AuthenticatedSupportTicketIdRoute
   '/_authenticated/support/new': typeof AuthenticatedSupportNewRoute
+  '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/_authenticated/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
   '/_authenticated/support/': typeof AuthenticatedSupportIndexRoute
+  '/p/$slug/': typeof PSlugIndexRoute
   '/_authenticated/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -322,8 +340,10 @@ export interface FileRouteTypes {
     | '/simulate/$attemptId'
     | '/support/$ticketId'
     | '/support/new'
+    | '/p/$slug/$projectId'
     | '/interview-prep/'
     | '/support/'
+    | '/p/$slug/'
     | '/interview-prep/live/$interviewId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
@@ -353,8 +373,10 @@ export interface FileRouteTypes {
     | '/simulate/$attemptId'
     | '/support/$ticketId'
     | '/support/new'
+    | '/p/$slug/$projectId'
     | '/interview-prep'
     | '/support'
+    | '/p/$slug'
     | '/interview-prep/live/$interviewId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
@@ -385,8 +407,10 @@ export interface FileRouteTypes {
     | '/_authenticated/simulate/$attemptId'
     | '/_authenticated/support/$ticketId'
     | '/_authenticated/support/new'
+    | '/p/$slug/$projectId'
     | '/_authenticated/interview-prep/'
     | '/_authenticated/support/'
+    | '/p/$slug/'
     | '/_authenticated/interview-prep/live/$interviewId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
@@ -405,6 +429,8 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  PSlugProjectIdRoute: typeof PSlugProjectIdRoute
+  PSlugIndexRoute: typeof PSlugIndexRoute
   ApiPublicHooksPurgeExportsRoute: typeof ApiPublicHooksPurgeExportsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicPortfolioPhotoSlugRoute: typeof ApiPublicPortfolioPhotoSlugRoute
@@ -576,6 +602,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSupportNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/p/$slug/': {
+      id: '/p/$slug/'
+      path: '/p/$slug'
+      fullPath: '/p/$slug/'
+      preLoaderRoute: typeof PSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug/$projectId': {
+      id: '/p/$slug/$projectId'
+      path: '/p/$slug/$projectId'
+      fullPath: '/p/$slug/$projectId'
+      preLoaderRoute: typeof PSlugProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/interview-prep/live/$interviewId': {
       id: '/_authenticated/interview-prep/live/$interviewId'
       path: '/interview-prep/live/$interviewId'
@@ -680,6 +720,8 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  PSlugProjectIdRoute: PSlugProjectIdRoute,
+  PSlugIndexRoute: PSlugIndexRoute,
   ApiPublicHooksPurgeExportsRoute: ApiPublicHooksPurgeExportsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicPortfolioPhotoSlugRoute: ApiPublicPortfolioPhotoSlugRoute,
