@@ -2,7 +2,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ROLE_REGISTRY, roleKeyForId } from './role-registry';
 import { PILLARS, PILLAR_LABELS } from './scoring-config';
-import { cleanText, displayUrl, stageReplies, stageTables, stageVisibility, PUBLIC_REQUESTS_PER_MINUTE, type StageVisibility, type PublicCard, type PublicFolder, type PublicPortfolio, type PublicStage, type PublicProject } from './portfolio';
+import { cleanText, reportRetentionCutoffs, displayUrl, stageReplies, stageTables, stageVisibility, PUBLIC_REQUESTS_PER_MINUTE, type StageVisibility, type PublicCard, type PublicFolder, type PublicPortfolio, type PublicStage, type PublicProject } from './portfolio';
 export type { PublicCard, PublicFolder, PublicPortfolio, PublicStage, PublicProject };
 import { detectInjection } from './deliverable-extract';
 
@@ -173,4 +173,16 @@ export async function writeInsight(l: LoadedProject, callAi: (s: string, u: stri
 
 export function ownerName(profileName: string | null | undefined, row: PortfolioRow | null) {
   return cleanText(row?.display_name || profileName || 'RoleProve candidate', 80);
+}
+
+/** Hourly: deletes visitor reports past their retention period (days come from app_settings). */
+export async function purgeOldReports(admin: Admin): Promise<number> {
+  const { data: cfg, error: cErr } = await admin.from('app_settings').select('report_resolved_retention_days, report_open_retention_days').eq('id', true).maybeSingle();
+  if (cErr) throw new Error(cErr.message);
+  const c = reportRetentionCutoffs(new Date(), cfg?.report_resolved_retention_days ?? 90, cfg?.report_open_retention_days ?? 365);
+  const r1 = await admin.from('portfolio_reports').delete().eq('status', 'resolved').lt('resolved_at', c.resolvedBefore).select('id');
+  if (r1.error) throw new Error(r1.error.message);
+  const r2 = await admin.from('portfolio_reports').delete().eq('status', 'open').lt('created_at', c.openBefore).select('id');
+  if (r2.error) throw new Error(r2.error.message);
+  return (r1.data?.length ?? 0) + (r2.data?.length ?? 0);
 }

@@ -92,6 +92,13 @@
       "when": 1794703082318,
       "tag": "0012_portfolio_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794703703358,
+      "tag": "0013_portfolio_report_hmac_retention",
+      "breakpoints": true
     }
   ]
 }

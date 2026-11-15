@@ -29,3 +29,12 @@ describe('share links', () => {
     expect(l.email.startsWith('mailto:?subject=')).toBe(true);
   });
 });
+
+import { reportRetentionCutoffs } from './portfolio';
+describe('visitor report retention', () => {
+  it('resolved reports go after 90 days, unresolved after 12 months', () => {
+    const c = reportRetentionCutoffs(new Date('2026-12-31T00:00:00Z'), 90, 365);
+    expect(c.resolvedBefore).toBe('2026-10-02T00:00:00.000Z');
+    expect(c.openBefore).toBe('2025-12-31T00:00:00.000Z');
+  });
+});
