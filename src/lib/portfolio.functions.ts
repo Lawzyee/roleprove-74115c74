@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
-import { BIO_MAX, INSIGHT_MAX, MAX_INSIGHT_GENERATIONS, PHOTO_MAX_BYTES, cleanText, ctaCopy, safeUrl, slugProblem, validatePublicReport, PUBLIC_REPORTS_PER_HOUR, REPORT_REASONS } from './portfolio';
+import { BIO_MAX, INSIGHT_MAX, MAX_INSIGHT_GENERATIONS, PHOTO_MAX_BYTES, cleanText, ctaCopy, safeUrl, slugProblem, validatePublicReport, PUBLIC_REPORTS_PER_HOUR } from './portfolio';
 import {
   PHOTO_BUCKET, buildPublicPortfolio, groupFolders, loadOwnPortfolioRow, loadProject, loadPublicPortfolioRow, ownerName, rateOk, shapeProject, writeInsight,
   type OwnerStage, type PublicProject,
@@ -291,7 +291,6 @@ export const reportPortfolioPublicFn = createServerFn({ method: 'POST' })
     if (error) return { error: 'Could not send the report.' };
     return { ok: true as const };
   });
-export const PORTFOLIO_REPORT_REASONS = REPORT_REASONS;
 
 export const staffUnpublishFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ slug: slugInput }).parse(d))
