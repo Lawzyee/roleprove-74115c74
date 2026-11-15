@@ -127,7 +127,7 @@ export const setVisibilityFn = createServerFn({ method: 'POST' }).middleware([re
       if (!p.consented_at && !data.consent) return { error: 'Please confirm you understand who can see your portfolio.' };
       if (!p.consented_at) patch.consented_at = new Date().toISOString();
     }
-    const { error } = await a.from('portfolios').update(patch).eq('user_id', context.userId);
+    const { error } = await a.from('portfolios').update(patch as never).eq('user_id', context.userId);
     if (error) return { error: 'Could not change visibility.' };
     return { ok: true };
   });
@@ -220,7 +220,7 @@ export const updateProjectFn = createServerFn({ method: 'POST' }).middleware([re
       patch.insight = cleanText(data.insight, INSIGHT_MAX) || null;
     }
     if (data.stageSettings) patch.stage_settings = data.stageSettings;
-    const { error } = await (await admin()).from('portfolio_projects').update(patch).eq('id', data.projectId).eq('user_id', context.userId);
+    const { error } = await (await admin()).from('portfolio_projects').update(patch as never).eq('id', data.projectId).eq('user_id', context.userId);
     if (error) return { error: 'Could not save the project.' };
     return { ok: true };
   });
