@@ -20,9 +20,17 @@ export type Database = {
           daily_grading_cap: number
           daily_interview_turns: number
           daily_interviews: number
+          employer_contact_days: number
+          employer_daily_submissions: number
+          employer_max_pending: number
+          employer_pending_days: number
+          employer_rejected_days: number
+          employer_unconfirmed_days: number
+          employer_waitlist_max_months: number | null
           free_interview_prep: number
           free_regrades: number
           free_simulations: number
+          hiring_software_domains: string[]
           id: boolean
           interview_answer_chars: number
           launch_free_until: string | null
@@ -40,9 +48,17 @@ export type Database = {
           daily_grading_cap?: number
           daily_interview_turns?: number
           daily_interviews?: number
+          employer_contact_days?: number
+          employer_daily_submissions?: number
+          employer_max_pending?: number
+          employer_pending_days?: number
+          employer_rejected_days?: number
+          employer_unconfirmed_days?: number
+          employer_waitlist_max_months?: number | null
           free_interview_prep?: number
           free_regrades?: number
           free_simulations?: number
+          hiring_software_domains?: string[]
           id?: boolean
           interview_answer_chars?: number
           launch_free_until?: string | null
@@ -60,9 +76,17 @@ export type Database = {
           daily_grading_cap?: number
           daily_interview_turns?: number
           daily_interviews?: number
+          employer_contact_days?: number
+          employer_daily_submissions?: number
+          employer_max_pending?: number
+          employer_pending_days?: number
+          employer_rejected_days?: number
+          employer_unconfirmed_days?: number
+          employer_waitlist_max_months?: number | null
           free_interview_prep?: number
           free_regrades?: number
           free_simulations?: number
+          hiring_software_domains?: string[]
           id?: boolean
           interview_answer_chars?: number
           launch_free_until?: string | null
@@ -409,6 +433,120 @@ export type Database = {
           },
         ]
       }
+      employer_rate_hits: {
+        Row: {
+          created_at: string
+          id: number
+          ip_hash: string
+          kind: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          ip_hash: string
+          kind: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          ip_hash?: string
+          kind?: string
+        }
+        Relationships: []
+      }
+      employer_sessions: {
+        Row: {
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          expires_at: string | null
+          id: string
+          token_hash: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string | null
+          id?: string
+          token_hash: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string | null
+          id?: string
+          token_hash?: string
+        }
+        Relationships: []
+      }
+      employer_waitlist: {
+        Row: {
+          arrangements: string[]
+          company: string
+          company_size: string | null
+          confirm_token_hash: string | null
+          confirmed_at: string | null
+          consent_at: string
+          country: string
+          created_at: string
+          email: string
+          full_name: string
+          hires_per_year: string | null
+          hiring_types: string[]
+          id: string
+          job_title: string
+          message: string
+          other_role: string
+          personal_email: boolean
+          remove_token_hash: string
+          roles: string[]
+        }
+        Insert: {
+          arrangements?: string[]
+          company?: string
+          company_size?: string | null
+          confirm_token_hash?: string | null
+          confirmed_at?: string | null
+          consent_at?: string
+          country?: string
+          created_at?: string
+          email: string
+          full_name?: string
+          hires_per_year?: string | null
+          hiring_types?: string[]
+          id?: string
+          job_title?: string
+          message?: string
+          other_role?: string
+          personal_email?: boolean
+          remove_token_hash: string
+          roles?: string[]
+        }
+        Update: {
+          arrangements?: string[]
+          company?: string
+          company_size?: string | null
+          confirm_token_hash?: string | null
+          confirmed_at?: string | null
+          consent_at?: string
+          country?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          hires_per_year?: string | null
+          hiring_types?: string[]
+          id?: string
+          job_title?: string
+          message?: string
+          other_role?: string
+          personal_email?: boolean
+          remove_token_hash?: string
+          roles?: string[]
+        }
+        Relationships: []
+      }
       interview_prep_questions: {
         Row: {
           category: string
@@ -617,6 +755,10 @@ export type Database = {
           last_checked_at: string | null
           link_broken: boolean
           practice_text: string
+          reject_note: string
+          reject_reason: string | null
+          removal_token_hash: string | null
+          reviewed_at: string | null
           source_note: string
           staff_notes: string
           submitter_email: string
@@ -630,6 +772,10 @@ export type Database = {
           last_checked_at?: string | null
           link_broken?: boolean
           practice_text?: string
+          reject_note?: string
+          reject_reason?: string | null
+          removal_token_hash?: string | null
+          reviewed_at?: string | null
           source_note?: string
           staff_notes?: string
           submitter_email?: string
@@ -643,6 +789,10 @@ export type Database = {
           last_checked_at?: string | null
           link_broken?: boolean
           practice_text?: string
+          reject_note?: string
+          reject_reason?: string | null
+          removal_token_hash?: string | null
+          reviewed_at?: string | null
           source_note?: string
           staff_notes?: string
           submitter_email?: string
