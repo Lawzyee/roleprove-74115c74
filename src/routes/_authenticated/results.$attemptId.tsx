@@ -17,6 +17,7 @@ import { roleKeyForId } from "@/lib/role-registry";
 import { getStripeEnvironment } from '@/lib/stripe';
 import { useEffect, useRef, useState } from "react";
 import { gradeDeliverablesFn } from "@/lib/deliverables.functions";
+import { addProjectFn } from "@/lib/portfolio.functions";
 import { DeliverableResult, FilePickButton, useDeliverableUploader, type DeliverableRow } from "@/components/DeliverableUpload";
 
 export const Route = createFileRoute("/_authenticated/results/$attemptId")({
@@ -252,6 +253,7 @@ function ResultsPage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Button onClick={retake}>Retake simulation</Button>
+              {attempt.status === "completed" && attempt.overall_score != null && <AddToPortfolioButton attemptId={attempt.id} />}
               <Button asChild variant="outline">
                 <Link to="/dashboard">Back to dashboard</Link>
               </Button>
@@ -282,4 +284,16 @@ function TaskDeliverable({ attemptId, taskId, accept, row, onUploaded }: { attem
     );
   }
   return <DeliverableResult d={row}>{row.grading_status === "legacy" ? null : picker}</DeliverableResult>;
+}
+
+function AddToPortfolioButton({ attemptId }: { attemptId: string }) {
+  const add = useServerFn(addProjectFn);
+  const [state, setState] = useState<"idle" | "busy" | "done">("idle");
+  if (state === "done") return <Button asChild variant="outline"><Link to="/portfolio">View portfolio</Link></Button>;
+  return <Button variant="outline" disabled={state === "busy"} onClick={async () => {
+    setState("busy");
+    const r = await add({ data: { attemptId } }).catch(() => ({ error: "Could not add to your portfolio." }));
+    if ("error" in r && r.error) { toast.error(r.error); setState(r.error.includes("already") ? "done" : "idle"); return; }
+    toast.success("Added to your portfolio."); setState("done");
+  }}>{state === "busy" ? "Adding…" : "Add to portfolio"}</Button>;
 }

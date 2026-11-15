@@ -27,14 +27,21 @@ import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authent
 import { Route as AuthenticatedCheckoutReturnRouteImport } from './routes/_authenticated/checkout.return'
 import { Route as AuthenticatedInterviewPrepIndexRouteImport } from './routes/_authenticated/interview-prep.index'
 import { Route as AuthenticatedInterviewPrepSessionIdRouteImport } from './routes/_authenticated/interview-prep.$sessionId'
+import { Route as AuthenticatedPortfolioIndexRouteImport } from './routes/_authenticated/portfolio.index'
+import { Route as AuthenticatedPortfolioProjectIdRouteImport } from './routes/_authenticated/portfolio.$projectId'
 import { Route as AuthenticatedResultsAttemptIdRouteImport } from './routes/_authenticated/results.$attemptId'
 import { Route as AuthenticatedSimulateAttemptIdRouteImport } from './routes/_authenticated/simulate.$attemptId'
 import { Route as AuthenticatedSupportIndexRouteImport } from './routes/_authenticated/support.index'
 import { Route as AuthenticatedSupportTicketIdRouteImport } from './routes/_authenticated/support.$ticketId'
 import { Route as AuthenticatedSupportNewRouteImport } from './routes/_authenticated/support.new'
+import { Route as PSlugIndexRouteImport } from './routes/p/$slug.index'
+import { Route as PSlugProjectIdRouteImport } from './routes/p/$slug.$projectId'
 import { Route as AuthenticatedInterviewPrepLiveInterviewIdRouteImport } from './routes/_authenticated/interview-prep.live.$interviewId'
+import { Route as AuthenticatedPortfolioPreviewIndexRouteImport } from './routes/_authenticated/portfolio.preview.index'
+import { Route as AuthenticatedPortfolioPreviewProjectIdRouteImport } from './routes/_authenticated/portfolio.preview.$projectId'
 import { Route as ApiPublicHooksPurgeExportsRouteImport } from './routes/api/public/hooks/purge-exports'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicPortfolioPhotoSlugRouteImport } from './routes/api/public/portfolio-photo/$slug'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -133,6 +140,18 @@ const AuthenticatedInterviewPrepSessionIdRoute =
     path: '/interview-prep/$sessionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPortfolioIndexRoute =
+  AuthenticatedPortfolioIndexRouteImport.update({
+    id: '/portfolio/',
+    path: '/portfolio/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPortfolioProjectIdRoute =
+  AuthenticatedPortfolioProjectIdRouteImport.update({
+    id: '/portfolio/$projectId',
+    path: '/portfolio/$projectId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedResultsAttemptIdRoute =
   AuthenticatedResultsAttemptIdRouteImport.update({
     id: '/results/$attemptId',
@@ -162,10 +181,32 @@ const AuthenticatedSupportNewRoute = AuthenticatedSupportNewRouteImport.update({
   path: '/support/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const PSlugIndexRoute = PSlugIndexRouteImport.update({
+  id: '/p/$slug/',
+  path: '/p/$slug/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugProjectIdRoute = PSlugProjectIdRouteImport.update({
+  id: '/p/$slug/$projectId',
+  path: '/p/$slug/$projectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedInterviewPrepLiveInterviewIdRoute =
   AuthenticatedInterviewPrepLiveInterviewIdRouteImport.update({
     id: '/interview-prep/live/$interviewId',
     path: '/interview-prep/live/$interviewId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPortfolioPreviewIndexRoute =
+  AuthenticatedPortfolioPreviewIndexRouteImport.update({
+    id: '/portfolio/preview/',
+    path: '/portfolio/preview/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPortfolioPreviewProjectIdRoute =
+  AuthenticatedPortfolioPreviewProjectIdRouteImport.update({
+    id: '/portfolio/preview/$projectId',
+    path: '/portfolio/preview/$projectId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ApiPublicHooksPurgeExportsRoute =
@@ -178,6 +219,12 @@ const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
     path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPortfolioPhotoSlugRoute =
+  ApiPublicPortfolioPhotoSlugRouteImport.update({
+    id: '/api/public/portfolio-photo/$slug',
+    path: '/api/public/portfolio-photo/$slug',
     getParentRoute: () => rootRouteImport,
   } as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
@@ -214,18 +261,25 @@ export interface FileRoutesByFullPath {
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
+  '/portfolio/$projectId': typeof AuthenticatedPortfolioProjectIdRoute
   '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
   '/support/$ticketId': typeof AuthenticatedSupportTicketIdRoute
   '/support/new': typeof AuthenticatedSupportNewRoute
+  '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
+  '/portfolio/': typeof AuthenticatedPortfolioIndexRoute
   '/support/': typeof AuthenticatedSupportIndexRoute
+  '/p/$slug/': typeof PSlugIndexRoute
   '/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
+  '/portfolio/preview/$projectId': typeof AuthenticatedPortfolioPreviewProjectIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/portfolio-photo/$slug': typeof ApiPublicPortfolioPhotoSlugRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/portfolio/preview/': typeof AuthenticatedPortfolioPreviewIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -244,18 +298,25 @@ export interface FileRoutesByTo {
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
+  '/portfolio/$projectId': typeof AuthenticatedPortfolioProjectIdRoute
   '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
   '/support/$ticketId': typeof AuthenticatedSupportTicketIdRoute
   '/support/new': typeof AuthenticatedSupportNewRoute
+  '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/interview-prep': typeof AuthenticatedInterviewPrepIndexRoute
+  '/portfolio': typeof AuthenticatedPortfolioIndexRoute
   '/support': typeof AuthenticatedSupportIndexRoute
+  '/p/$slug': typeof PSlugIndexRoute
   '/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
+  '/portfolio/preview/$projectId': typeof AuthenticatedPortfolioPreviewProjectIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/portfolio-photo/$slug': typeof ApiPublicPortfolioPhotoSlugRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/portfolio/preview': typeof AuthenticatedPortfolioPreviewIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -276,18 +337,25 @@ export interface FileRoutesById {
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/_authenticated/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
+  '/_authenticated/portfolio/$projectId': typeof AuthenticatedPortfolioProjectIdRoute
   '/_authenticated/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/_authenticated/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
   '/_authenticated/support/$ticketId': typeof AuthenticatedSupportTicketIdRoute
   '/_authenticated/support/new': typeof AuthenticatedSupportNewRoute
+  '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/_authenticated/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
+  '/_authenticated/portfolio/': typeof AuthenticatedPortfolioIndexRoute
   '/_authenticated/support/': typeof AuthenticatedSupportIndexRoute
+  '/p/$slug/': typeof PSlugIndexRoute
   '/_authenticated/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
+  '/_authenticated/portfolio/preview/$projectId': typeof AuthenticatedPortfolioPreviewProjectIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/portfolio-photo/$slug': typeof ApiPublicPortfolioPhotoSlugRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/_authenticated/portfolio/preview/': typeof AuthenticatedPortfolioPreviewIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -308,18 +376,25 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/checkout/return'
     | '/interview-prep/$sessionId'
+    | '/portfolio/$projectId'
     | '/results/$attemptId'
     | '/simulate/$attemptId'
     | '/support/$ticketId'
     | '/support/new'
+    | '/p/$slug/$projectId'
     | '/interview-prep/'
+    | '/portfolio/'
     | '/support/'
+    | '/p/$slug/'
     | '/interview-prep/live/$interviewId'
+    | '/portfolio/preview/$projectId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
+    | '/api/public/portfolio-photo/$slug'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/portfolio/preview/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -338,18 +413,25 @@ export interface FileRouteTypes {
     | '/admin/support'
     | '/checkout/return'
     | '/interview-prep/$sessionId'
+    | '/portfolio/$projectId'
     | '/results/$attemptId'
     | '/simulate/$attemptId'
     | '/support/$ticketId'
     | '/support/new'
+    | '/p/$slug/$projectId'
     | '/interview-prep'
+    | '/portfolio'
     | '/support'
+    | '/p/$slug'
     | '/interview-prep/live/$interviewId'
+    | '/portfolio/preview/$projectId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
+    | '/api/public/portfolio-photo/$slug'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/portfolio/preview'
   id:
     | '__root__'
     | '/'
@@ -369,18 +451,25 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/support'
     | '/_authenticated/checkout/return'
     | '/_authenticated/interview-prep/$sessionId'
+    | '/_authenticated/portfolio/$projectId'
     | '/_authenticated/results/$attemptId'
     | '/_authenticated/simulate/$attemptId'
     | '/_authenticated/support/$ticketId'
     | '/_authenticated/support/new'
+    | '/p/$slug/$projectId'
     | '/_authenticated/interview-prep/'
+    | '/_authenticated/portfolio/'
     | '/_authenticated/support/'
+    | '/p/$slug/'
     | '/_authenticated/interview-prep/live/$interviewId'
+    | '/_authenticated/portfolio/preview/$projectId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
+    | '/api/public/portfolio-photo/$slug'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
+    | '/_authenticated/portfolio/preview/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -392,8 +481,11 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  PSlugProjectIdRoute: typeof PSlugProjectIdRoute
+  PSlugIndexRoute: typeof PSlugIndexRoute
   ApiPublicHooksPurgeExportsRoute: typeof ApiPublicHooksPurgeExportsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicPortfolioPhotoSlugRoute: typeof ApiPublicPortfolioPhotoSlugRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -527,6 +619,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInterviewPrepSessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/portfolio/': {
+      id: '/_authenticated/portfolio/'
+      path: '/portfolio'
+      fullPath: '/portfolio/'
+      preLoaderRoute: typeof AuthenticatedPortfolioIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/portfolio/$projectId': {
+      id: '/_authenticated/portfolio/$projectId'
+      path: '/portfolio/$projectId'
+      fullPath: '/portfolio/$projectId'
+      preLoaderRoute: typeof AuthenticatedPortfolioProjectIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/results/$attemptId': {
       id: '/_authenticated/results/$attemptId'
       path: '/results/$attemptId'
@@ -562,11 +668,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSupportNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/p/$slug/': {
+      id: '/p/$slug/'
+      path: '/p/$slug'
+      fullPath: '/p/$slug/'
+      preLoaderRoute: typeof PSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug/$projectId': {
+      id: '/p/$slug/$projectId'
+      path: '/p/$slug/$projectId'
+      fullPath: '/p/$slug/$projectId'
+      preLoaderRoute: typeof PSlugProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/interview-prep/live/$interviewId': {
       id: '/_authenticated/interview-prep/live/$interviewId'
       path: '/interview-prep/live/$interviewId'
       fullPath: '/interview-prep/live/$interviewId'
       preLoaderRoute: typeof AuthenticatedInterviewPrepLiveInterviewIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/portfolio/preview/': {
+      id: '/_authenticated/portfolio/preview/'
+      path: '/portfolio/preview'
+      fullPath: '/portfolio/preview/'
+      preLoaderRoute: typeof AuthenticatedPortfolioPreviewIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/portfolio/preview/$projectId': {
+      id: '/_authenticated/portfolio/preview/$projectId'
+      path: '/portfolio/preview/$projectId'
+      fullPath: '/portfolio/preview/$projectId'
+      preLoaderRoute: typeof AuthenticatedPortfolioPreviewProjectIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/hooks/purge-exports': {
@@ -581,6 +715,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/payments/webhook'
       fullPath: '/api/public/payments/webhook'
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/portfolio-photo/$slug': {
+      id: '/api/public/portfolio-photo/$slug'
+      path: '/api/public/portfolio-photo/$slug'
+      fullPath: '/api/public/portfolio-photo/$slug'
+      preLoaderRoute: typeof ApiPublicPortfolioPhotoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/preview': {
@@ -617,13 +758,17 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedCheckoutReturnRoute: typeof AuthenticatedCheckoutReturnRoute
   AuthenticatedInterviewPrepSessionIdRoute: typeof AuthenticatedInterviewPrepSessionIdRoute
+  AuthenticatedPortfolioProjectIdRoute: typeof AuthenticatedPortfolioProjectIdRoute
   AuthenticatedResultsAttemptIdRoute: typeof AuthenticatedResultsAttemptIdRoute
   AuthenticatedSimulateAttemptIdRoute: typeof AuthenticatedSimulateAttemptIdRoute
   AuthenticatedSupportTicketIdRoute: typeof AuthenticatedSupportTicketIdRoute
   AuthenticatedSupportNewRoute: typeof AuthenticatedSupportNewRoute
   AuthenticatedInterviewPrepIndexRoute: typeof AuthenticatedInterviewPrepIndexRoute
+  AuthenticatedPortfolioIndexRoute: typeof AuthenticatedPortfolioIndexRoute
   AuthenticatedSupportIndexRoute: typeof AuthenticatedSupportIndexRoute
   AuthenticatedInterviewPrepLiveInterviewIdRoute: typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
+  AuthenticatedPortfolioPreviewProjectIdRoute: typeof AuthenticatedPortfolioPreviewProjectIdRoute
+  AuthenticatedPortfolioPreviewIndexRoute: typeof AuthenticatedPortfolioPreviewIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -637,14 +782,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCheckoutReturnRoute: AuthenticatedCheckoutReturnRoute,
   AuthenticatedInterviewPrepSessionIdRoute:
     AuthenticatedInterviewPrepSessionIdRoute,
+  AuthenticatedPortfolioProjectIdRoute: AuthenticatedPortfolioProjectIdRoute,
   AuthenticatedResultsAttemptIdRoute: AuthenticatedResultsAttemptIdRoute,
   AuthenticatedSimulateAttemptIdRoute: AuthenticatedSimulateAttemptIdRoute,
   AuthenticatedSupportTicketIdRoute: AuthenticatedSupportTicketIdRoute,
   AuthenticatedSupportNewRoute: AuthenticatedSupportNewRoute,
   AuthenticatedInterviewPrepIndexRoute: AuthenticatedInterviewPrepIndexRoute,
+  AuthenticatedPortfolioIndexRoute: AuthenticatedPortfolioIndexRoute,
   AuthenticatedSupportIndexRoute: AuthenticatedSupportIndexRoute,
   AuthenticatedInterviewPrepLiveInterviewIdRoute:
     AuthenticatedInterviewPrepLiveInterviewIdRoute,
+  AuthenticatedPortfolioPreviewProjectIdRoute:
+    AuthenticatedPortfolioPreviewProjectIdRoute,
+  AuthenticatedPortfolioPreviewIndexRoute:
+    AuthenticatedPortfolioPreviewIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -659,8 +810,11 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  PSlugProjectIdRoute: PSlugProjectIdRoute,
+  PSlugIndexRoute: PSlugIndexRoute,
   ApiPublicHooksPurgeExportsRoute: ApiPublicHooksPurgeExportsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicPortfolioPhotoSlugRoute: ApiPublicPortfolioPhotoSlugRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,

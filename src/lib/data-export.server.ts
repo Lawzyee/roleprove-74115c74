@@ -47,6 +47,8 @@ export const SECTIONS: Array<{ label: string; file: string; about: string; load:
   { label: 'legal acceptances', file: 'legal_acceptances', about: 'When you accepted each version of the Terms and Privacy Policy.', load: by('legal_acceptances', 'user_id') },
   { label: 'subscription status', file: 'subscriptions', about: 'Your Practice/Prep subscription records (status, period end, cancellation).', load: by('subscriptions', 'user_id') },
   { label: 'usage records', file: 'billing_usage', about: 'Each simulation or interview prep you started, used for free-allowance counting.', load: by('billing_usage', 'user_id') },
+  { label: 'portfolio settings', file: 'portfolio', about: 'Your portfolio: link name, public or private, consent time, display name, bio, city/country, Credly link and which sections are shown. Your photo is in files/portfolio-photos/.', load: by('portfolios', 'user_id') },
+  { label: 'portfolio projects', file: 'portfolio_projects', about: 'Projects in your portfolio, with the insight text and which parts of each stage are shown.', load: by('portfolio_projects', 'user_id') },
   { label: 'credentials', file: 'credentials', about: 'Certificates and qualifications you added. Uploaded certificate files are in files/credentials/.', load: by('credentials', 'user_id') },
   { label: 'pasted job ads', file: 'job_postings', about: 'Job descriptions you pasted, and what was extracted from them.', load: by('job_postings', 'user_id') },
   { label: 'simulation attempts', file: 'simulation_attempts', about: 'Every simulation you started, with scores and status.', load: by('simulation_attempts', 'user_id'), keep: 'attempts' },
@@ -70,6 +72,7 @@ const FILE_BUCKETS: Array<{ bucket: string; label: string }> = [
   { bucket: 'deliverables', label: 'uploaded files and CVs' },
   { bucket: 'attempt-recordings', label: 'recordings' },
   { bucket: 'support-attachments', label: 'support screenshot files' },
+  { bucket: 'portfolio-photos', label: 'portfolio photo' },
 ];
 
 export const NOT_INCLUDED = [
@@ -134,6 +137,7 @@ export function readme(exportedAt: string, hasLinks: boolean) {
     '  files/deliverables/ — files uploaded in simulations (by attempt) and CVs (interview-prep-cv/).',
     '  files/attempt-recordings/ — verified-attempt recordings.',
     '  files/support-attachments/ — screenshots attached to support messages.',
+    '  files/portfolio-photos/ — your portfolio photo (location data already removed).',
     ...(hasLinks ? ['', `large_recordings_links.csv — recordings too large to include. Each link downloads the file and stops working ${LINK_SECONDS / 60} minutes after the export was created.`] : []),
     '',
     'Not included, and why:',

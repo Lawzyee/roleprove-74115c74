@@ -62,6 +62,7 @@ export const terms: LegalDocument = {
       blocks: [
         p("You keep ownership of what you upload, such as CVs, deliverables, certificates and recordings."),
         p("You give RoleProve a limited, non-exclusive licence to store and process that content only to provide the service to you, including AI processing to generate questions, scores and feedback. This licence ends when you delete the content or your account, except where we must keep something by law."),
+        p("If you make your portfolio public, you are responsible for what you publish on it, including your bio, project insights and answers, and for not sharing confidential or employer information. [[PLACEHOLDER: confirm wording]]"),
       ],
     },
     {
