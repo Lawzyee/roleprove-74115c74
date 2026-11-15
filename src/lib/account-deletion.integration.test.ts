@@ -53,21 +53,29 @@ async function seedAccount() {
     { const r = await admin.from('support_attachments').insert({ message_id: msg.id, file_path: shot, file_name: 's.png' }); if (r.error) throw new Error('attachment' + ": " + r.error.message); }
     { const r = await admin.from('billing_usage').insert({ user_id: uid, kind: 'simulation', environment: 'sandbox' }); if (r.error) throw new Error('usage' + ": " + r.error.message); }
 
+    // Public portfolio with a photo and one project.
+    const slug = `del-${uid.slice(0, 8)}`;
+    must(await admin.storage.from('portfolio-photos').upload(`${uid}/photo-1.jpg`, file('jpg', 'image/jpeg')), 'portfolio photo');
+    { const r = await admin.from('portfolios').insert({ user_id: uid, slug, is_public: true, consented_at: new Date().toISOString(), bio: 'Portfolio bio', photo_path: `${uid}/photo-1.jpg` }); if (r.error) throw new Error('portfolio: ' + r.error.message); }
+    { const r = await admin.from('portfolio_projects').insert({ user_id: uid, attempt_id: attempt.id, insight: 'Portfolio insight' }); if (r.error) throw new Error('portfolio project: ' + r.error.message); }
+
     // Real Stripe test-mode subscription (trial, so no card needed).
     const customer = await stripe.customers.create({ email, name: 'Erasure Test', metadata: { userId: uid } });
     const price = (await stripe.prices.list({ lookup_keys: ['roleprove_practice_prep_monthly'], limit: 1 })).data[0];
     const sub = await stripe.subscriptions.create({ customer: customer.id, items: [{ price: price.id }], trial_period_days: 7, metadata: { userId: uid } });
     { const r = await admin.from('subscriptions').insert({ user_id: uid, stripe_subscription_id: sub.id, stripe_customer_id: customer.id, price_id: 'roleprove_practice_prep_monthly', status: sub.status, environment: 'sandbox' }); if (r.error) throw new Error('subscription' + ": " + r.error.message); }
 
-    return { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg };
+    return { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, slug, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg };
 }
 
 describe.skipIf(!ready)('account deletion removes everything', () => {
   it('leaves no rows, files, sign-in account or Stripe customer behind', async () => {
-    const { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg } = await seedAccount();
+    const { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, slug, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg } = await seedAccount();
     const legal = must(await admin.from('legal_acceptances').select('id').eq('user_id', uid), 'legal');
     expect(legal.length).toBeGreaterThan(0);
-    expect((await listUserFiles(admin, uid)).length).toBe(5);
+    expect((await listUserFiles(admin, uid)).length).toBe(6);
+    const { loadPublicPortfolioRow } = await import('./portfolio.server');
+    expect((await loadPublicPortfolioRow(admin, slug))?.user_id).toBe(uid);
 
     const result = await eraseAccount({ admin, userId: uid, stripeFor: (env) => (env === 'sandbox' ? stripe : null) });
     expect(result.stripe).toEqual([{ env: 'sandbox', customerId: customer.id, action: 'deleted' }]);
@@ -77,6 +85,9 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
     for (const [t, c, v] of [['attempt_task_results', 'attempt_id', attempt.id], ['attempt_deliverables', 'user_id', uid], ['deliverable_flags', 'user_id', uid], ['interview_prep_questions', 'session_id', sess.id], ['interview_prep_responses', 'question_id', q.id], ['support_messages', 'ticket_id', ticket.id], ['support_attachments', 'message_id', msg.id], ['simulation_tasks', 'id', task.id], ['live_interview_messages', 'interview_id', live.id], ['live_interview_flags', 'interview_id', live.id]] as const)
       expect(must(await admin.from(t as never).select('*').eq(c, v), t), t).toEqual([]);
     expect(await listUserFiles(admin, uid)).toEqual([]);
+    // The public page and photo now resolve to "not found" (same lookup the page and photo address use).
+    expect(await loadPublicPortfolioRow(admin, slug)).toBeNull();
+    expect((await admin.storage.from('portfolio-photos').list(uid)).data).toEqual([]);
     expect((await admin.auth.admin.getUserById(uid)).data.user).toBeNull();
     expect((await stripe.customers.retrieve(customer.id)).deleted).toBe(true);
 
@@ -111,16 +122,19 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
       expect(all.support_messages[0].body).toBe('hi');
       expect(all.job_postings[0].raw_text).toBe('JD text');
       expect(all.subscriptions[0].status).toBe('trialing');
+      expect(all.portfolio[0].bio).toBe('Portfolio bio');
+      expect(all.portfolio[0].is_public).toBe(true);
+      expect(all.portfolio_projects[0].insight).toBe('Portfolio insight');
       // Staff-only data stays out.
       expect(all.support_tickets[0]).not.toHaveProperty('tags');
       expect(all.support_tickets[0]).not.toHaveProperty('staff_last_read_at');
       expect(names.some((n) => n.includes('flag'))).toBe(false);
       expect(JSON.stringify(all)).not.toContain('"reason":"test"');
       expect(JSON.stringify(all)).not.toContain('steering test');
-      // All five files are inside the zip.
-      for (const prefix of ['files/deliverables/', 'files/deliverables/interview-prep-cv/', 'files/attempt-recordings/', 'files/credentials/', 'files/support-attachments/'])
+      // All six files are inside the zip.
+      for (const prefix of ['files/deliverables/', 'files/deliverables/interview-prep-cv/', 'files/attempt-recordings/', 'files/credentials/', 'files/support-attachments/', 'files/portfolio-photos/'])
         expect(names.some((n) => n.startsWith(prefix)), prefix).toBe(true);
-      expect(names.filter((n) => n.startsWith('files/')).length).toBe(5);
+      expect(names.filter((n) => n.startsWith('files/')).length).toBe(6);
       const readme = strFromU8(files['README.txt']);
       for (const s of SECTIONS) expect(readme).toContain(`data/${s.file}.csv`);
       expect(readme).toContain(NOT_INCLUDED[0]);
