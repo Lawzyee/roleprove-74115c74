@@ -34,11 +34,11 @@ export const getStaffJobsFn=createServerFn({method:'POST'}).middleware([requireS
 export const saveStaffJobFn=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((d:unknown)=>jobSchema.parse(d)).handler(async({data,context})=>{
   const {data:staff,error}=await context.supabase.rpc('is_support_staff',{_user_id:context.userId});if(error||staff!==true)throw new Error('Staff only.');
   if(data.status==='published'){const {resolvePublicLink}=await import('./job-links.server');await resolvePublicLink(data.apply_url);if(data.company_website)await resolvePublicLink(data.company_website);}
-  const {id,practice_text,source_note,staff_notes,...publicJob}=data;
+  const {id,practice_text,source_note,staff_notes,submitter_name,submitter_email,...publicJob}=data;
   const payload={...publicJob,company_website:publicJob.company_website||null,updated_at:new Date().toISOString()};
   const result=id?await context.supabase.from('job_center_jobs').update(payload).eq('id',id).select('id').single():await context.supabase.from('job_center_jobs').insert(payload).select('id').single();
-  if(result.error||!result.data)throw new Error('Could not save the job.');
-  const {error:e}=await context.supabase.from('job_center_private').upsert({job_id:result.data.id,practice_text,source_note,staff_notes,consecutive_failures:0,link_broken:false,last_checked_at:null});if(e)throw new Error('Could not save private job details.');return {id:result.data.id};
+  if(result.error||!result.data)throw new Error(result.error?.code==='23505'?'That source and external ID already identify a job.':'Could not save the job.');
+  const {error:e}=await context.supabase.from('job_center_private').upsert({job_id:result.data.id,practice_text,source_note,staff_notes,submitter_name:data.source_type==='employer_submitted'?submitter_name:'',submitter_email:data.source_type==='employer_submitted'?submitter_email:'',consecutive_failures:0,link_broken:false,last_checked_at:null});if(e)throw new Error('Could not save private job details.');return {id:result.data.id};
 });
 export const deleteStaffJobFn=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((d:unknown)=>idSchema.parse(d)).handler(async({data,context})=>{
   const {data:staff,error}=await context.supabase.rpc('is_support_staff',{_user_id:context.userId});if(error||staff!==true)throw new Error('Staff only.');

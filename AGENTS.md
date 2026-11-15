@@ -26,5 +26,6 @@
 - Signed-out portfolio reports go to the staff-only portfolio_reports table (never support_tickets, which need an account) via reportPortfolioPublicFn, rate-limited per hashed IP with a honeypot field — the owner never sees reports.
 - Report IP hashes and portfolio_reports retention: keyed via public.portfolio_report_ip_hash (key in private.app_keys); retention days in app_settings, purged by the hourly purge-exports hook.
 - Job center public listing fields and staff-only practice text live in separate RLS-protected tables; tracker/preferences are owner-only, and staff deletion tombstones listings so existing trackers retain their reference.
+- Job source identity is unique per source reference/external ID; database triggers hash normalized application links across all writers, while submitter contacts remain in the staff-only private table and source configuration has staff-only RLS without syncing.
 - Job practice uses the existing generators under withUsage with privateSource set; original staff text is never persisted in owner-readable job ads or prep sessions.
 - Application link checks validate every redirect and pin TLS to a public resolved address before sending HTTP bytes; unsupported socket verification fails closed to prevent DNS rebinding.

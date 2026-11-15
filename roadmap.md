@@ -26,6 +26,7 @@
 - [x] Share buttons, QR download, "Where to use your link" card
 
 ## Job center v1
+- [ ] Source preparation: source identifiers/hash, review statuses/queue, private contacts, staff-only source table and full tests.
 - [x] Staff-curated drafts, private practice text, staff RLS and management page
 - [ ] Publish and daily safe public-link checks: resolver unreachable in sandbox; deployed pinned TLS verification remains unverified. Expiry and three-failure hiding verified.
 - [x] Signed-in browsing, filters, preferences, tracker, apply and reports
