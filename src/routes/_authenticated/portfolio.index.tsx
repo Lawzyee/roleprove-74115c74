@@ -130,7 +130,7 @@ function VisibilityPanel({ data, onChange }: { data: Data; onChange: () => void 
             </div>
           )}
         </div>
-        {s.is_public && url && s.slug && <ShareTools url={url} slug={s.slug} name={data.settings.display_name || data.profile.name || ""} />}
+        {s.is_public && url && s.slug && <ShareTools url={url} slug={s.slug} name={data.settings.display_name || data.profile?.name || ""} />}
       </CardContent>
       <Dialog open={consentOpen} onOpenChange={setConsentOpen}>
         <DialogContent>
