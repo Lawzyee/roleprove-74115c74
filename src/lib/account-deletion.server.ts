@@ -3,13 +3,15 @@ import type Stripe from 'stripe';
 
 export type StripeEnvName = 'sandbox' | 'live';
 /** Every private file store whose paths start with {userId}/. */
-export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings', 'support-attachments', 'data-exports'] as const;
+export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings', 'support-attachments', 'data-exports', 'portfolio-photos'] as const;
 /**
  * Rows keyed by user, deleted parent-first so child rows go with them
  * (task results, uploads, gradings, flags, prep questions/answers, ticket messages/attachments).
  * Personalised simulations are removed when the sign-in account is deleted (owner cascade).
  */
 export const USER_TABLES: Array<{ table: string; column: string }> = [
+  { table: 'portfolio_projects', column: 'user_id' },
+  { table: 'portfolios', column: 'user_id' },
   { table: 'support_tickets', column: 'user_id' },
   { table: 'simulation_attempts', column: 'user_id' },
   { table: 'live_interviews', column: 'user_id' },
