@@ -103,7 +103,7 @@ function SimulationRunner() {
     queryFn: async () => {
       const { data: attempt, error } = await supabase
         .from("simulation_attempts")
-        .select("id, status, simulation_id, simulation_type, proctoring_mode, simulations(title, description, estimated_minutes)")
+        .select("id, status, simulation_id, simulation_type, proctoring_mode, job_center_id, simulations(title, description, estimated_minutes)")
         .eq("id", attemptId)
         .single();
       if (error) throw error;
@@ -268,7 +268,7 @@ function SimulationRunner() {
     const wrap = (node: ReactNode) => (
       <>
         <SiteHeader />
-        <main className="mx-auto max-w-3xl px-5 py-10">{node}</main>
+        <main className="mx-auto max-w-3xl px-5 py-10">{attemptRow.job_center_id && <p className="mb-4 text-sm text-muted-foreground">Practice simulation based on this job's requirements.</p>}{node}</main>
       </>
     );
     if (interrupted) {

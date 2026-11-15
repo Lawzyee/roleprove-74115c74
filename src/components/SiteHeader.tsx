@@ -55,6 +55,9 @@ export function SiteHeader() {
               <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
                 <Link to="/portfolio">Portfolio</Link>
               </Button>
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Link to="/jobs">Job center</Link>
+              </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -97,6 +100,9 @@ export function SiteHeader() {
                     <Link to="/profile">
                       <UserIcon className="mr-2 h-4 w-4" /> Profile
                     </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="sm:hidden">
+                    <Link to="/jobs"><Library className="mr-2 h-4 w-4" /> Job center</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/settings">
