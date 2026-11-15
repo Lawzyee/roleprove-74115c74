@@ -7,6 +7,8 @@ import { StatusBadge } from '@/components/support/SupportParts';
 import { TicketThread } from '@/components/support/TicketThread';
 import { categoryLabel, SUPPORT_CATEGORIES } from '@/lib/support';
 import { getDisputeAttemptFn, getIsSupportStaffFn } from '@/lib/support.functions';
+import { REPORT_REASONS } from '@/lib/portfolio';
+import { useQueryClient } from '@tanstack/react-query';
 import { staffUnpublishFn } from '@/lib/portfolio.functions';
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
@@ -65,6 +67,7 @@ function AdminSupport() {
           <p className="text-xs text-muted-foreground">{categoryLabel(t.category)}{t.tags.includes('legal_deadline') ? ' · Legal deadline' : ''} · {new Date(t.updated_at).toLocaleDateString()}</p>
         </Link></li>;
       })}{tickets.data?.length === 0 && <li className="p-3 text-sm text-muted-foreground">No tickets.</li>}</ul>
+      <PortfolioReports />
       <UnpublishPortfolio />
     </aside>
     <section>{search.ticket ? <><TicketThread key={search.ticket} ticketId={search.ticket} staff /><DisputePanel ticketId={search.ticket} /></> : <p className="text-muted-foreground">Select a ticket.</p>}</section>
@@ -96,5 +99,31 @@ function UnpublishPortfolio() {
     <p className="text-sm font-medium">Unpublish a reported portfolio</p>
     <div className="flex gap-2"><Input value={slug} onChange={(e) => setSlug(e.target.value.toLowerCase())} placeholder="link name" aria-label="Portfolio link name" />
       <Button size="sm" variant="destructive" disabled={!slug} onClick={async () => { const r = await unpublish({ data: { slug } }); if ('error' in r && r.error) toast.error(r.error); else { toast.success('Portfolio made private.'); setSlug(''); } }}>Unpublish</Button></div>
+  </div>;
+}
+
+function PortfolioReports() {
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ['portfolio-reports'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('portfolio_reports').select('id, slug, reason, details, contact_email, created_at').eq('status', 'open').order('created_at', { ascending: false }).limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const resolve = async (id: string) => {
+    const { error } = await supabase.from('portfolio_reports').update({ status: 'resolved' }).eq('id', id);
+    if (error) toast.error('Could not update.'); else qc.invalidateQueries({ queryKey: ['portfolio-reports'] });
+  };
+  return <div className="mt-6 space-y-2 rounded-lg border border-border p-3">
+    <p className="text-sm font-medium">Portfolio reports from visitors</p>
+    {q.data?.length === 0 && <p className="text-xs text-muted-foreground">No open reports.</p>}
+    <ul className="space-y-3">{q.data?.map((r) => <li key={r.id} className="text-sm">
+      <p><a href={`/p/${r.slug}`} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">/p/{r.slug}</a> · {REPORT_REASONS.find((x) => x.value === r.reason)?.label ?? r.reason}</p>
+      {r.details && <p className="whitespace-pre-wrap text-muted-foreground">{r.details}</p>}
+      <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}{r.contact_email ? ` · ${r.contact_email}` : ' · no email'}</p>
+      <Button size="sm" variant="outline" className="mt-1" onClick={() => resolve(r.id)}>Mark resolved</Button>
+    </li>)}</ul>
   </div>;
 }
