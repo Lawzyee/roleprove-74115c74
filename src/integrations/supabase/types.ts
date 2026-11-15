@@ -719,6 +719,155 @@ export type Database = {
           },
         ]
       }
+      portfolio_projects: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          id: string
+          insight: string | null
+          insight_generations: number
+          stage_settings: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          id?: string
+          insight?: string | null
+          insight_generations?: number
+          stage_settings?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          id?: string
+          insight?: string | null
+          insight_generations?: number
+          stage_settings?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_projects_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: true
+            referencedRelation: "simulation_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_projects_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      portfolio_rate: {
+        Row: {
+          hits: number
+          rate_key: string
+          window_start: string
+        }
+        Insert: {
+          hits?: number
+          rate_key: string
+          window_start: string
+        }
+        Update: {
+          hits?: number
+          rate_key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
+      portfolios: {
+        Row: {
+          allow_indexing: boolean
+          bio: string | null
+          city: string | null
+          consented_at: string | null
+          country: string | null
+          created_at: string
+          credly_url: string | null
+          display_name: string | null
+          is_public: boolean
+          photo_path: string | null
+          photo_version: number
+          show_credentials: boolean
+          show_credly: boolean
+          show_github: boolean
+          show_linkedin: boolean
+          show_links: boolean
+          show_location: boolean
+          show_other: boolean
+          show_scores: boolean
+          slug: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_indexing?: boolean
+          bio?: string | null
+          city?: string | null
+          consented_at?: string | null
+          country?: string | null
+          created_at?: string
+          credly_url?: string | null
+          display_name?: string | null
+          is_public?: boolean
+          photo_path?: string | null
+          photo_version?: number
+          show_credentials?: boolean
+          show_credly?: boolean
+          show_github?: boolean
+          show_linkedin?: boolean
+          show_links?: boolean
+          show_location?: boolean
+          show_other?: boolean
+          show_scores?: boolean
+          slug?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_indexing?: boolean
+          bio?: string | null
+          city?: string | null
+          consented_at?: string | null
+          country?: string | null
+          created_at?: string
+          credly_url?: string | null
+          display_name?: string | null
+          is_public?: boolean
+          photo_path?: string | null
+          photo_version?: number
+          show_credentials?: boolean
+          show_credly?: boolean
+          show_github?: boolean
+          show_linkedin?: boolean
+          show_links?: boolean
+          show_location?: boolean
+          show_other?: boolean
+          show_scores?: boolean
+          slug?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolios_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -1129,6 +1278,10 @@ export type Database = {
       billing_hmac_of_md5: { Args: { p_md5: string }; Returns: string }
       get_billing_access: { Args: { p_env: string }; Returns: Json }
       is_support_staff: { Args: { _user_id: string }; Returns: boolean }
+      portfolio_rate_hit: {
+        Args: { p_key: string; p_limit: number }
+        Returns: boolean
+      }
       reserve_billing_usage: {
         Args: { p_env: string; p_kind: string; p_user: string }
         Returns: Json
