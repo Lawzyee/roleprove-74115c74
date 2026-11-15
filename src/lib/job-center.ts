@@ -5,6 +5,8 @@ export const EMPLOYMENT = ['full-time','part-time','contract','internship','free
 export const TRACKER_STATUSES = ['saved','applied','interviewing','offer','rejected','not_interested'] as const;
 export const JOB_REPORT_REASONS = ['looks like a scam','link broken or job closed','wrong information','other'] as const;
 export const PAGE_SIZE = 20;
+export const JOB_STATUSES = ['draft','pending_review','published','rejected','expired','hidden'] as const;
+export const SOURCE_TYPES = ['staff','company_board','employer_submitted'] as const;
 export function publicAddress(value: string): boolean {
   try { const addr = ipaddr.process(value.replace(/^\[|\]$/g,'')); return addr.range() === 'unicast'; } catch { return false; }
 }
@@ -24,7 +26,9 @@ export const jobSchema = z.object({
   id: z.string().uuid().optional(), title:text(180).min(1), company:text(180).min(1), company_website:text(2000).nullable().optional(),
   city:text(100), country:text(100), arrangement:z.enum(ARRANGEMENTS), employment:z.enum(EMPLOYMENT), role_key:z.enum(['data_analyst','customer_support','other']), other_role:text(100), seniority:z.enum(['entry','mid','senior']),
   salary_currency:text(3).nullable(), salary_min:z.number().nonnegative().nullable(), salary_max:z.number().nonnegative().nullable(), salary_period:z.enum(['hour','month','year']).nullable(), summary:text(600).min(1), apply_url:text(2000).refine(v=>!applyLinkProblem(v), 'Use a public HTTPS application link.'),
-  posted_date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/), expires_date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/), status:z.enum(['draft','published','expired','hidden']), practice_text:text(20000), source_note:text(1000), staff_notes:text(4000),
+  posted_date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/), expires_date:z.string().regex(/^\d{4}-\d{2}-\d{2}$/), status:z.enum(JOB_STATUSES), practice_text:text(20000), source_note:text(1000), staff_notes:text(4000),
+  source_type:z.enum(SOURCE_TYPES).default('staff'),source_ref:text(500).nullable().default(null),external_id:text(500).nullable().default(null),
+  submitter_name:text(180).default(''),submitter_email:z.union([z.literal(''),z.string().trim().email().max(254)]).default(''),
 }).superRefine((v,c)=>{
   if(v.role_key==='other'&&!v.other_role) c.addIssue({code:'custom',path:['other_role'],message:'Name the role.'});
   if(v.salary_min!==null&&v.salary_max!==null&&v.salary_max<v.salary_min) c.addIssue({code:'custom',path:['salary_max'],message:'Maximum must be at least the minimum.'});

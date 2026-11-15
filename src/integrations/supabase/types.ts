@@ -521,6 +521,7 @@ export type Database = {
       job_center_jobs: {
         Row: {
           apply_url: string
+          apply_url_hash: string | null
           arrangement: string
           city: string
           company: string
@@ -530,6 +531,7 @@ export type Database = {
           deleted_at: string | null
           employment: string
           expires_date: string
+          external_id: string | null
           id: string
           other_role: string
           posted_date: string
@@ -539,6 +541,8 @@ export type Database = {
           salary_min: number | null
           salary_period: string | null
           seniority: string
+          source_ref: string | null
+          source_type: string
           status: string
           summary: string
           title: string
@@ -546,6 +550,7 @@ export type Database = {
         }
         Insert: {
           apply_url: string
+          apply_url_hash?: string | null
           arrangement: string
           city?: string
           company: string
@@ -555,6 +560,7 @@ export type Database = {
           deleted_at?: string | null
           employment: string
           expires_date?: string
+          external_id?: string | null
           id?: string
           other_role?: string
           posted_date?: string
@@ -564,6 +570,8 @@ export type Database = {
           salary_min?: number | null
           salary_period?: string | null
           seniority: string
+          source_ref?: string | null
+          source_type?: string
           status?: string
           summary: string
           title: string
@@ -571,6 +579,7 @@ export type Database = {
         }
         Update: {
           apply_url?: string
+          apply_url_hash?: string | null
           arrangement?: string
           city?: string
           company?: string
@@ -580,6 +589,7 @@ export type Database = {
           deleted_at?: string | null
           employment?: string
           expires_date?: string
+          external_id?: string | null
           id?: string
           other_role?: string
           posted_date?: string
@@ -589,6 +599,8 @@ export type Database = {
           salary_min?: number | null
           salary_period?: string | null
           seniority?: string
+          source_ref?: string | null
+          source_type?: string
           status?: string
           summary?: string
           title?: string
@@ -607,6 +619,8 @@ export type Database = {
           practice_text: string
           source_note: string
           staff_notes: string
+          submitter_email: string
+          submitter_name: string
         }
         Insert: {
           apply_clicks?: number
@@ -618,6 +632,8 @@ export type Database = {
           practice_text?: string
           source_note?: string
           staff_notes?: string
+          submitter_email?: string
+          submitter_name?: string
         }
         Update: {
           apply_clicks?: number
@@ -629,6 +645,8 @@ export type Database = {
           practice_text?: string
           source_note?: string
           staff_notes?: string
+          submitter_email?: string
+          submitter_name?: string
         }
         Relationships: [
           {
@@ -706,6 +724,48 @@ export type Database = {
           roles?: string[]
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      job_sources: {
+        Row: {
+          auto_publish: boolean
+          board_identifier: string
+          board_type: string
+          company_name: string
+          company_website: string
+          created_at: string
+          enabled: boolean
+          id: string
+          last_error: string | null
+          last_synced_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          auto_publish?: boolean
+          board_identifier: string
+          board_type: string
+          company_name: string
+          company_website: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          auto_publish?: boolean
+          board_identifier?: string
+          board_type?: string
+          company_name?: string
+          company_website?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1528,6 +1588,7 @@ export type Database = {
       get_billing_access: { Args: { p_env: string }; Returns: Json }
       increment_job_apply: { Args: { p_job: string }; Returns: undefined }
       is_support_staff: { Args: { _user_id: string }; Returns: boolean }
+      normalized_job_apply_url: { Args: { value: string }; Returns: string }
       portfolio_rate_hit: {
         Args: { p_key: string; p_limit: number }
         Returns: boolean
