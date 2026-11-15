@@ -59,7 +59,7 @@ async function seedAccount() {
     { const r = await admin.from('portfolios').insert({ user_id: uid, slug, is_public: true, consented_at: new Date().toISOString(), bio: 'Portfolio bio', photo_path: `${uid}/photo-1.jpg` }); if (r.error) throw new Error('portfolio: ' + r.error.message); }
     { const r = await admin.from('portfolio_projects').insert({ user_id: uid, attempt_id: attempt.id, insight: 'Portfolio insight' }); if (r.error) throw new Error('portfolio project: ' + r.error.message); }
     const listing = must(await admin.from('job_center_jobs').insert({ title:'Deletion test job',company:'Test',arrangement:'remote',employment:'full-time',role_key:'data_analyst',seniority:'entry',summary:'Test',apply_url:'https://example.com',status:'published' }).select('id').single(),'job listing');
-    must(await admin.from('job_center_private').insert({job_id:listing.id,practice_text:'STAFF PRIVATE',staff_notes:'STAFF NOTE'}).select('job_id').single(),'private listing');
+    must(await admin.from('job_center_private').insert({job_id:listing.id,practice_text:'STAFF PRIVATE',staff_notes:'STAFF NOTE',submitter_name:'PRIVATE SUBMITTER',submitter_email:'private-submitter@example.com'}).select('job_id').single(),'private listing');
     must(await admin.from('job_tracker').insert({user_id:uid,job_id:listing.id,status:'applied',notes:'My job note'}).select('id').single(),'tracker');
     must(await admin.from('job_preferences').insert({user_id:uid,roles:['data_analyst'],countries:['Nigeria']}).select('user_id').single(),'preferences');
 
@@ -137,6 +137,8 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
       expect(all.job_preferences[0].countries).toEqual(['Nigeria']);
       expect(JSON.stringify(all)).not.toContain('STAFF PRIVATE');
       expect(JSON.stringify(all)).not.toContain('STAFF NOTE');
+      expect(JSON.stringify(all)).not.toContain('PRIVATE SUBMITTER');
+      expect(JSON.stringify(all)).not.toContain('private-submitter@example.com');
       // Staff-only data stays out.
       expect(all.support_tickets[0]).not.toHaveProperty('tags');
       expect(all.support_tickets[0]).not.toHaveProperty('staff_last_read_at');

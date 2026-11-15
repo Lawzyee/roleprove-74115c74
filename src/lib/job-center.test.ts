@@ -10,6 +10,9 @@ describe('job center rules',()=>{
  it('resets consecutive failures on success',()=>expect(failureState(2,true)).toEqual({failures:0,hide:false}));
  it('expires after the expiry date but not on that date',()=>{expect(available(job,'2026-12-15')).toBe(true);expect(available(job,'2026-12-16')).toBe(false);});
  it('hides unpublished and deleted jobs',()=>{expect(available({...job,status:'draft'},'2026-11-15')).toBe(false);expect(available({...job,deleted_at:'2026-11-15'},'2026-11-15')).toBe(false);});
+ it('pending review jobs never appear in browsing',()=>expect(available({...job,status:'pending_review'},'2026-11-15')).toBe(false));
+ it('rejected jobs never appear in browsing',()=>expect(available({...job,status:'rejected'},'2026-11-15')).toBe(false));
+ it('existing staff input defaults to staff source',()=>expect(jobSchema.parse({...job,practice_text:'Test',source_note:'',staff_notes:''}).source_type).toBe('staff'));
  it('uses 20 jobs per page',()=>expect(PAGE_SIZE).toBe(20));
  it('filters role arrangement employment location date salary and keyword',()=>{const f={...filters,roles:['data_analyst'],arrangements:['remote'],employment_types:['full-time'],location:'Lagos',days:'7',salary:'2000',keyword:'Acme'};expect(filterJobs([job,{...job,id:'2',arrangement:'on-site'}],f,EMPTY_PREFERENCES,null,new Date('2026-11-15T12:00:00Z')).map(j=>j.id)).toEqual([job.id]);});
  it('best match uses only job preferences and target role',()=>expect(matchScore(job,{roles:['data_analyst'],arrangements:['remote'],employment_types:['full-time'],countries:['Nigeria']},'data_analyst')).toBe(13));
