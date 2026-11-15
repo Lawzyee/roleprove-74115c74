@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { checkApplicationLink } from './job-links.server';
+import { checkApplicationLink, LinkCheckUnavailable } from './job-links.server';
 import { failureState } from './job-center';
 
 export async function checkOneJob(admin:SupabaseClient,id:string,force=false) {
@@ -12,7 +12,10 @@ export async function checkOneJob(admin:SupabaseClient,id:string,force=false) {
   if(claimError)throw claimError;
   if(!rows?.length)return {skipped:true,success:false,hidden:false};
   let success=false;
-  try{success=await checkApplicationLink(job.apply_url);}catch{success=false;}
+  try{success=await checkApplicationLink(job.apply_url);}catch(e){
+    if(e instanceof LinkCheckUnavailable){await admin.from('job_center_private').update({check_started_at:null}).eq('job_id',id);throw e;}
+    success=false;
+  }
   const result=failureState(rows[0].consecutive_failures,success);
   const {error:saveError}=await admin.from('job_center_private').update({last_checked_at:new Date().toISOString(),check_started_at:null,consecutive_failures:result.failures,link_broken:result.hide}).eq('job_id',id);
   if(saveError)throw saveError;

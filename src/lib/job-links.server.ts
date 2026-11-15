@@ -1,6 +1,7 @@
 import ipaddr from 'ipaddr.js';
 import { request } from 'node:https';
 import { applyLinkProblem, publicAddress } from './job-center';
+export class LinkCheckUnavailable extends Error {}
 
 // Resolve through HTTPS, then pin the connection to a validated address. Never fetch the original hostname after checking DNS.
 export async function resolvePublicLink(value:string):Promise<{url:URL;address:string;family:4|6}> {
@@ -9,8 +10,9 @@ export async function resolvePublicLink(value:string):Promise<{url:URL;address:s
   if(ipaddr.isValid(host)) { if(!publicAddress(host))throw new Error('Private address blocked.'); return {url,address:host,family:ipaddr.parse(host).kind()==='ipv6'?6:4}; }
   const addresses:string[]=[];
   for(const type of ['A','AAAA']) {
-    const res=await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=${type}`,{headers:{accept:'application/dns-json'},signal:AbortSignal.timeout(4000)});
-    if(!res.ok)throw new Error('Could not validate the website address.');
+    let res:Response;
+    try { res=await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=${type}`,{headers:{accept:'application/dns-json'},signal:AbortSignal.timeout(4000)}); } catch { throw new LinkCheckUnavailable('Website address checking is unavailable. Save as draft and retry publishing later.'); }
+    if(!res.ok)throw new LinkCheckUnavailable('Could not validate the website address.');
     const data=await res.json() as {Status:number;Answer?:{type:number;data:string}[]};
     if(data.Status!==0&&data.Status!==3)throw new Error('Could not validate DNS.');
     for(const a of data.Answer??[])if(a.type===1||a.type===28)addresses.push(a.data);
@@ -31,7 +33,7 @@ async function pinnedHead(target:Awaited<ReturnType<typeof resolvePublicLink>>) 
     // Delay sending any HTTP bytes until the actual socket is verified. Unsupported runtimes fail closed.
     req.on('socket',socket=>socket.once('secureConnect',()=>{
       const remote=socket.remoteAddress;
-      if(!remote||!publicAddress(remote)||ipaddr.process(remote).toString()!==ipaddr.process(address).toString()){clearTimeout(timer);req.destroy();reject(new Error('Safe pinned link checks unavailable.'));return;}
+      if(!remote||!publicAddress(remote)||ipaddr.process(remote).toString()!==ipaddr.process(address).toString()){clearTimeout(timer);req.destroy();reject(new LinkCheckUnavailable('Safe pinned link checks unavailable.'));return;}
       req.end();
     }));
   });

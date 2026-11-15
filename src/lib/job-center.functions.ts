@@ -33,7 +33,7 @@ export const getStaffJobsFn=createServerFn({method:'POST'}).middleware([requireS
 });
 export const saveStaffJobFn=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((d:unknown)=>jobSchema.parse(d)).handler(async({data,context})=>{
   const {data:staff,error}=await context.supabase.rpc('is_support_staff',{_user_id:context.userId});if(error||staff!==true)throw new Error('Staff only.');
-  const {resolvePublicLink}=await import('./job-links.server');await resolvePublicLink(data.apply_url);if(data.company_website)await resolvePublicLink(data.company_website);
+  if(data.status==='published'){const {resolvePublicLink}=await import('./job-links.server');await resolvePublicLink(data.apply_url);if(data.company_website)await resolvePublicLink(data.company_website);}
   const {id,practice_text,source_note,staff_notes,...publicJob}=data;
   const payload={...publicJob,company_website:publicJob.company_website||null,updated_at:new Date().toISOString()};
   const result=id?await context.supabase.from('job_center_jobs').update(payload).eq('id',id).select('id').single():await context.supabase.from('job_center_jobs').insert(payload).select('id').single();
