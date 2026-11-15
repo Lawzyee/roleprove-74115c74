@@ -35,6 +35,7 @@ import { Route as AuthenticatedSupportNewRouteImport } from './routes/_authentic
 import { Route as AuthenticatedInterviewPrepLiveInterviewIdRouteImport } from './routes/_authenticated/interview-prep.live.$interviewId'
 import { Route as ApiPublicHooksPurgeExportsRouteImport } from './routes/api/public/hooks/purge-exports'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicPortfolioPhotoSlugRouteImport } from './routes/api/public/portfolio-photo/$slug'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -180,6 +181,12 @@ const ApiPublicPaymentsWebhookRoute =
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPortfolioPhotoSlugRoute =
+  ApiPublicPortfolioPhotoSlugRouteImport.update({
+    id: '/api/public/portfolio-photo/$slug',
+    path: '/api/public/portfolio-photo/$slug',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
@@ -223,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/portfolio-photo/$slug': typeof ApiPublicPortfolioPhotoSlugRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -253,6 +261,7 @@ export interface FileRoutesByTo {
   '/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/portfolio-photo/$slug': typeof ApiPublicPortfolioPhotoSlugRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -285,6 +294,7 @@ export interface FileRoutesById {
   '/_authenticated/interview-prep/live/$interviewId': typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
   '/api/public/hooks/purge-exports': typeof ApiPublicHooksPurgeExportsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/portfolio-photo/$slug': typeof ApiPublicPortfolioPhotoSlugRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/interview-prep/live/$interviewId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
+    | '/api/public/portfolio-photo/$slug'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/interview-prep/live/$interviewId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
+    | '/api/public/portfolio-photo/$slug'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -378,6 +390,7 @@ export interface FileRouteTypes {
     | '/_authenticated/interview-prep/live/$interviewId'
     | '/api/public/hooks/purge-exports'
     | '/api/public/payments/webhook'
+    | '/api/public/portfolio-photo/$slug'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
@@ -394,6 +407,7 @@ export interface RootRouteChildren {
   AuthConfirmRoute: typeof AuthConfirmRoute
   ApiPublicHooksPurgeExportsRoute: typeof ApiPublicHooksPurgeExportsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicPortfolioPhotoSlugRoute: typeof ApiPublicPortfolioPhotoSlugRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -583,6 +597,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/portfolio-photo/$slug': {
+      id: '/api/public/portfolio-photo/$slug'
+      path: '/api/public/portfolio-photo/$slug'
+      fullPath: '/api/public/portfolio-photo/$slug'
+      preLoaderRoute: typeof ApiPublicPortfolioPhotoSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/auth/preview': {
       id: '/lovable/email/auth/preview'
       path: '/lovable/email/auth/preview'
@@ -661,6 +682,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthConfirmRoute: AuthConfirmRoute,
   ApiPublicHooksPurgeExportsRoute: ApiPublicHooksPurgeExportsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicPortfolioPhotoSlugRoute: ApiPublicPortfolioPhotoSlugRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
