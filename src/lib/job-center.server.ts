@@ -26,8 +26,12 @@ export async function cleanJobCenter(admin:SupabaseClient) {
   const today=new Date().toISOString().slice(0,10);
   const {error}=await admin.from('job_center_jobs').update({status:'expired',updated_at:new Date().toISOString()}).eq('status','published').lt('expires_date',today);
   if(error)throw error;
-  const {data:jobs,error:e}=await admin.from('job_center_jobs').select('id,job_center_private!inner(last_checked_at)').eq('status','published').is('deleted_at',null).or(`last_checked_at.is.null,last_checked_at.lt.${new Date(Date.now()-86400000).toISOString()}`,{referencedTable:'job_center_private'}).limit(10);
-  if(e)throw e;
-  const results=await Promise.all((jobs??[]).map(j=>checkOneJob(admin,j.id)));
+  const jobs:{id:string}[]=[];
+  for(let offset=0;;offset+=1000){
+    const {data:page,error:e}=await admin.from('job_center_jobs').select('id,job_center_private!inner(last_checked_at)').eq('status','published').is('deleted_at',null).or(`last_checked_at.is.null,last_checked_at.lt.${new Date(Date.now()-86400000).toISOString()}`,{referencedTable:'job_center_private'}).order('id').range(offset,offset+999);
+    if(e)throw e;jobs.push(...(page??[]));if(!page||page.length<1000)break;
+  }
+  const results=[];
+  for(let offset=0;offset<jobs.length;offset+=10)results.push(...await Promise.all(jobs.slice(offset,offset+10).map(j=>checkOneJob(admin,j.id))));
   return {checked:results.filter(r=>!r.skipped).length,hidden:results.filter(r=>r.hidden).length};
 }

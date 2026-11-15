@@ -30,7 +30,7 @@ export const jobSchema = z.object({
   if(v.salary_min!==null&&v.salary_max!==null&&v.salary_max<v.salary_min) c.addIssue({code:'custom',path:['salary_max'],message:'Maximum must be at least the minimum.'});
   if((v.salary_min!==null||v.salary_max!==null)&&(!v.salary_currency||!v.salary_period)) c.addIssue({code:'custom',path:['salary_currency'],message:'Choose currency and salary period.'});
   if(v.expires_date<v.posted_date) c.addIssue({code:'custom',path:['expires_date'],message:'Expiry must be on or after posting.'});
-  if(v.status==='published'&&v.practice_text.trim().split(/\s+/).length<50) c.addIssue({code:'custom',path:['practice_text'],message:'Published jobs need at least 50 words of practice text.'});
+  if(v.status==='published'&&!v.practice_text) c.addIssue({code:'custom',path:['practice_text'],message:'Add practice text before publishing.'});
   if(v.company_website&&applyLinkProblem(v.company_website)) c.addIssue({code:'custom',path:['company_website'],message:'Use a public HTTPS website.'});
 });
 export type JobInput = z.infer<typeof jobSchema>;

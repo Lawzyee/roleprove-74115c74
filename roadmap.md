@@ -26,9 +26,9 @@
 - [x] Share buttons, QR download, "Where to use your link" card
 
 ## Job center v1
-- [ ] Staff-curated jobs, private practice text, staff RLS and management page
-- [ ] Safe HTTPS validation, daily checks, automatic expiry and broken-link hiding
-- [ ] Signed-in browsing, filters, preferences, tracker, apply and reports
-- [ ] Existing capped/paywalled simulation and interview practice integration
-- [ ] Deletion/export coverage, legal placeholders and tests
-- [ ] Full tests and authenticated desktop/mobile verification
+- [x] Staff-curated drafts, private practice text, staff RLS and management page
+- [ ] Publish and daily safe public-link checks: resolver unreachable in sandbox; deployed pinned TLS verification remains unverified. Expiry and three-failure hiding verified.
+- [x] Signed-in browsing, filters, preferences, tracker, apply and reports
+- [x] Existing capped/paywalled simulation and interview practice integration
+- [x] Deletion/export coverage, legal placeholders and tests
+- [ ] Full suite passes; authenticated desktop/mobile browse and simulation verified. Staff publication, Other interview prep and real generation-limit exhaustion remain unverified.
