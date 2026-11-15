@@ -119,7 +119,7 @@ export async function loadProject(admin: Admin, userId: string, projectId: strin
   if (tErr || rErr) throw new Error('Could not load project.');
   const byTask = new Map((results ?? []).map((r) => [r.task_id, r]));
   return {
-    project, attempt, sim: attempt.simulations as LoadedProject['sim'],
+    project, attempt, sim: attempt.simulations as unknown as LoadedProject['sim'],
     stages: (tasks ?? []).map((t) => {
       const r = byTask.get(t.id);
       const evidence = Array.isArray(r?.criteria_breakdown) ? (r!.criteria_breakdown as Array<{ label?: string; justification?: string }>).map((c) => `${c.label ?? ''}: ${c.justification ?? ''}`).slice(0, 8) : [];

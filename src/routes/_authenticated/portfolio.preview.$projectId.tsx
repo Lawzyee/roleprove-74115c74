@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ProjectView } from "@/components/portfolio/PublicView";
+import { PreviewBar, ProjectView } from "@/components/portfolio/PublicView";
 import { previewProjectFn } from "@/lib/portfolio.functions";
-import { PreviewBar } from "./portfolio.preview.index";
 
 export const Route = createFileRoute("/_authenticated/portfolio/preview/$projectId")({
   head: () => ({

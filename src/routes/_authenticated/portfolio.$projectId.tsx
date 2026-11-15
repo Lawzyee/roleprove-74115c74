@@ -40,13 +40,15 @@ function OwnerProjectPage() {
   useEffect(() => {
     if (q.data?.found) {
       setInsight(q.data.project.insight);
-      setVis(Object.fromEntries(q.data.project.stages.map((s) => [s.taskId, s.visibility])));
+      setVis(Object.fromEntries((q.data.project.stages as unknown as Array<{ taskId: string; visibility: StageVisibility }>).map((s) => [s.taskId, s.visibility])));
     }
   }, [q.data]);
 
   if (q.isLoading) return <Shell><p className="text-sm text-muted-foreground">Loading…</p></Shell>;
   if (!q.data?.found) return <Shell><p>This project isn’t in your portfolio.</p><Button asChild variant="outline" className="mt-3"><Link to="/portfolio">Back to portfolio</Link></Button></Shell>;
-  const { project, generationsLeft, showScores } = q.data;
+  const { generationsLeft, showScores } = q.data;
+  const project = q.data.project;
+  const stages = project.stages as unknown as Array<(typeof project.stages)[number] & { taskId: string; visibility: StageVisibility }>;
 
   async function save() {
     setBusy(true);
@@ -81,7 +83,7 @@ function OwnerProjectPage() {
       <section className="mt-6 space-y-4">
         <h2 className="font-display text-lg font-semibold">Approach, stage by stage</h2>
         <p className="text-xs text-muted-foreground">Choose what visitors see for each stage. Uploaded files and recordings are never shown.</p>
-        {project.stages.map((s, i) => {
+        {stages.map((s, i) => {
           const v = vis[s.taskId] ?? s.visibility;
           return (
             <Card key={s.taskId}><CardContent className="space-y-3 p-5">
