@@ -49,7 +49,7 @@ export async function callAi(system: string, user: string) {
 
 export async function createPrepSession(
   userId: string,
-  input: { text?: string; url?: string; cvFilePath?: string },
+  input: { text?: string; url?: string; cvFilePath?: string; roleName?: string; privateSource?: boolean },
 ) {
   const sourceUrl = input.url?.trim() || null;
   let text = input.text?.trim() ?? "";
@@ -66,6 +66,7 @@ export async function createPrepSession(
   const cvText = cvFilePath ? await extractCvText(cvFilePath) : "";
 
   const extracted = await extractJobPosting(text);
+  if (input.roleName) { extracted.role_type = input.roleName; extracted.confidence = 1; }
 
   const pillarBriefs: Record<PrepCategory, string> = {
     can_do_job:
@@ -149,7 +150,7 @@ export async function createPrepSession(
     .insert({
       user_id: userId,
       title,
-      source_jd_text: text.slice(0, 20000),
+      source_jd_text: input.privateSource ? 'Practice based on a staff-curated external listing.' : text.slice(0, 20000),
       source_url: sourceUrl,
       extracted_role_context: extracted as unknown as never,
       cv_file_path: cvFilePath,

@@ -38,6 +38,7 @@ export const terms: LegalDocument = {
       heading: "4. What RoleProve is",
       blocks: [
         p("RoleProve offers practice job simulations and interview preparation that produce scores and feedback."),
+        p("The Job center links to external websites that RoleProve does not control. RoleProve does not verify employers or guarantee any role. [[PLACEHOLDER: confirm external listings wording]]"),
         p("Scores are practice-based indicators of how you performed on a task. They are not a guarantee of job performance, hiring outcomes or a formal qualification."),
       ],
     },

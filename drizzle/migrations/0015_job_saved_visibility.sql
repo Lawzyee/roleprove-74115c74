@@ -1,0 +1,2 @@
+DROP POLICY jobs_saved_read ON public.job_center_jobs;
+CREATE POLICY jobs_saved_read ON public.job_center_jobs FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.job_tracker t WHERE t.job_id = job_center_jobs.id AND t.user_id = auth.uid()));

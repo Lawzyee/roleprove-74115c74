@@ -518,6 +518,128 @@ export type Database = {
         }
         Relationships: []
       }
+      job_center_jobs: {
+        Row: {
+          apply_url: string
+          arrangement: string
+          city: string
+          company: string
+          company_website: string | null
+          country: string
+          created_at: string
+          deleted_at: string | null
+          employment: string
+          expires_date: string
+          id: string
+          other_role: string
+          posted_date: string
+          role_key: string
+          salary_currency: string | null
+          salary_max: number | null
+          salary_min: number | null
+          salary_period: string | null
+          seniority: string
+          status: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          apply_url: string
+          arrangement: string
+          city?: string
+          company: string
+          company_website?: string | null
+          country?: string
+          created_at?: string
+          deleted_at?: string | null
+          employment: string
+          expires_date?: string
+          id?: string
+          other_role?: string
+          posted_date?: string
+          role_key: string
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_period?: string | null
+          seniority: string
+          status?: string
+          summary: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          apply_url?: string
+          arrangement?: string
+          city?: string
+          company?: string
+          company_website?: string | null
+          country?: string
+          created_at?: string
+          deleted_at?: string | null
+          employment?: string
+          expires_date?: string
+          id?: string
+          other_role?: string
+          posted_date?: string
+          role_key?: string
+          salary_currency?: string | null
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_period?: string | null
+          seniority?: string
+          status?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      job_center_private: {
+        Row: {
+          apply_clicks: number
+          check_started_at: string | null
+          consecutive_failures: number
+          job_id: string
+          last_checked_at: string | null
+          link_broken: boolean
+          practice_text: string
+          source_note: string
+          staff_notes: string
+        }
+        Insert: {
+          apply_clicks?: number
+          check_started_at?: string | null
+          consecutive_failures?: number
+          job_id: string
+          last_checked_at?: string | null
+          link_broken?: boolean
+          practice_text?: string
+          source_note?: string
+          staff_notes?: string
+        }
+        Update: {
+          apply_clicks?: number
+          check_started_at?: string | null
+          consecutive_failures?: number
+          job_id?: string
+          last_checked_at?: string | null
+          link_broken?: boolean
+          practice_text?: string
+          source_note?: string
+          staff_notes?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_center_private_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "job_center_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_postings: {
         Row: {
           company_context: string | null
@@ -559,6 +681,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      job_preferences: {
+        Row: {
+          arrangements: string[]
+          countries: string[]
+          employment_types: string[]
+          roles: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          arrangements?: string[]
+          countries?: string[]
+          employment_types?: string[]
+          roles?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          arrangements?: string[]
+          countries?: string[]
+          employment_types?: string[]
+          roles?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      job_tracker: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          notes: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          notes?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          notes?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_tracker_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "job_center_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       legal_acceptances: {
         Row: {
@@ -997,6 +1184,7 @@ export type Database = {
         Row: {
           completed_at: string | null
           id: string
+          job_center_id: string | null
           job_posting_id: string | null
           overall_score: number | null
           pillar_scores: Json
@@ -1012,6 +1200,7 @@ export type Database = {
         Insert: {
           completed_at?: string | null
           id?: string
+          job_center_id?: string | null
           job_posting_id?: string | null
           overall_score?: number | null
           pillar_scores?: Json
@@ -1027,6 +1216,7 @@ export type Database = {
         Update: {
           completed_at?: string | null
           id?: string
+          job_center_id?: string | null
           job_posting_id?: string | null
           overall_score?: number | null
           pillar_scores?: Json
@@ -1040,6 +1230,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "simulation_attempts_job_center_id_fkey"
+            columns: ["job_center_id"]
+            isOneToOne: false
+            referencedRelation: "job_center_jobs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "simulation_attempts_job_posting_id_fkey"
             columns: ["job_posting_id"]
@@ -1261,6 +1458,7 @@ export type Database = {
           created_at: string
           data_request: string | null
           id: string
+          job_center_id: string | null
           staff_last_read_at: string | null
           status: string
           subject: string
@@ -1275,6 +1473,7 @@ export type Database = {
           created_at?: string
           data_request?: string | null
           id?: string
+          job_center_id?: string | null
           staff_last_read_at?: string | null
           status?: string
           subject: string
@@ -1289,6 +1488,7 @@ export type Database = {
           created_at?: string
           data_request?: string | null
           id?: string
+          job_center_id?: string | null
           staff_last_read_at?: string | null
           status?: string
           subject?: string
@@ -1305,6 +1505,13 @@ export type Database = {
             referencedRelation: "simulation_attempts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "support_tickets_job_center_id_fkey"
+            columns: ["job_center_id"]
+            isOneToOne: false
+            referencedRelation: "job_center_jobs"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -1319,12 +1526,17 @@ export type Database = {
       billing_email_hash: { Args: { p_email: string }; Returns: string }
       billing_hmac_of_md5: { Args: { p_md5: string }; Returns: string }
       get_billing_access: { Args: { p_env: string }; Returns: Json }
+      increment_job_apply: { Args: { p_job: string }; Returns: undefined }
       is_support_staff: { Args: { _user_id: string }; Returns: boolean }
       portfolio_rate_hit: {
         Args: { p_key: string; p_limit: number }
         Returns: boolean
       }
       portfolio_report_ip_hash: { Args: { p_ip: string }; Returns: string }
+      report_job_center: {
+        Args: { p_details: string; p_job: string; p_reason: string }
+        Returns: string
+      }
       reserve_billing_usage: {
         Args: { p_env: string; p_kind: string; p_user: string }
         Returns: Json

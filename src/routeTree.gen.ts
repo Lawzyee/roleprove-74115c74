@@ -23,10 +23,14 @@ import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authenticated/subscribe'
 import { Route as AuthConfirmRouteImport } from './routes/auth_.confirm'
+import { Route as AuthenticatedAdminJobsRouteImport } from './routes/_authenticated/admin.jobs'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedCheckoutReturnRouteImport } from './routes/_authenticated/checkout.return'
 import { Route as AuthenticatedInterviewPrepIndexRouteImport } from './routes/_authenticated/interview-prep.index'
 import { Route as AuthenticatedInterviewPrepSessionIdRouteImport } from './routes/_authenticated/interview-prep.$sessionId'
+import { Route as AuthenticatedJobsIndexRouteImport } from './routes/_authenticated/jobs.index'
+import { Route as AuthenticatedJobsJobIdRouteImport } from './routes/_authenticated/jobs.$jobId'
+import { Route as AuthenticatedJobsTrackerRouteImport } from './routes/_authenticated/jobs.tracker'
 import { Route as AuthenticatedPortfolioIndexRouteImport } from './routes/_authenticated/portfolio.index'
 import { Route as AuthenticatedPortfolioProjectIdRouteImport } from './routes/_authenticated/portfolio.$projectId'
 import { Route as AuthenticatedResultsAttemptIdRouteImport } from './routes/_authenticated/results.$attemptId'
@@ -116,6 +120,11 @@ const AuthConfirmRoute = AuthConfirmRouteImport.update({
   path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAdminJobsRoute = AuthenticatedAdminJobsRouteImport.update({
+  id: '/admin/jobs',
+  path: '/admin/jobs',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminSupportRoute =
   AuthenticatedAdminSupportRouteImport.update({
     id: '/admin/support',
@@ -138,6 +147,22 @@ const AuthenticatedInterviewPrepSessionIdRoute =
   AuthenticatedInterviewPrepSessionIdRouteImport.update({
     id: '/interview-prep/$sessionId',
     path: '/interview-prep/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedJobsIndexRoute = AuthenticatedJobsIndexRouteImport.update({
+  id: '/jobs/',
+  path: '/jobs/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJobsJobIdRoute = AuthenticatedJobsJobIdRouteImport.update({
+  id: '/jobs/$jobId',
+  path: '/jobs/$jobId',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJobsTrackerRoute =
+  AuthenticatedJobsTrackerRouteImport.update({
+    id: '/jobs/tracker',
+    path: '/jobs/tracker',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPortfolioIndexRoute =
@@ -258,9 +283,12 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
+  '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
+  '/jobs/tracker': typeof AuthenticatedJobsTrackerRoute
   '/portfolio/$projectId': typeof AuthenticatedPortfolioProjectIdRoute
   '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
@@ -268,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
+  '/jobs/': typeof AuthenticatedJobsIndexRoute
   '/portfolio/': typeof AuthenticatedPortfolioIndexRoute
   '/support/': typeof AuthenticatedSupportIndexRoute
   '/p/$slug/': typeof PSlugIndexRoute
@@ -295,9 +324,12 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
+  '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
+  '/jobs/tracker': typeof AuthenticatedJobsTrackerRoute
   '/portfolio/$projectId': typeof AuthenticatedPortfolioProjectIdRoute
   '/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
@@ -305,6 +337,7 @@ export interface FileRoutesByTo {
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/interview-prep': typeof AuthenticatedInterviewPrepIndexRoute
+  '/jobs': typeof AuthenticatedJobsIndexRoute
   '/portfolio': typeof AuthenticatedPortfolioIndexRoute
   '/support': typeof AuthenticatedSupportIndexRoute
   '/p/$slug': typeof PSlugIndexRoute
@@ -334,9 +367,12 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
   '/auth_/confirm': typeof AuthConfirmRoute
+  '/_authenticated/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/_authenticated/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
+  '/_authenticated/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
+  '/_authenticated/jobs/tracker': typeof AuthenticatedJobsTrackerRoute
   '/_authenticated/portfolio/$projectId': typeof AuthenticatedPortfolioProjectIdRoute
   '/_authenticated/results/$attemptId': typeof AuthenticatedResultsAttemptIdRoute
   '/_authenticated/simulate/$attemptId': typeof AuthenticatedSimulateAttemptIdRoute
@@ -344,6 +380,7 @@ export interface FileRoutesById {
   '/_authenticated/support/new': typeof AuthenticatedSupportNewRoute
   '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/_authenticated/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
+  '/_authenticated/jobs/': typeof AuthenticatedJobsIndexRoute
   '/_authenticated/portfolio/': typeof AuthenticatedPortfolioIndexRoute
   '/_authenticated/support/': typeof AuthenticatedSupportIndexRoute
   '/p/$slug/': typeof PSlugIndexRoute
@@ -373,9 +410,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscribe'
     | '/auth/confirm'
+    | '/admin/jobs'
     | '/admin/support'
     | '/checkout/return'
     | '/interview-prep/$sessionId'
+    | '/jobs/$jobId'
+    | '/jobs/tracker'
     | '/portfolio/$projectId'
     | '/results/$attemptId'
     | '/simulate/$attemptId'
@@ -383,6 +423,7 @@ export interface FileRouteTypes {
     | '/support/new'
     | '/p/$slug/$projectId'
     | '/interview-prep/'
+    | '/jobs/'
     | '/portfolio/'
     | '/support/'
     | '/p/$slug/'
@@ -410,9 +451,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscribe'
     | '/auth/confirm'
+    | '/admin/jobs'
     | '/admin/support'
     | '/checkout/return'
     | '/interview-prep/$sessionId'
+    | '/jobs/$jobId'
+    | '/jobs/tracker'
     | '/portfolio/$projectId'
     | '/results/$attemptId'
     | '/simulate/$attemptId'
@@ -420,6 +464,7 @@ export interface FileRouteTypes {
     | '/support/new'
     | '/p/$slug/$projectId'
     | '/interview-prep'
+    | '/jobs'
     | '/portfolio'
     | '/support'
     | '/p/$slug'
@@ -448,9 +493,12 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/subscribe'
     | '/auth_/confirm'
+    | '/_authenticated/admin/jobs'
     | '/_authenticated/admin/support'
     | '/_authenticated/checkout/return'
     | '/_authenticated/interview-prep/$sessionId'
+    | '/_authenticated/jobs/$jobId'
+    | '/_authenticated/jobs/tracker'
     | '/_authenticated/portfolio/$projectId'
     | '/_authenticated/results/$attemptId'
     | '/_authenticated/simulate/$attemptId'
@@ -458,6 +506,7 @@ export interface FileRouteTypes {
     | '/_authenticated/support/new'
     | '/p/$slug/$projectId'
     | '/_authenticated/interview-prep/'
+    | '/_authenticated/jobs/'
     | '/_authenticated/portfolio/'
     | '/_authenticated/support/'
     | '/p/$slug/'
@@ -591,6 +640,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/jobs': {
+      id: '/_authenticated/admin/jobs'
+      path: '/admin/jobs'
+      fullPath: '/admin/jobs'
+      preLoaderRoute: typeof AuthenticatedAdminJobsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin/support': {
       id: '/_authenticated/admin/support'
       path: '/admin/support'
@@ -617,6 +673,27 @@ declare module '@tanstack/react-router' {
       path: '/interview-prep/$sessionId'
       fullPath: '/interview-prep/$sessionId'
       preLoaderRoute: typeof AuthenticatedInterviewPrepSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/jobs/': {
+      id: '/_authenticated/jobs/'
+      path: '/jobs'
+      fullPath: '/jobs/'
+      preLoaderRoute: typeof AuthenticatedJobsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/jobs/$jobId': {
+      id: '/_authenticated/jobs/$jobId'
+      path: '/jobs/$jobId'
+      fullPath: '/jobs/$jobId'
+      preLoaderRoute: typeof AuthenticatedJobsJobIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/jobs/tracker': {
+      id: '/_authenticated/jobs/tracker'
+      path: '/jobs/tracker'
+      fullPath: '/jobs/tracker'
+      preLoaderRoute: typeof AuthenticatedJobsTrackerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/portfolio/': {
@@ -755,15 +832,19 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSubscribeRoute: typeof AuthenticatedSubscribeRoute
+  AuthenticatedAdminJobsRoute: typeof AuthenticatedAdminJobsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedCheckoutReturnRoute: typeof AuthenticatedCheckoutReturnRoute
   AuthenticatedInterviewPrepSessionIdRoute: typeof AuthenticatedInterviewPrepSessionIdRoute
+  AuthenticatedJobsJobIdRoute: typeof AuthenticatedJobsJobIdRoute
+  AuthenticatedJobsTrackerRoute: typeof AuthenticatedJobsTrackerRoute
   AuthenticatedPortfolioProjectIdRoute: typeof AuthenticatedPortfolioProjectIdRoute
   AuthenticatedResultsAttemptIdRoute: typeof AuthenticatedResultsAttemptIdRoute
   AuthenticatedSimulateAttemptIdRoute: typeof AuthenticatedSimulateAttemptIdRoute
   AuthenticatedSupportTicketIdRoute: typeof AuthenticatedSupportTicketIdRoute
   AuthenticatedSupportNewRoute: typeof AuthenticatedSupportNewRoute
   AuthenticatedInterviewPrepIndexRoute: typeof AuthenticatedInterviewPrepIndexRoute
+  AuthenticatedJobsIndexRoute: typeof AuthenticatedJobsIndexRoute
   AuthenticatedPortfolioIndexRoute: typeof AuthenticatedPortfolioIndexRoute
   AuthenticatedSupportIndexRoute: typeof AuthenticatedSupportIndexRoute
   AuthenticatedInterviewPrepLiveInterviewIdRoute: typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
@@ -778,16 +859,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSubscribeRoute: AuthenticatedSubscribeRoute,
+  AuthenticatedAdminJobsRoute: AuthenticatedAdminJobsRoute,
   AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
   AuthenticatedCheckoutReturnRoute: AuthenticatedCheckoutReturnRoute,
   AuthenticatedInterviewPrepSessionIdRoute:
     AuthenticatedInterviewPrepSessionIdRoute,
+  AuthenticatedJobsJobIdRoute: AuthenticatedJobsJobIdRoute,
+  AuthenticatedJobsTrackerRoute: AuthenticatedJobsTrackerRoute,
   AuthenticatedPortfolioProjectIdRoute: AuthenticatedPortfolioProjectIdRoute,
   AuthenticatedResultsAttemptIdRoute: AuthenticatedResultsAttemptIdRoute,
   AuthenticatedSimulateAttemptIdRoute: AuthenticatedSimulateAttemptIdRoute,
   AuthenticatedSupportTicketIdRoute: AuthenticatedSupportTicketIdRoute,
   AuthenticatedSupportNewRoute: AuthenticatedSupportNewRoute,
   AuthenticatedInterviewPrepIndexRoute: AuthenticatedInterviewPrepIndexRoute,
+  AuthenticatedJobsIndexRoute: AuthenticatedJobsIndexRoute,
   AuthenticatedPortfolioIndexRoute: AuthenticatedPortfolioIndexRoute,
   AuthenticatedSupportIndexRoute: AuthenticatedSupportIndexRoute,
   AuthenticatedInterviewPrepLiveInterviewIdRoute:

@@ -794,7 +794,7 @@ export async function generateCaseStudyWithRetry(extracted: Extracted): Promise<
 
 export async function generatePersonalisedSimulation(
   userId: string,
-  input: { text?: string; url?: string },
+  input: { text?: string; url?: string; roleKey?: RoleKey; privateSource?: boolean },
 ) {
   const sourceUrl = input.url?.trim() || null;
   let rawText = (input.text ?? "").trim();
@@ -809,14 +809,15 @@ export async function generatePersonalisedSimulation(
   }
 
   const extracted = await extractJobPosting(rawText);
-  const roleKey = matchRole(extracted);
+  const roleKey = input.roleKey ?? matchRole(extracted);
+  if (input.roleKey) extracted.role_type = ROLE_REGISTRY[input.roleKey].name;
   const matched = roleKey !== null;
 
   const { data: posting, error: postingError } = await supabaseAdmin
     .from("job_postings")
     .insert({
       user_id: userId,
-      raw_text: rawText.slice(0, 20000),
+      raw_text: input.privateSource ? 'Practice based on a staff-curated external listing.' : rawText.slice(0, 20000),
       source_url: sourceUrl,
       extracted_role_type: extracted.role_type,
       extracted_seniority: extracted.seniority,
@@ -860,7 +861,8 @@ export async function generatePersonalisedSimulation(
     baseMinutes = baseSim.estimated_minutes;
     personalised = await generateCaseStudyWithRetry(extracted);
   }
-  const roleName = ROLE_REGISTRY[roleKey!].name;
+  if (!roleKey) throw new Error('Role unavailable.');
+  const roleName = ROLE_REGISTRY[roleKey].name;
 
   const { data: newSim, error: simError } = await supabaseAdmin
     .from("simulations")

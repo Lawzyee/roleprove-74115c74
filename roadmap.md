@@ -24,3 +24,11 @@
 ## Portfolio follow-up — done
 - [x] Signed-out report form (reason, details, email, honeypot, 5/hour per address) + staff list in support inbox
 - [x] Share buttons, QR download, "Where to use your link" card
+
+## Job center v1
+- [x] Staff-curated drafts, private practice text, staff RLS and management page
+- [ ] Publish and daily safe public-link checks: resolver unreachable in sandbox; deployed pinned TLS verification remains unverified. Expiry and three-failure hiding verified.
+- [x] Signed-in browsing, filters, preferences, tracker, apply and reports
+- [x] Existing capped/paywalled simulation and interview practice integration
+- [x] Deletion/export coverage, legal placeholders and tests
+- [ ] Full suite passes; authenticated desktop/mobile browse and simulation verified. Staff publication, Other interview prep and real generation-limit exhaustion remain unverified.

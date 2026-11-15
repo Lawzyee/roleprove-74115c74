@@ -1,0 +1,48 @@
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { queryOptions, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
+import { useServerFn } from '@tanstack/react-start';
+import { useState } from 'react';
+import { SlidersHorizontal, X, ChevronLeft, ChevronRight, BriefcaseBusiness } from 'lucide-react';
+import { toast } from 'sonner';
+import { SiteHeader } from '@/components/SiteHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogTitle, DialogHeader } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { JobCard, jobHead } from '@/components/jobs/JobParts';
+import { getJobCenterFn, saveJobPreferencesFn, saveTrackedJobFn } from '@/lib/job-center.functions';
+import { ARRANGEMENTS, EMPLOYMENT, EMPTY_PREFERENCES, PAGE_SIZE, filterJobs, matchScore, type Filters, type Preferences } from '@/lib/job-center';
+import { LIVE_ROLES, roleKeyForId } from '@/lib/role-registry';
+const options=queryOptions({queryKey:['job-center'],queryFn:()=>getJobCenterFn()});
+export const Route=createFileRoute('/_authenticated/jobs/')({head:()=>jobHead('Job center','Staff-curated external jobs and private application tracking.'),loader:({context})=>context.queryClient.ensureQueryData(options),component:JobCenter});
+function JobCenter(){
+  const {data}=useSuspenseQuery(options);const qc=useQueryClient();const save=useServerFn(saveTrackedJobFn);const savePreferences=useServerFn(saveJobPreferencesFn);
+  const target=roleKeyForId(data.targetRoleId);const preferences:Preferences=data.preferences??{...EMPTY_PREFERENCES,roles:target?[target]:[]};
+  const [filters,setFilters]=useState<Filters>(()=>({...preferences,keyword:'',location:'',days:'',salary:'',sort:'best',seniority:''}));
+  const [page,setPage]=useState(1);const [showPreferences,setShowPreferences]=useState(false);const [draft,setDraft]=useState(preferences);const [countryText,setCountryText]=useState(preferences.countries.join(', '));
+  const filtered=filterJobs(data.jobs,filters,preferences,target).filter(j=>!filters.seniority||j.seniority===filters.seniority).sort((a,b)=>(filters.sort==='best'?matchScore(b,preferences,target)-matchScore(a,preferences,target):0)||b.posted_date.localeCompare(a.posted_date)||a.id.localeCompare(b.id));
+  const pages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));const current=Math.min(page,pages);
+  const update=(patch:Partial<Filters>)=>{setFilters(f=>({...f,...patch}));setPage(1);};
+  const select=(key:'roles'|'arrangements'|'employment_types',value:string)=>update({[key]:value==='all'?[]:[value]});
+  const choices=(key:'roles'|'arrangements'|'employment_types',values:{value:string;label:string}[])=> <div className="space-y-2">{values.map(v=><Label key={v.value} className="flex items-center gap-2"><Checkbox checked={draft[key].includes(v.value)} onCheckedChange={checked=>setDraft(p=>({...p,[key]:checked?[...p[key],v.value]:p[key].filter(x=>x!==v.value)}))}/>{v.label}</Label>)}</div>;
+  return <><SiteHeader/><main className="mx-auto max-w-6xl px-5 py-9">
+    <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="mb-2 flex items-center gap-2 text-sm text-primary"><BriefcaseBusiness className="h-4 w-4"/>Opportunities</p><h1 className="font-display text-3xl font-semibold">Job center</h1></div><div className="flex flex-wrap gap-2"><Button asChild variant="outline"><Link to="/jobs/tracker">My jobs <span className="ml-2 text-muted-foreground">{data.tracker.length}</span></Link></Button><Button variant="outline" onClick={()=>setShowPreferences(true)}><SlidersHorizontal className="mr-2 h-4 w-4"/>My job preferences</Button></div></div>
+    <section aria-label="Job filters" className="my-7 grid gap-3 border-y border-border py-5 sm:grid-cols-2 lg:grid-cols-4">
+      <Input aria-label="Search title or company" placeholder="Search title or company" value={filters.keyword} onChange={e=>update({keyword:e.target.value})}/>
+      <Select value={filters.roles[0]??'all'} onValueChange={v=>select('roles',v)}><SelectTrigger aria-label="Role filter"><SelectValue placeholder="All roles"/></SelectTrigger><SelectContent><SelectItem value="all">All roles</SelectItem>{LIVE_ROLES.map(r=><SelectItem key={r.key} value={r.key}>{r.name}</SelectItem>)}<SelectItem value="other">Other roles</SelectItem></SelectContent></Select>
+      <Select value={filters.arrangements[0]??'all'} onValueChange={v=>select('arrangements',v)}><SelectTrigger aria-label="Work arrangement filter"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">All work arrangements</SelectItem>{ARRANGEMENTS.map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select>
+      <Select value={filters.employment_types[0]??'all'} onValueChange={v=>select('employment_types',v)}><SelectTrigger aria-label="Employment filter"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">All employment types</SelectItem>{EMPLOYMENT.map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select>
+      <Input aria-label="City or country" placeholder="City or country" value={filters.location} onChange={e=>update({location:e.target.value})}/>
+      <Select value={filters.seniority||'all'} onValueChange={v=>update({seniority:v==='all'?'':v})}><SelectTrigger aria-label="Seniority filter"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">All seniority levels</SelectItem>{['entry','mid','senior'].map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select>
+      <Select value={filters.days||'all'} onValueChange={v=>update({days:v==='all'?'':v})}><SelectTrigger aria-label="Posted within filter"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">Any posting date</SelectItem><SelectItem value="7">Posted within 7 days</SelectItem><SelectItem value="30">Posted within 30 days</SelectItem></SelectContent></Select>
+      <Input type="number" min="0" aria-label="Minimum salary" placeholder="Minimum salary (listed currency)" value={filters.salary} onChange={e=>update({salary:e.target.value})}/>
+    </section>
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><span className="text-sm text-muted-foreground">{filtered.length} jobs</span><Button size="sm" variant="ghost" onClick={()=>update({...EMPTY_PREFERENCES,keyword:'',location:'',days:'',salary:'',seniority:''})}><X className="mr-1 h-3 w-3"/>Clear filters</Button></div><Select value={filters.sort} onValueChange={v=>update({sort:v})}><SelectTrigger className="w-40" aria-label="Sort jobs"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="best">Best match</SelectItem><SelectItem value="newest">Newest</SelectItem></SelectContent></Select></div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{filtered.slice((current-1)*PAGE_SIZE,current*PAGE_SIZE).map(job=><JobCard key={job.id} job={job} saved={data.tracker.some(t=>t.job_id===job.id)} onSave={async()=>{try{if(data.tracker.some(t=>t.job_id===job.id))return;await save({data:{id:job.id,status:'saved',notes:''}});await qc.invalidateQueries({queryKey:['job-center']});toast.success('Job saved.');}catch(e){toast.error((e as Error).message);}}}/>)}</div>
+    {!filtered.length&&<div className="py-16 text-center"><BriefcaseBusiness className="mx-auto mb-4 h-9 w-9 text-muted-foreground"/><h2 className="font-display text-xl">No jobs found</h2><p className="mt-2 text-sm text-muted-foreground">No published listings match your current preferences.</p></div>}
+    <div className="mt-7 flex items-center justify-center gap-4"><Button size="icon" variant="outline" aria-label="Previous page" disabled={current===1} onClick={()=>setPage(current-1)}><ChevronLeft/></Button><span className="text-sm">{current} / {pages}</span><Button size="icon" variant="outline" aria-label="Next page" disabled={current===pages} onClick={()=>setPage(current+1)}><ChevronRight/></Button></div>
+    <Dialog open={showPreferences} onOpenChange={setShowPreferences}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>My job preferences</DialogTitle></DialogHeader><fieldset className="space-y-3"><legend className="mb-3 font-medium">Roles</legend>{choices('roles',[...LIVE_ROLES.map(r=>({value:r.key,label:r.name})),{value:'other',label:'Other'}])}</fieldset><fieldset className="space-y-3"><legend className="mb-3 font-medium">Work arrangements</legend>{choices('arrangements',ARRANGEMENTS.map(v=>({value:v,label:v})))}</fieldset><fieldset><legend className="mb-3 font-medium">Employment</legend>{choices('employment_types',EMPLOYMENT.map(v=>({value:v,label:v})))}</fieldset><Label>Countries (comma separated)<Input value={countryText} onChange={e=>setCountryText(e.target.value)}/></Label><Button onClick={async()=>{try{const p={...draft,countries:countryText.split(',').map(s=>s.trim()).filter(Boolean)};await savePreferences({data:p});update(p);await qc.invalidateQueries({queryKey:['job-center']});setShowPreferences(false);toast.success('Preferences saved.');}catch(e){toast.error((e as Error).message);}}}>Save preferences</Button></DialogContent></Dialog>
+  </main></>;
+}

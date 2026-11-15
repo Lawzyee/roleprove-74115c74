@@ -43,6 +43,8 @@ const by = (table: string, column: string, key?: string) => async ({ admin, user
 };
 
 export const SECTIONS: Array<{ label: string; file: string; about: string; load: (c: Ctx) => Promise<Row[]>; keep?: string }> = [
+  { label: 'saved jobs and application tracker', file: 'job_tracker', about: 'Jobs you saved, your application statuses and private notes.', load: by('job_tracker', 'user_id') },
+  { label: 'job preferences', file: 'job_preferences', about: 'Your preferred roles, work arrangements, employment types and countries.', load: by('job_preferences', 'user_id') },
   { label: 'profile', file: 'profile', about: 'Your profile: name, email, headline, links, target role and settings.', load: by('profiles', 'id') },
   { label: 'legal acceptances', file: 'legal_acceptances', about: 'When you accepted each version of the Terms and Privacy Policy.', load: by('legal_acceptances', 'user_id') },
   { label: 'subscription status', file: 'subscriptions', about: 'Your Practice/Prep subscription records (status, period end, cancellation).', load: by('subscriptions', 'user_id') },
@@ -76,6 +78,7 @@ const FILE_BUCKETS: Array<{ bucket: string; label: string }> = [
 ];
 
 export const NOT_INCLUDED = [
+  'Staff-curated job descriptions, source notes and staff notes: private listing-management data, not your personal data.',
   'Suspicious-content flags on uploads: notes for our support staff when an upload seemed to try to influence grading. They are staff review notes, not data you provided.',
   'Steering-attempt flags on live interviews: notes for our support staff when a message tried to change the interviewer\'s rules or the scoring. They are staff review notes, not interview content.',
   'Ticket tags and staff read times on support tickets: internal routing and workload markers for our support team.',
