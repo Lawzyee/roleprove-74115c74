@@ -2,7 +2,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ROLE_REGISTRY, roleKeyForId } from './role-registry';
 import { PILLARS, PILLAR_LABELS } from './scoring-config';
-import { cleanText, displayUrl, stageReplies, stageTables, stageVisibility, PUBLIC_REQUESTS_PER_MINUTE, type StageVisibility, type PublicCard, type PublicFolder, type PublicPortfolio, type PublicStage, type PublicProject } from './portfolio';
+import { cleanText, reportRetentionCutoffs, displayUrl, stageReplies, stageTables, stageVisibility, PUBLIC_REQUESTS_PER_MINUTE, type StageVisibility, type PublicCard, type PublicFolder, type PublicPortfolio, type PublicStage, type PublicProject } from './portfolio';
 export type { PublicCard, PublicFolder, PublicPortfolio, PublicStage, PublicProject };
 import { detectInjection } from './deliverable-extract';
 
