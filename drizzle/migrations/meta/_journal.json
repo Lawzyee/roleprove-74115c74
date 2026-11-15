@@ -85,6 +85,13 @@
       "when": 1794701222459,
       "tag": "0011_portfolios",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794703082318,
+      "tag": "0012_portfolio_reports",
+      "breakpoints": true
     }
   ]
 }

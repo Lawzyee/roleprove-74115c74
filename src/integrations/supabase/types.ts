@@ -785,6 +785,39 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_reports: {
+        Row: {
+          contact_email: string | null
+          created_at: string
+          details: string | null
+          id: string
+          ip_hash: string
+          reason: string
+          slug: string
+          status: string
+        }
+        Insert: {
+          contact_email?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          ip_hash: string
+          reason: string
+          slug: string
+          status?: string
+        }
+        Update: {
+          contact_email?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          ip_hash?: string
+          reason?: string
+          slug?: string
+          status?: string
+        }
+        Relationships: []
+      }
       portfolios: {
         Row: {
           allow_indexing: boolean
