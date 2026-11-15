@@ -27,6 +27,7 @@ import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authent
 import { Route as AuthenticatedCheckoutReturnRouteImport } from './routes/_authenticated/checkout.return'
 import { Route as AuthenticatedInterviewPrepIndexRouteImport } from './routes/_authenticated/interview-prep.index'
 import { Route as AuthenticatedInterviewPrepSessionIdRouteImport } from './routes/_authenticated/interview-prep.$sessionId'
+import { Route as AuthenticatedJobsIndexRouteImport } from './routes/_authenticated/jobs.index'
 import { Route as AuthenticatedPortfolioIndexRouteImport } from './routes/_authenticated/portfolio.index'
 import { Route as AuthenticatedPortfolioProjectIdRouteImport } from './routes/_authenticated/portfolio.$projectId'
 import { Route as AuthenticatedResultsAttemptIdRouteImport } from './routes/_authenticated/results.$attemptId'
@@ -140,6 +141,11 @@ const AuthenticatedInterviewPrepSessionIdRoute =
     path: '/interview-prep/$sessionId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedJobsIndexRoute = AuthenticatedJobsIndexRouteImport.update({
+  id: '/jobs/',
+  path: '/jobs/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPortfolioIndexRoute =
   AuthenticatedPortfolioIndexRouteImport.update({
     id: '/portfolio/',
@@ -268,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
+  '/jobs/': typeof AuthenticatedJobsIndexRoute
   '/portfolio/': typeof AuthenticatedPortfolioIndexRoute
   '/support/': typeof AuthenticatedSupportIndexRoute
   '/p/$slug/': typeof PSlugIndexRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByTo {
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/interview-prep': typeof AuthenticatedInterviewPrepIndexRoute
+  '/jobs': typeof AuthenticatedJobsIndexRoute
   '/portfolio': typeof AuthenticatedPortfolioIndexRoute
   '/support': typeof AuthenticatedSupportIndexRoute
   '/p/$slug': typeof PSlugIndexRoute
@@ -344,6 +352,7 @@ export interface FileRoutesById {
   '/_authenticated/support/new': typeof AuthenticatedSupportNewRoute
   '/p/$slug/$projectId': typeof PSlugProjectIdRoute
   '/_authenticated/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
+  '/_authenticated/jobs/': typeof AuthenticatedJobsIndexRoute
   '/_authenticated/portfolio/': typeof AuthenticatedPortfolioIndexRoute
   '/_authenticated/support/': typeof AuthenticatedSupportIndexRoute
   '/p/$slug/': typeof PSlugIndexRoute
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/support/new'
     | '/p/$slug/$projectId'
     | '/interview-prep/'
+    | '/jobs/'
     | '/portfolio/'
     | '/support/'
     | '/p/$slug/'
@@ -420,6 +430,7 @@ export interface FileRouteTypes {
     | '/support/new'
     | '/p/$slug/$projectId'
     | '/interview-prep'
+    | '/jobs'
     | '/portfolio'
     | '/support'
     | '/p/$slug'
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/_authenticated/support/new'
     | '/p/$slug/$projectId'
     | '/_authenticated/interview-prep/'
+    | '/_authenticated/jobs/'
     | '/_authenticated/portfolio/'
     | '/_authenticated/support/'
     | '/p/$slug/'
@@ -619,6 +631,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInterviewPrepSessionIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/jobs/': {
+      id: '/_authenticated/jobs/'
+      path: '/jobs'
+      fullPath: '/jobs/'
+      preLoaderRoute: typeof AuthenticatedJobsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/portfolio/': {
       id: '/_authenticated/portfolio/'
       path: '/portfolio'
@@ -764,6 +783,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSupportTicketIdRoute: typeof AuthenticatedSupportTicketIdRoute
   AuthenticatedSupportNewRoute: typeof AuthenticatedSupportNewRoute
   AuthenticatedInterviewPrepIndexRoute: typeof AuthenticatedInterviewPrepIndexRoute
+  AuthenticatedJobsIndexRoute: typeof AuthenticatedJobsIndexRoute
   AuthenticatedPortfolioIndexRoute: typeof AuthenticatedPortfolioIndexRoute
   AuthenticatedSupportIndexRoute: typeof AuthenticatedSupportIndexRoute
   AuthenticatedInterviewPrepLiveInterviewIdRoute: typeof AuthenticatedInterviewPrepLiveInterviewIdRoute
@@ -788,6 +808,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSupportTicketIdRoute: AuthenticatedSupportTicketIdRoute,
   AuthenticatedSupportNewRoute: AuthenticatedSupportNewRoute,
   AuthenticatedInterviewPrepIndexRoute: AuthenticatedInterviewPrepIndexRoute,
+  AuthenticatedJobsIndexRoute: AuthenticatedJobsIndexRoute,
   AuthenticatedPortfolioIndexRoute: AuthenticatedPortfolioIndexRoute,
   AuthenticatedSupportIndexRoute: AuthenticatedSupportIndexRoute,
   AuthenticatedInterviewPrepLiveInterviewIdRoute:

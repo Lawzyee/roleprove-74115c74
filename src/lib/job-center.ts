@@ -37,7 +37,7 @@ export type JobInput = z.infer<typeof jobSchema>;
 export type Job = { id:string;title:string;company:string;company_website:string|null;city:string;country:string;arrangement:string;employment:string;role_key:string;other_role:string;seniority:string;salary_currency:string|null;salary_min:number|null;salary_max:number|null;salary_period:string|null;summary:string;apply_url:string;posted_date:string;expires_date:string;status:string;deleted_at:string|null };
 export type Preferences = { roles:string[];arrangements:string[];employment_types:string[];countries:string[] };
 export const EMPTY_PREFERENCES: Preferences = { roles:[], arrangements:[], employment_types:[], countries:[] };
-export type Filters = Preferences & { keyword:string;location:string;days:string;salary:string;sort:string };
+export type Filters = Preferences & { keyword:string;location:string;days:string;salary:string;sort:string;seniority:string };
 export function available(j: Job, today=new Date().toISOString().slice(0,10)) { return j.status==='published'&&!j.deleted_at&&j.expires_date>=today; }
 export function matchScore(j:Job,p:Preferences,target:string|null) { return (j.role_key===target?4:0)+(p.roles.includes(j.role_key)?3:0)+(p.arrangements.includes(j.arrangement)?2:0)+(p.employment_types.includes(j.employment)?2:0)+(p.countries.some(c=>c.toLowerCase()===j.country.toLowerCase())?2:0); }
 export function filterJobs(jobs:Job[], f:Filters,p:Preferences,target:string|null, now=new Date()) {

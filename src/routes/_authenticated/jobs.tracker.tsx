@@ -1,0 +1,18 @@
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { queryOptions, useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
+import { useServerFn } from '@tanstack/react-start';
+import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { SiteHeader } from '@/components/SiteHeader';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { jobHead } from '@/components/jobs/JobParts';
+import { getJobCenterFn, saveTrackedJobFn, removeTrackedJobFn } from '@/lib/job-center.functions';
+import { TRACKER_STATUSES, available } from '@/lib/job-center';
+const options=queryOptions({queryKey:['job-center'],queryFn:()=>getJobCenterFn()});
+export const Route=createFileRoute('/_authenticated/jobs/tracker')({head:()=>jobHead('My jobs','Your private saved jobs and application tracker.'),loader:({context})=>context.queryClient.ensureQueryData(options),component:Tracker});
+type Entry=Awaited<ReturnType<typeof getJobCenterFn>>['tracker'][number];
+function Tracker(){const {data}=useSuspenseQuery(options);return <><SiteHeader/><main className="mx-auto max-w-4xl px-5 py-9"><div className="flex items-center justify-between"><h1 className="font-display text-3xl font-semibold">My jobs</h1><Button asChild variant="outline"><Link to="/jobs">Job center</Link></Button></div><div className="mt-7 space-y-5">{data.tracker.map(t=><TrackerEntry key={t.id} entry={t}/>)}{!data.tracker.length&&<p className="py-10 text-muted-foreground">No saved jobs yet.</p>}</div></main></>;}
+function TrackerEntry({entry}:{entry:Entry}){const qc=useQueryClient();const save=useServerFn(saveTrackedJobFn);const remove=useServerFn(removeTrackedJobFn);const [notes,setNotes]=useState(entry.notes);const job=entry.job_center_jobs;return <article className="rounded-lg border border-border p-5"><div className="flex items-start justify-between gap-3"><div><Link to="/jobs/$jobId" params={{jobId:entry.job_id}} className="font-display text-xl font-semibold">{job?.title??'Unavailable listing'}</Link><p className="text-sm text-muted-foreground">{job?.company}</p>{(!job||!available(job))&&<p className="mt-2 text-sm text-destructive">No longer available</p>}</div><Button size="icon" variant="ghost" aria-label="Remove saved job" title="Remove saved job" onClick={async()=>{try{await remove({data:{id:entry.job_id}});await qc.invalidateQueries({queryKey:['job-center']});}catch(e){toast.error((e as Error).message);}}}><Trash2 className="h-4 w-4"/></Button></div><Select value={entry.status} onValueChange={async v=>{try{await save({data:{id:entry.job_id,status:v as typeof TRACKER_STATUSES[number],notes}});await qc.invalidateQueries({queryKey:['job-center']});}catch(e){toast.error((e as Error).message);}}}><SelectTrigger className="mt-4 w-48" aria-label="Application status"><SelectValue/></SelectTrigger><SelectContent>{TRACKER_STATUSES.map(v=><SelectItem value={v} key={v}>{v.replace('_',' ')}</SelectItem>)}</SelectContent></Select><Textarea className="mt-4" aria-label="Private notes" placeholder="Private notes" maxLength={4000} value={notes} onChange={e=>setNotes(e.target.value)}/><Button className="mt-3" size="sm" variant="outline" onClick={async()=>{try{await save({data:{id:entry.job_id,status:entry.status as typeof TRACKER_STATUSES[number],notes}});await qc.invalidateQueries({queryKey:['job-center']});toast.success('Notes saved.');}catch(e){toast.error((e as Error).message);}}}>Save notes</Button></article>;}
