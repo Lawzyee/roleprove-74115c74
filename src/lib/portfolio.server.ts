@@ -2,7 +2,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ROLE_REGISTRY, roleKeyForId } from './role-registry';
 import { PILLARS, PILLAR_LABELS } from './scoring-config';
-import { cleanText, displayUrl, stageReplies, stageTables, stageVisibility, PUBLIC_REQUESTS_PER_MINUTE, type DataTable, type StageVisibility } from './portfolio';
+import { cleanText, displayUrl, stageReplies, stageTables, stageVisibility, PUBLIC_REQUESTS_PER_MINUTE, type StageVisibility, type PublicCard, type PublicFolder, type PublicPortfolio, type PublicStage, type PublicProject } from './portfolio';
+export type { PublicCard, PublicFolder, PublicPortfolio, PublicStage, PublicProject };
 import { detectInjection } from './deliverable-extract';
 
 type Admin = SupabaseClient;
@@ -15,20 +16,6 @@ export type PortfolioRow = {
   photo_path: string | null; photo_version: number; credly_url: string | null;
   show_linkedin: boolean; show_github: boolean; show_credly: boolean; show_other: boolean;
   show_scores: boolean; show_credentials: boolean; show_links: boolean; show_location: boolean; allow_indexing: boolean;
-};
-
-export type PublicCard = { id: string; title: string; insight: string; date: string | null; verified: boolean; score: number | null };
-export type PublicFolder = { key: string; name: string; projects: PublicCard[] };
-export type PublicPortfolio = {
-  slug: string; name: string; headline: string | null; bio: string | null; location: string | null; photoUrl: string | null;
-  links: Array<{ label: string; url: string }>;
-  credentials: Array<{ title: string; issuer: string; year: number | null; status: string; type: string; url: string | null }>;
-  folders: PublicFolder[]; showScores: boolean; indexable: boolean;
-};
-export type PublicStage = { title: string; summary: string | null; replies: Array<{ label: string; reply: string }>; tables: DataTable[] };
-export type PublicProject = {
-  slug: string; ownerName: string; id: string; title: string; role: string; scenario: string; date: string | null; verified: boolean;
-  insight: string; score: number | null; pillars: Array<{ label: string; score: number }> | null; stages: PublicStage[]; indexable: boolean; photoUrl: string | null;
 };
 
 /** One response for private, unpublished and unknown slugs: null. Only rows with is_public = true are ever returned. */

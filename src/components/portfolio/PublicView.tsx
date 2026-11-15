@@ -13,7 +13,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PRACTICE_DISCLAIMER, VERIFIED_MEANING } from "@/lib/portfolio";
 import { reportPortfolioFn } from "@/lib/portfolio.functions";
-import type { PublicCard, PublicPortfolio, PublicProject } from "@/lib/portfolio.server";
+import type { PublicCard, PublicPortfolio, PublicProject } from "@/lib/portfolio";
 
 export type Cta = { body: string; note: string | null; button: string };
 type Mode = "public" | "preview";

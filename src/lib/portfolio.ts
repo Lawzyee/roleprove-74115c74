@@ -110,3 +110,18 @@ export function ctaCopy(s: { enforced: boolean; launchFreeUntil: string | null; 
   }
   return { body: base, note: null, button: s.trialDays > 0 ? 'Start your free trial' : 'Create your portfolio' };
 }
+
+export type PublicCard = { id: string; title: string; insight: string; date: string | null; verified: boolean; score: number | null };
+export type PublicFolder = { key: string; name: string; projects: PublicCard[] };
+export type PublicPortfolio = {
+  slug: string; name: string; headline: string | null; bio: string | null; location: string | null; photoUrl: string | null;
+  links: Array<{ label: string; url: string }>;
+  credentials: Array<{ title: string; issuer: string; year: number | null; status: string; type: string; url: string | null }>;
+  folders: PublicFolder[]; showScores: boolean; indexable: boolean;
+};
+export type PublicStage = { title: string; summary: string | null; replies: Array<{ label: string; reply: string }>; tables: DataTable[] };
+export type PublicProject = {
+  slug: string; ownerName: string; id: string; title: string; role: string; scenario: string; date: string | null; verified: boolean;
+  insight: string; score: number | null; pillars: Array<{ label: string; score: number }> | null; stages: PublicStage[]; indexable: boolean; photoUrl: string | null;
+};
+
