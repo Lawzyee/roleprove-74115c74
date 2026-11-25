@@ -33,3 +33,4 @@
 - Inbox notifications are created only via notify() in src/lib/notifications.server.ts → public.create_notification (service-role-only: duplicate guard, hourly cap, email preference); job-closure notices come from a DB trigger — keeps every writer covered.
 - Application sharing (src/lib/application-profile*.ts): employer views come only from buildShareView (SHAREABLE_ITEMS + ticked items); snapshots/consents are owner-read, server-written and frozen by DB trigger (only withdrawn_at, once); employer reads via readSnapshotForEmployer, in-app only.
 - Absolute links are built only in src/lib/site-url.ts from config, never request host/headers (localhost leaked into emails); site-url.test.ts enforces it.
+- Employer accounts: kind in account_types; route gate + requireCandidate + restrictive RLS separate them; status via audited staffAction — layered so one bypass isn't enough.

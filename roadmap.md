@@ -44,3 +44,5 @@
 - [x] Application profile, employer preview, frozen share snapshots, per-application consent, withdrawal
 - Rule for later employer screens: view in the app only — no bulk export, no file downloads except the CV the candidate included in that snapshot; read only via readSnapshotForEmployer (withdrawn = no access).
 - [ ] Later (out of scope now): employer accounts, applying, review screen before sending, employer views
+- [x] Employer accounts: work-email sign-up, company onboarding/review, team invites, staff Companies page, emails, export/deletion/cleanup.
+- [ ] Employer Terms and Privacy wording (placeholders) — waits on legal text from you.

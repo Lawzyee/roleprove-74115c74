@@ -271,10 +271,11 @@ export async function mySubmissions(a: A, userId: string) {
 }
 
 // ---------- Staff side (db = the staff member's own client, so row-level security decides what is visible) ----------
+type StaffCompanyBase = { id: string; name: string; website: string; email_domain: string; country: string; size_band: string; industry: string; description: string; registration_number: string; public_page_url: string; status: string; status_reason: string; created_at: string; updated_at: string };
 export async function staffListCompanies(db: A, a: A) {
   const { data: companies, error } = await db.from('companies').select(COMPANY_COLS).order('created_at', { ascending: false }).limit(500);
   if (error) fail('Could not load companies.');
-  const list = (companies ?? []) as Array<Record<string, any>>;
+  const list = (companies ?? []) as unknown as Array<StaffCompanyBase>;
   const ids = list.map((c) => c.id);
   const [{ data: members }, { data: notes }, { data: subs }, { data: wait }] = await Promise.all([
     ids.length ? db.from('company_members').select('company_id,user_id,role').in('company_id', ids) : Promise.resolve({ data: [] as any[] }),

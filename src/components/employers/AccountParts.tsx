@@ -43,7 +43,7 @@ export function StatusBanner({ status, reason }: { status: CompanyStatus; reason
   </div>;
 }
 
-export const emptyCompany = (): CompanyInput => ({ name: '', website: 'https://', country: '', size_band: '1-10', industry: 'technology', description: '', registration_number: '', public_page_url: '' });
+export const emptyCompany = (): CompanyInput => ({ name: '', website: '', country: '', size_band: '1-10', industry: 'technology', description: '', registration_number: '', public_page_url: '' });
 
 export function CompanyForm({ initial, domain, submitLabel, disabled, onSubmit }: { initial: CompanyInput; domain: string; submitLabel: string; disabled?: boolean; onSubmit: (v: CompanyInput) => Promise<string | null> }) {
   const [f, setF] = useState<CompanyInput>(initial);
@@ -60,7 +60,7 @@ export function CompanyForm({ initial, domain, submitLabel, disabled, onSubmit }
   return <form onSubmit={submit} className="space-y-4">
     <fieldset disabled={disabled || busy} className="space-y-4">
       {field('name', 'Company name', <Input id="c-name" value={f.name} maxLength={180} onChange={(e) => set('name', e.target.value)} />)}
-      {field('website', 'Company website', <Input id="c-website" value={f.website} maxLength={300} onChange={(e) => set('website', e.target.value)} />, `Your email domain is @${domain}. A website on the same domain gets the "${LEVEL_EMAIL}" label.`)}
+      {field('website', 'Company website', <Input id="c-website" placeholder="yourcompany.com" value={f.website} maxLength={300} onChange={(e) => set('website', e.target.value)} />, `Start with https. Your email domain is @${domain}. A website on the same domain gets the "${LEVEL_EMAIL}" label.`)}
       <div className="grid gap-4 sm:grid-cols-2">
         {field('country', 'Country', <Input id="c-country" value={f.country} maxLength={100} onChange={(e) => set('country', e.target.value)} />)}
         {field('size_band', 'Company size', <Select value={f.size_band} onValueChange={(v) => set('size_band', v as CompanyInput['size_band'])}><SelectTrigger id="c-size_band"><SelectValue /></SelectTrigger><SelectContent>{COMPANY_SIZES.map((s) => <SelectItem key={s} value={s}>{s} people</SelectItem>)}</SelectContent></Select>)}
@@ -68,7 +68,7 @@ export function CompanyForm({ initial, domain, submitLabel, disabled, onSubmit }
       {field('industry', 'Industry', <Select value={f.industry} onValueChange={(v) => set('industry', v as CompanyInput['industry'])}><SelectTrigger id="c-industry"><SelectValue /></SelectTrigger><SelectContent>{INDUSTRIES.map((s) => <SelectItem key={s} value={s}>{s[0]!.toUpperCase() + s.slice(1)}</SelectItem>)}</SelectContent></Select>)}
       {field('description', 'Short description', <Textarea id="c-description" value={f.description} maxLength={600} rows={4} onChange={(e) => set('description', e.target.value)} />, `${f.description.length}/600 characters. Plain text only.`)}
       {field('registration_number', 'Company registration number (optional)', <Input id="c-registration_number" value={f.registration_number} maxLength={60} onChange={(e) => set('registration_number', e.target.value)} />)}
-      {field('public_page_url', 'Public company page (optional)', <Input id="c-public_page_url" value={f.public_page_url} maxLength={300} placeholder="https://" onChange={(e) => set('public_page_url', e.target.value)} />, 'For example your page on a company register or LinkedIn.')}
+      {field('public_page_url', 'Public company page (optional)', <Input id="c-public_page_url" value={f.public_page_url} maxLength={300} placeholder="companieshouse.gov.uk/…" onChange={(e) => set('public_page_url', e.target.value)} />, 'For example your page on a company register or LinkedIn.')}
     </fieldset>
     {err && <p role="alert" className="text-sm text-destructive">{err}</p>}
     {!disabled && <Button type="submit" disabled={busy}>{busy ? 'Saving…' : submitLabel}</Button>}

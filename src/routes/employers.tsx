@@ -25,7 +25,7 @@ function Employers() {
       <p className="text-sm font-medium text-primary">For employers</p>
       <h1 className="mt-2 font-display text-4xl font-semibold leading-tight">Hire on what people can actually do</h1>
       <p className="mt-4 text-lg text-muted-foreground">Candidates on RoleProve complete realistic job simulations for roles like Data Analyst and Customer Support. They can share a portfolio and verified practice score, but only with employers they choose.</p>
-      <p className="mt-6 rounded-lg border border-border bg-accent p-4 text-sm">Employer accounts are coming soon. For now you can list a job link for free and join the waitlist.</p>
+      <div className="mt-6 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-accent p-4 text-sm"><span>Hiring? Create an employer account with your work email.</span><Button asChild size="sm"><Link to="/employers/sign-up">Create an employer account</Link></Button></div>
       <div className="mt-6 flex flex-wrap gap-3"><Button asChild size="lg"><a href="#list-a-job"><Briefcase className="mr-2 h-4 w-4" />List a job</a></Button><Button asChild size="lg" variant="outline"><a href="#waitlist"><Users className="mr-2 h-4 w-4" />Join the waitlist</a></Button></div>
     </section>
     <div className="mt-14 grid gap-10 lg:grid-cols-2">
