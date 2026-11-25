@@ -13,7 +13,6 @@ export const USER_TABLES: Array<{ table: string; column: string }> = [
   { table: 'application_consents', column: 'user_id' },
   { table: 'application_snapshots', column: 'user_id' },
   { table: 'application_profiles', column: 'user_id' },
-  { table: 'notifications', column: 'user_id' },
   { table: 'notification_settings', column: 'user_id' },
   { table: 'job_tracker', column: 'user_id' },
   { table: 'job_preferences', column: 'user_id' },
@@ -31,6 +30,8 @@ export const USER_TABLES: Array<{ table: string; column: string }> = [
   { table: 'data_exports', column: 'user_id' },
   { table: 'subscriptions', column: 'user_id' },
   { table: 'profiles', column: 'id' },
+  // After profiles: a late Stripe cancellation webhook can still create a notice until the profile is gone (sendBillingEmail stops at a missing profile).
+  { table: 'notifications', column: 'user_id' },
 ];
 
 const DONE = ['canceled', 'incomplete_expired'];

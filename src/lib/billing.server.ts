@@ -73,6 +73,6 @@ export async function sendBillingEmail(sub: { metadata: Record<string, string>; 
   const { sendTemplateEmail } = await import('./email-templates/send-email');
   await sendTemplateEmail('billing-update', profile.email, {
     idempotencyKey: `billing-${eventId}`,
-    templateData: { kind, name: profile.name || undefined, accessUntil: kind === 'cancelled' && end && end * 1000 > Date.now() ? new Date(end * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : undefined },
+    templateData: { kind, siteUrl: (await import('./site-url')).siteUrl(), name: profile.name || undefined, accessUntil: kind === 'cancelled' && end && end * 1000 > Date.now() ? new Date(end * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : undefined },
   });
 }

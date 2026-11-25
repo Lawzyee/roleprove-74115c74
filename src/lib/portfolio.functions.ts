@@ -9,12 +9,8 @@ import {
 } from './portfolio.server';
 import { sniffImage, stripImageMetadata } from './image-meta';
 
-function origin() {
-  const req = getRequest();
-  const url = new URL(req.url);
-  const sandboxHost = url.hostname === 'localhost' ? req.headers.get('x-forwarded-host') : null;
-  return sandboxHost ? `https://${sandboxHost}` : url.origin;
-}
+import { siteUrl } from './site-url';
+const origin = () => siteUrl();
 const admin = async () => (await import('@/integrations/supabase/client.server')).supabaseAdmin;
 async function ensurePortfolio(userId: string) {
   const a = await admin();

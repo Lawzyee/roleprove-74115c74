@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Body, Button, Container, Head, Heading, Html, Preview, Text } from '@react-email/components'
+import { absoluteUrl } from '../site-url'
 
 type Kind = 'started' | 'payment_failed' | 'cancelled'
 interface Props { kind?: Kind; name?: string; accessUntil?: string; siteUrl?: string }
@@ -10,7 +11,7 @@ const COPY: Record<Kind, { title: string; body: (p: Props) => string; cta: strin
   cancelled: { title: 'Your cancellation is confirmed', body: (p) => p.accessUntil ? `Your subscription won’t renew. You keep unlimited practice until ${p.accessUntil}.` : 'Your subscription has ended and won’t renew.', cta: 'View your plan', path: '/settings' },
 }
 
-export function BillingUpdateEmail({ kind = 'started', name, accessUntil, siteUrl = 'https://roleprove.com' }: Props) {
+export function BillingUpdateEmail({ kind = 'started', name, accessUntil, siteUrl }: Props) {
   const c = COPY[kind]
   return (
     <Html lang="en"><Head /><Preview>{c.title}</Preview>
@@ -19,7 +20,7 @@ export function BillingUpdateEmail({ kind = 'started', name, accessUntil, siteUr
           <Heading style={{ fontSize: '22px', color: '#1c2b27' }}>{c.title}</Heading>
           <Text style={{ fontSize: '15px', color: '#55575d', lineHeight: '1.5' }}>{name ? `Hi ${name},` : 'Hi,'}</Text>
           <Text style={{ fontSize: '15px', color: '#55575d', lineHeight: '1.5' }}>{c.body({ accessUntil })}</Text>
-          <Button href={`${siteUrl}${c.path}`} style={{ backgroundColor: '#1f7a68', color: '#ffffff', borderRadius: '8px', padding: '12px 20px', fontSize: '15px' }}>{c.cta}</Button>
+          <Button href={siteUrl ? `${siteUrl}${c.path}` : absoluteUrl(c.path)} style={{ backgroundColor: '#1f7a68', color: '#ffffff', borderRadius: '8px', padding: '12px 20px', fontSize: '15px' }}>{c.cta}</Button>
           <Text style={{ fontSize: '12px', color: '#999999', marginTop: '30px' }}>RoleProve · Practice/Prep billing</Text>
           <Text style={{ fontSize: '12px', color: '#999999', margin: '4px 0 0' }}>Questions? Contact <a href="mailto:support@roleprove.com" style={{ color: '#1f7a68' }}>support@roleprove.com</a></Text>
         </Container>

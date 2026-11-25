@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Text } from '@react-email/components'
+import { absoluteUrl } from '../site-url'
 import type { TemplateEntry } from './registry'
 import { EmployerEmail, p } from './employer-layout'
 
@@ -11,4 +12,4 @@ const Email = ({ title, company, expires, removeUrl }: Props) => (
   </EmployerEmail>
 )
 export const template = { component: Email, subject: (d: Record<string, any>) => d.title ? `Your listing is live: ${d.title}` : 'Your job listing is live on RoleProve', displayName: 'Employer job approved',
-  previewData: { title: 'Data Analyst', company: 'Acme', expires: '2026-12-15', removeUrl: 'https://roleprove.com/employers/remove?token=example' } } satisfies TemplateEntry
+  previewData: { title: 'Data Analyst', company: 'Acme', expires: '2026-12-15', removeUrl: absoluteUrl('/employers/remove', { token: 'example' }) } } satisfies TemplateEntry

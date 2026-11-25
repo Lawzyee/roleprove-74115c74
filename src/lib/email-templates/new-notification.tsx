@@ -1,12 +1,13 @@
 import * as React from 'react'
 import { Body, Button, Container, Head, Heading, Html, Preview, Text } from '@react-email/components'
+import { absoluteUrl } from '../site-url'
 import type { TemplateEntry } from './registry'
 
 interface Props { url?: string }
 
 /** Deliberately carries no notification content: sign in to read it. */
 export function NewNotificationEmail({ url }: Props) {
-  const href = url || 'https://roleprove.com/inbox'
+  const href = url || absoluteUrl('/inbox')
   return (
     <Html lang="en"><Head /><Preview>You have a new notification on RoleProve</Preview>
       <Body style={{ backgroundColor: '#ffffff', fontFamily: 'Helvetica, Arial, sans-serif' }}>
@@ -26,5 +27,5 @@ export const template = {
   component: NewNotificationEmail,
   subject: 'You have a new notification on RoleProve',
   displayName: 'New inbox notification',
-  previewData: { url: 'https://roleprove.com/inbox' },
+  previewData: { url: absoluteUrl('/inbox') },
 } satisfies TemplateEntry

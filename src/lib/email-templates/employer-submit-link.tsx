@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Text } from '@react-email/components'
+import { absoluteUrl } from '../site-url'
 import type { TemplateEntry } from './registry'
 import { EmployerEmail, p } from './employer-layout'
 
@@ -11,4 +12,4 @@ const Email = ({ submitUrl }: Props) => (
   </EmployerEmail>
 )
 export const template = { component: Email, subject: 'Confirm your email to list a job on RoleProve', displayName: 'Employer job link confirmation',
-  previewData: { submitUrl: 'https://roleprove.com/employers/submit?token=example' } } satisfies TemplateEntry
+  previewData: { submitUrl: absoluteUrl('/employers/submit', { token: 'example' }) } } satisfies TemplateEntry

@@ -1,3 +1,4 @@
+import { absoluteUrl } from './site-url';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
@@ -45,7 +46,7 @@ export const getBillingAccessFn = createServerFn({ method: 'POST' }).middleware(
   });
 
 export const createCheckoutSession = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ environment, origin: z.string().url() }).parse(data))
+  .inputValidator((data: unknown) => z.object({ environment, origin: z.string().url().optional() }).parse(data))
   .handler(async ({ data, context }) => {
     try {
       const stripe = createStripeClient(data.environment);
@@ -59,11 +60,10 @@ export const createCheckoutSession = createServerFn({ method: 'POST' }).middlewa
       const prices = await stripe.prices.list({ lookup_keys: [PRACTICE_PRICE], active: true });
       const price = prices.data[0];
       if (!price) throw new Error('Practice/Prep price is unavailable.');
-      const origin = new URL(data.origin).origin;
       const session = await stripe.checkout.sessions.create({
         ui_mode: 'embedded_page', mode: 'subscription', customer,
         line_items: [{ price: price.id, quantity: 1 }],
-        return_url: `${origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`,
+        return_url: `${absoluteUrl('/checkout/return')}?session_id={CHECKOUT_SESSION_ID}`,
         metadata: { userId: context.userId }, subscription_data: { metadata: { userId: context.userId } },
       });
       if (!session.client_secret) throw new Error('Stripe did not return a checkout form.');
@@ -72,14 +72,14 @@ export const createCheckoutSession = createServerFn({ method: 'POST' }).middlewa
   });
 
 export const createPortalSession = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ environment, origin: z.string().url() }).parse(data))
+  .inputValidator((data: unknown) => z.object({ environment, origin: z.string().url().optional() }).parse(data))
   .handler(async ({ data, context }) => {
     try {
       const { data: sub, error } = await context.supabase.from('subscriptions').select('stripe_customer_id').eq('user_id', context.userId).eq('environment', data.environment).order('created_at', { ascending: false }).limit(1).maybeSingle();
       if (error) throw error;
       if (!sub) throw new Error('No subscription found.');
       const stripe = createStripeClient(data.environment);
-      const portal = await stripe.billingPortal.sessions.create({ customer: sub.stripe_customer_id, return_url: `${new URL(data.origin).origin}/settings` });
+      const portal = await stripe.billingPortal.sessions.create({ customer: sub.stripe_customer_id, return_url: absoluteUrl('/settings') });
       return { url: portal.url };
     } catch (error) { return { error: getStripeErrorMessage(error) }; }
   });

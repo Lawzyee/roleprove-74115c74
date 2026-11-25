@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
+import { absoluteUrl } from './site-url';
 import { waitlistSchema, workEmailSchema, employerJobSchema, isPersonalEmail, submissionLimitProblem, REJECT_REASONS, WAITLIST_MESSAGE, type WaitlistInput } from './employer';
 
 const admin = async () => (await import('@/integrations/supabase/client.server')).supabaseAdmin;
@@ -23,8 +24,7 @@ async function addToWaitlist(v: Omit<WaitlistInput, 'consent' | 'website'>) {
     ? await a.from('employer_waitlist').update(row).eq('id', existing.id).select('id').single()
     : await a.from('employer_waitlist').insert(row).select('id').single();
   if (error || !data) throw new Error('Could not join the waitlist. Please try again.');
-  const base = s.origin();
-  await send('employer-waitlist-confirm', v.email, { name: v.full_name, confirmUrl: `${base}/employers/confirm?token=${confirm}`, removeUrl: `${base}/employers/leave?token=${remove}` }, `waitlist-confirm-${data.id}-${row.confirm_token_hash.slice(0, 12)}`);
+  await send('employer-waitlist-confirm', v.email, { name: v.full_name, confirmUrl: absoluteUrl('/employers/confirm', { token: confirm }), removeUrl: absoluteUrl('/employers/leave', { token: remove }) }, `waitlist-confirm-${data.id}-${row.confirm_token_hash.slice(0, 12)}`);
 }
 
 export const joinWaitlistFn = createServerFn({ method: 'POST' }).inputValidator((d: unknown) => waitlistSchema.parse(d)).handler(async ({ data }) => {
@@ -58,7 +58,7 @@ export const requestSubmitLinkFn = createServerFn({ method: 'POST' }).inputValid
   const token = s.newToken(); const hash = await s.hashToken(token);
   const { data: row, error } = await a.from('employer_sessions').insert({ email: data.email, token_hash: hash }).select('id').single();
   if (error || !row) return { error: 'Could not send the link. Please try again.' };
-  try { await send('employer-submit-link', data.email, { submitUrl: `${s.origin()}/employers/submit?token=${token}` }, `employer-link-${row.id}`); }
+  try { await send('employer-submit-link', data.email, { submitUrl: absoluteUrl('/employers/submit', { token }) }, `employer-link-${row.id}`); }
   catch (e) { console.error('employer link', e); return { error: 'Could not send the link. Please try again.' }; }
   return { ok: true as const };
 });

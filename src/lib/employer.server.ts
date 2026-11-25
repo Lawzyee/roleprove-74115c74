@@ -1,12 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getRequest } from '@tanstack/react-start/server';
 
-export function origin() {
-  const req = getRequest();
-  const url = new URL(req.url);
-  const sandboxHost = url.hostname === 'localhost' ? req.headers.get('x-forwarded-host') : null;
-  return sandboxHost ? `https://${sandboxHost}` : url.origin;
-}
+import { absoluteUrl } from './site-url';
 /** Random URL-safe token; only its SHA-256 is stored, so a database copy can't be used to click links. */
 export function newToken() {
   const b = crypto.getRandomValues(new Uint8Array(32));
@@ -83,7 +78,7 @@ export async function notifySubmitter(a: SupabaseClient, jobId: string, kind: 'a
   if (!j || j.source_type !== 'employer_submitted' || !p?.submitter_email) return;
   const token = newToken();
   await a.from('job_center_private').update({ removal_token_hash: await hashToken(token) }).eq('job_id', jobId);
-  const removeUrl = `${origin()}/employers/remove?token=${token}`;
+  const removeUrl = absoluteUrl('/employers/remove', { token });
   const { sendTemplateEmail } = await import('@/lib/email-templates/send-email');
   await sendTemplateEmail(kind === 'approved' ? 'employer-job-approved' : 'employer-job-rejected', p.submitter_email,
     { templateData: kind === 'approved' ? { title: j.title, company: j.company, expires: j.expires_date, removeUrl } : { title: j.title, company: j.company, reason: p.reject_reason, note: p.reject_note, removeUrl }, idempotencyKey: `employer-${kind}-${jobId}` },

@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { BODY_MAX, TITLE_MAX, isInternalPath, type NotificationType } from './notifications';
 
-export const APP_ORIGIN = 'https://roleprove.com';
+import { absoluteUrl } from './site-url';
 type Input = { userId: string; type: NotificationType; title: string; body?: string; link: string; relatedType: string; relatedId: string };
 type RpcResult = { created: boolean; id?: string; email?: boolean; reason?: string };
 
@@ -9,7 +9,7 @@ async function emailOne(admin: SupabaseClient, id: string, userId: string) {
   const { data: profile } = await admin.from('profiles').select('email').eq('id', userId).maybeSingle();
   if (profile?.email) {
     const { sendTemplateEmail } = await import('./email-templates/send-email');
-    await sendTemplateEmail('new-notification', profile.email, { idempotencyKey: `notification-${id}`, templateData: { url: `${APP_ORIGIN}/inbox` } });
+    await sendTemplateEmail('new-notification', profile.email, { idempotencyKey: `notification-${id}`, templateData: { url: absoluteUrl('/inbox') } });
   }
   await admin.from('notifications').update({ email_pending: false }).eq('id', id);
 }

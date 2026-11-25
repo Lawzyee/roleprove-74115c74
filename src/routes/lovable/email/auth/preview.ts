@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { siteUrl } from '@/lib/site-url'
 import { render } from '@react-email/render'
 import { createFileRoute } from '@tanstack/react-router'
 import { SignupEmail } from '@/lib/email-templates/signup'
@@ -26,7 +27,7 @@ const ROOT_DOMAIN = "roleprove.com"
 // The sample email uses a fixed placeholder (RFC 6761 .test TLD) so the Go backend
 // can always find-and-replace it with the actual recipient when sending test emails,
 // even if the project's domain has changed since the template was scaffolded.
-const SAMPLE_PROJECT_URL = "https://sparkle-magic-maker-56.lovable.app"
+const SAMPLE_PROJECT_URL = siteUrl()
 const SAMPLE_EMAIL = "user@example.test"
 const SAMPLE_DATA: Record<string, object> = {
   signup: {

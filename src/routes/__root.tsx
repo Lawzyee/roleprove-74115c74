@@ -15,29 +15,28 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SiteFooter } from "@/components/legal/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
+import { Button } from "@/components/ui/button";
 import { CookieBanner } from "@/components/legal/CookieBanner";
 import { TermsUpdatePrompt } from "@/components/legal/TermsUpdatePrompt";
 import consentDefaults from "@/lib/consent-defaults.js?raw";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
+    <>
+      <SiteHeader />
+      <main className="mx-auto flex max-w-3xl flex-col items-start px-5 py-16">
+        <p className="text-sm font-medium text-primary">404</p>
+        <h1 className="mt-2 font-display text-3xl font-semibold">Page not found</h1>
+        <p className="mt-3 text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Button asChild><Link to="/">Go to the home page</Link></Button>
+          <Button asChild variant="outline"><Link to="/help">Visit the help centre</Link></Button>
         </div>
-      </div>
-    </div>
+      </main>
+    </>
   );
 }
 
