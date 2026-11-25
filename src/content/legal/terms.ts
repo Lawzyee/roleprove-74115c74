@@ -104,6 +104,14 @@ export const terms: LegalDocument = {
       ],
     },
     {
+      id: "employer-terms",
+      heading: "10a. Employer Terms",
+      blocks: [
+        p("These terms apply when you submit a job listing or join the employer waitlist. [[PLACEHOLDER: Employer Terms wording]]"),
+        p("By submitting a listing you confirm that you are authorised to post it for the company, that the job is genuine, lawful and non-discriminatory, and that candidates are never charged to apply. We review every listing and may decline or remove any listing at our discretion. Listings are shown as external listings and RoleProve does not verify employers. [[PLACEHOLDER: Employer Terms wording]]"),
+      ],
+    },
+    {
       id: "liability",
       heading: "11. Disclaimers and limits of liability",
       blocks: [

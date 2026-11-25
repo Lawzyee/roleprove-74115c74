@@ -34,11 +34,11 @@ export const jobSchema = z.object({
   if(v.salary_min!==null&&v.salary_max!==null&&v.salary_max<v.salary_min) c.addIssue({code:'custom',path:['salary_max'],message:'Maximum must be at least the minimum.'});
   if((v.salary_min!==null||v.salary_max!==null)&&(!v.salary_currency||!v.salary_period)) c.addIssue({code:'custom',path:['salary_currency'],message:'Choose currency and salary period.'});
   if(v.expires_date<v.posted_date) c.addIssue({code:'custom',path:['expires_date'],message:'Expiry must be on or after posting.'});
-  if(v.status==='published'&&!v.practice_text) c.addIssue({code:'custom',path:['practice_text'],message:'Add practice text before publishing.'});
+  if(v.status==='published'&&!v.practice_text&&v.source_type!=='employer_submitted') c.addIssue({code:'custom',path:['practice_text'],message:'Add practice text before publishing.'});
   if(v.company_website&&applyLinkProblem(v.company_website)) c.addIssue({code:'custom',path:['company_website'],message:'Use a public HTTPS website.'});
 });
 export type JobInput = z.infer<typeof jobSchema>;
-export type Job = { id:string;title:string;company:string;company_website:string|null;city:string;country:string;arrangement:string;employment:string;role_key:string;other_role:string;seniority:string;salary_currency:string|null;salary_min:number|null;salary_max:number|null;salary_period:string|null;summary:string;apply_url:string;posted_date:string;expires_date:string;status:string;deleted_at:string|null };
+export type Job = { id:string;title:string;company:string;company_website:string|null;city:string;country:string;arrangement:string;employment:string;role_key:string;other_role:string;seniority:string;salary_currency:string|null;salary_min:number|null;salary_max:number|null;salary_period:string|null;summary:string;apply_url:string;posted_date:string;expires_date:string;status:string;deleted_at:string|null;source_type?:string };
 export type Preferences = { roles:string[];arrangements:string[];employment_types:string[];countries:string[] };
 export const EMPTY_PREFERENCES: Preferences = { roles:[], arrangements:[], employment_types:[], countries:[] };
 export type Filters = Preferences & { keyword:string;location:string;days:string;salary:string;sort:string;seniority:string };

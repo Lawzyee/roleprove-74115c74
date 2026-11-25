@@ -12,6 +12,7 @@ export function SiteFooter() {
           <Link to="/cookies" className="hover:text-foreground">Cookies</Link>
           <button type="button" onClick={openCookieSettings} className="hover:text-foreground">Cookie settings</button>
           <Link to="/help" className="hover:text-foreground">Help</Link>
+          <Link to="/employers" className="hover:text-foreground">For employers</Link>
         </nav>
       </div>
     </footer>

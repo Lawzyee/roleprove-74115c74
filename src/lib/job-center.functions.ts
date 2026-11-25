@@ -29,16 +29,24 @@ export const reportJobFn=createServerFn({method:'POST'}).middleware([requireSupa
 });
 export const getStaffJobsFn=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).handler(async({context})=>{
   const {data:staff,error}=await context.supabase.rpc('is_support_staff',{_user_id:context.userId});if(error||staff!==true)throw new Error('Staff only.');
-  const {data:jobs,error:e}=await context.supabase.from('job_center_jobs').select('*,job_center_private(*)').is('deleted_at',null).order('created_at',{ascending:false});if(e)throw e;return {jobs:jobs??[]};
+  const {data:jobs,error:e}=await context.supabase.from('job_center_jobs').select('*,job_center_private(*)').is('deleted_at',null).order('created_at',{ascending:false});if(e)throw e;
+  const {supabaseAdmin}=await import('@/integrations/supabase/client.server');const {employerSettings}=await import('./employer.server');const {domainMatch,isPersonalEmail}=await import('./employer');
+  const allow=(await employerSettings(supabaseAdmin)).hiring_software_domains as string[];const list=jobs??[];
+  // Staff review flags: computed on the server from the private submitter email, the allow-list setting and the link hash.
+  return {jobs:list.map(j=>{const email=j.job_center_private?.submitter_email??'';return {...j,flags:{domain:email?domainMatch(j.apply_url,email,allow):null,personalEmail:email?isPersonalEmail(email):false,duplicate:Boolean(j.apply_url_hash&&list.some(o=>o.id!==j.id&&o.apply_url_hash===j.apply_url_hash))}};})};
 });
 export const saveStaffJobFn=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((d:unknown)=>jobSchema.parse(d)).handler(async({data,context})=>{
   const {data:staff,error}=await context.supabase.rpc('is_support_staff',{_user_id:context.userId});if(error||staff!==true)throw new Error('Staff only.');
   if(data.status==='published'){const {resolvePublicLink}=await import('./job-links.server');await resolvePublicLink(data.apply_url);if(data.company_website)await resolvePublicLink(data.company_website);}
+  let previousStatus:string|null=null;if(data.id){const {data:prev}=await context.supabase.from('job_center_jobs').select('status').eq('id',data.id).maybeSingle();previousStatus=prev?.status??null;}
   const {id,practice_text,source_note,staff_notes,submitter_name,submitter_email,...publicJob}=data;
   const payload={...publicJob,company_website:publicJob.company_website||null,updated_at:new Date().toISOString()};
   const result=id?await context.supabase.from('job_center_jobs').update(payload).eq('id',id).select('id').single():await context.supabase.from('job_center_jobs').insert(payload).select('id').single();
   if(result.error||!result.data)throw new Error(result.error?.code==='23505'?'That source and external ID already identify a job.':'Could not save the job.');
-  const {error:e}=await context.supabase.from('job_center_private').upsert({job_id:result.data.id,practice_text,source_note,staff_notes,submitter_name:data.source_type==='employer_submitted'?submitter_name:'',submitter_email:data.source_type==='employer_submitted'?submitter_email:'',consecutive_failures:0,link_broken:false,last_checked_at:null});if(e)throw new Error('Could not save private job details.');return {id:result.data.id};
+  const {error:e}=await context.supabase.from('job_center_private').upsert({job_id:result.data.id,practice_text,source_note,staff_notes,submitter_name:data.source_type==='employer_submitted'?submitter_name:'',submitter_email:data.source_type==='employer_submitted'?submitter_email:'',consecutive_failures:0,link_broken:false,last_checked_at:null});if(e)throw new Error('Could not save private job details.');
+  let emailed:boolean|null=null;
+  if(previousStatus==='pending_review'&&data.status==='published'){const {supabaseAdmin}=await import('@/integrations/supabase/client.server');await supabaseAdmin.from('job_center_private').update({reviewed_at:new Date().toISOString()}).eq('job_id',result.data.id);if(data.source_type==='employer_submitted'){try{const {notifySubmitter}=await import('./employer.server');await notifySubmitter(supabaseAdmin,result.data.id,'approved');emailed=true;}catch(err){console.error('approve email',err);emailed=false;}}}
+  return {id:result.data.id,emailed};
 });
 export const deleteStaffJobFn=createServerFn({method:'POST'}).middleware([requireSupabaseAuth]).inputValidator((d:unknown)=>idSchema.parse(d)).handler(async({data,context})=>{
   const {data:staff,error}=await context.supabase.rpc('is_support_staff',{_user_id:context.userId});if(error||staff!==true)throw new Error('Staff only.');
@@ -54,7 +62,7 @@ export const practiceJobFn=createServerFn({method:'POST'}).middleware([requireSu
   if(error||!job||job.status!=='published'||job.deleted_at||job.expires_date<new Date().toISOString().slice(0,10))throw new Error('Job unavailable.');
   if(data.kind==='simulation'&&job.role_key==='other')throw new Error('A simulation for that role is not available yet.');
   const {supabaseAdmin}=await import('@/integrations/supabase/client.server');
-  const {data:privateJob,error:p}=await supabaseAdmin.from('job_center_private').select('practice_text').eq('job_id',job.id).single();if(p||!privateJob)throw new Error('Practice text unavailable.');
+  const {data:privateJob,error:p}=await supabaseAdmin.from('job_center_private').select('practice_text').eq('job_id',job.id).single();if(p||!privateJob)throw new Error('Practice text unavailable.');if(!privateJob.practice_text)throw new Error('Practice isn\u2019t available for this listing.');
   const {withUsage}=await import('./billing.server');
   const {ROLE_REGISTRY}=await import('./role-registry');
   const roleKey=job.role_key==='data_analyst'||job.role_key==='customer_support'?job.role_key:undefined;

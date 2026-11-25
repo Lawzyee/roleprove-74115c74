@@ -103,6 +103,15 @@ export const privacy: LegalDocument = {
       ],
     },
     {
+      id: "employers",
+      heading: "7a. Employer waitlist and employer-submitted jobs",
+      blocks: [
+        p("If you join the employer waitlist we collect your name, work email, company, job title, company size, country, the roles and hiring types you're interested in, approximate hires per year, any message, when you consented and whether you confirmed your email. We use it only to contact you about RoleProve's employer features. Unconfirmed entries are deleted after 7 days; confirmed entries are kept until you remove them, or for at most 24 months. [[PLACEHOLDER: confirm wording and retention]]"),
+        p("If you submit a job link we collect the job details, any job description you choose to share for practice exercises (stored privately and never shown in full to candidates), and your name and confirmed work email so our team can review the listing and email you the decision. Your contact details are visible only to our staff. Jobs not reviewed within 30 days, and rejected jobs after 90 days, are deleted with your contact details; for approved jobs your contact details are deleted 90 days after the job expires or is removed. [[PLACEHOLDER: confirm wording and retention]]"),
+        p("To protect these forms from abuse we keep a scrambled (keyed hash) copy of your internet address for about a day. Waitlist and job submission details are not linked to RoleProve user accounts. Every waitlist email has a \"Remove me\" link and every listing email has a \"Remove this listing\" link; both work without signing in. You can also ask support@roleprove.com. [[PLACEHOLDER: confirm wording and retention]]"),
+      ],
+    },
+    {
       id: "rights",
       heading: "8. Your rights",
       blocks: [

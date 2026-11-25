@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { authenticateCronRequest } from '@/integrations/supabase/cron-auth'
 
-// Hourly: deletes export zips older than 24 hours, and visitor portfolio reports past their retention period.
+// Hourly: deletes export zips older than 24 hours, visitor portfolio reports past retention, job-center expiry/link checks, and employer waitlist/submission data past retention.
 export const Route = createFileRoute('/api/public/hooks/purge-exports')({
   server: {
     handlers: {
@@ -16,7 +16,9 @@ export const Route = createFileRoute('/api/public/hooks/purge-exports')({
           const reportsRemoved = await purgeOldReports(supabaseAdmin)
           const { cleanJobCenter } = await import('@/lib/job-center.server')
           const jobs = await cleanJobCenter(supabaseAdmin)
-          return Response.json({ removed, reportsRemoved, jobs })
+          const { cleanEmployerData } = await import('@/lib/employer.server')
+          const employers = await cleanEmployerData(supabaseAdmin)
+          return Response.json({ removed, reportsRemoved, jobs, employers })
         } catch (e) {
           console.error('purge exports', e)
           return new Response('Purge failed', { status: 500 })

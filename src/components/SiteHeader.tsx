@@ -120,6 +120,11 @@ export function SiteHeader() {
                       <HelpCircle className="mr-2 h-4 w-4" /> Help
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/employers">
+                      <Library className="mr-2 h-4 w-4" /> For employers
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" /> Log out
@@ -129,10 +134,13 @@ export function SiteHeader() {
             </>
           ) : (
             <>
-              <Button asChild variant="ghost" size="sm">
+              <Button asChild variant="ghost" size="sm" className="px-2 sm:px-3">
+                <Link to="/employers"><span className="sm:hidden">Employers</span><span className="hidden sm:inline">For employers</span></Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
                 <Link to="/help">Help</Link>
               </Button>
-              <Button asChild variant="ghost" size="sm">
+              <Button asChild variant="ghost" size="sm" className="px-2 sm:px-3">
                 <Link to="/auth">Log in</Link>
               </Button>
               <Button asChild size="sm">

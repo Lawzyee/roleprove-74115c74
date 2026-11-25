@@ -1,6 +1,10 @@
 import type { ComponentType } from 'react'
 import { template as billingUpdate } from './billing-update'
 import { template as dataExportRequested } from './data-export-requested'
+import { template as employerWaitlistConfirm } from './employer-waitlist-confirm'
+import { template as employerSubmitLink } from './employer-submit-link'
+import { template as employerJobApproved } from './employer-job-approved'
+import { template as employerJobRejected } from './employer-job-rejected'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -22,6 +26,10 @@ export interface TemplateEntry {
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'billing-update': billingUpdate,
   'data-export-requested': dataExportRequested,
+  'employer-waitlist-confirm': employerWaitlistConfirm,
+  'employer-submit-link': employerSubmitLink,
+  'employer-job-approved': employerJobApproved,
+  'employer-job-rejected': employerJobRejected,
   // Add templates here as they are created, e.g.:
   // 'welcome': welcomeTemplate,
 }

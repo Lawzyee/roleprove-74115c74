@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CookiesRouteImport } from './routes/cookies'
+import { Route as EmployersRouteImport } from './routes/employers'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -23,6 +24,11 @@ import { Route as AuthenticatedRolesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authenticated/subscribe'
 import { Route as AuthConfirmRouteImport } from './routes/auth_.confirm'
+import { Route as EmployersConfirmRouteImport } from './routes/employers_.confirm'
+import { Route as EmployersLeaveRouteImport } from './routes/employers_.leave'
+import { Route as EmployersRemoveRouteImport } from './routes/employers_.remove'
+import { Route as EmployersSubmitRouteImport } from './routes/employers_.submit'
+import { Route as AuthenticatedAdminEmployersRouteImport } from './routes/_authenticated/admin.employers'
 import { Route as AuthenticatedAdminJobsRouteImport } from './routes/_authenticated/admin.jobs'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedCheckoutReturnRouteImport } from './routes/_authenticated/checkout.return'
@@ -67,6 +73,11 @@ const AuthRoute = AuthRouteImport.update({
 const CookiesRoute = CookiesRouteImport.update({
   id: '/cookies',
   path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployersRoute = EmployersRouteImport.update({
+  id: '/employers',
+  path: '/employers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HelpRoute = HelpRouteImport.update({
@@ -120,6 +131,32 @@ const AuthConfirmRoute = AuthConfirmRouteImport.update({
   path: '/auth/confirm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmployersConfirmRoute = EmployersConfirmRouteImport.update({
+  id: '/employers_/confirm',
+  path: '/employers/confirm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployersLeaveRoute = EmployersLeaveRouteImport.update({
+  id: '/employers_/leave',
+  path: '/employers/leave',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployersRemoveRoute = EmployersRemoveRouteImport.update({
+  id: '/employers_/remove',
+  path: '/employers/remove',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployersSubmitRoute = EmployersSubmitRouteImport.update({
+  id: '/employers_/submit',
+  path: '/employers/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminEmployersRoute =
+  AuthenticatedAdminEmployersRouteImport.update({
+    id: '/admin/employers',
+    path: '/admin/employers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminJobsRoute = AuthenticatedAdminJobsRouteImport.update({
   id: '/admin/jobs',
   path: '/admin/jobs',
@@ -273,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/cookies': typeof CookiesRoute
+  '/employers': typeof EmployersRoute
   '/help': typeof HelpRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -283,6 +321,11 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/employers/confirm': typeof EmployersConfirmRoute
+  '/employers/leave': typeof EmployersLeaveRoute
+  '/employers/remove': typeof EmployersRemoveRoute
+  '/employers/submit': typeof EmployersSubmitRoute
+  '/admin/employers': typeof AuthenticatedAdminEmployersRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
@@ -314,6 +357,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/cookies': typeof CookiesRoute
+  '/employers': typeof EmployersRoute
   '/help': typeof HelpRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -324,6 +368,11 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/auth/confirm': typeof AuthConfirmRoute
+  '/employers/confirm': typeof EmployersConfirmRoute
+  '/employers/leave': typeof EmployersLeaveRoute
+  '/employers/remove': typeof EmployersRemoveRoute
+  '/employers/submit': typeof EmployersSubmitRoute
+  '/admin/employers': typeof AuthenticatedAdminEmployersRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
@@ -357,6 +406,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/cookies': typeof CookiesRoute
+  '/employers': typeof EmployersRoute
   '/help': typeof HelpRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
@@ -367,6 +417,11 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
   '/auth_/confirm': typeof AuthConfirmRoute
+  '/employers_/confirm': typeof EmployersConfirmRoute
+  '/employers_/leave': typeof EmployersLeaveRoute
+  '/employers_/remove': typeof EmployersRemoveRoute
+  '/employers_/submit': typeof EmployersSubmitRoute
+  '/_authenticated/admin/employers': typeof AuthenticatedAdminEmployersRoute
   '/_authenticated/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/checkout/return': typeof AuthenticatedCheckoutReturnRoute
@@ -400,6 +455,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/cookies'
+    | '/employers'
     | '/help'
     | '/privacy'
     | '/terms'
@@ -410,6 +466,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscribe'
     | '/auth/confirm'
+    | '/employers/confirm'
+    | '/employers/leave'
+    | '/employers/remove'
+    | '/employers/submit'
+    | '/admin/employers'
     | '/admin/jobs'
     | '/admin/support'
     | '/checkout/return'
@@ -441,6 +502,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/cookies'
+    | '/employers'
     | '/help'
     | '/privacy'
     | '/terms'
@@ -451,6 +513,11 @@ export interface FileRouteTypes {
     | '/settings'
     | '/subscribe'
     | '/auth/confirm'
+    | '/employers/confirm'
+    | '/employers/leave'
+    | '/employers/remove'
+    | '/employers/submit'
+    | '/admin/employers'
     | '/admin/jobs'
     | '/admin/support'
     | '/checkout/return'
@@ -483,6 +550,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/cookies'
+    | '/employers'
     | '/help'
     | '/privacy'
     | '/terms'
@@ -493,6 +561,11 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/subscribe'
     | '/auth_/confirm'
+    | '/employers_/confirm'
+    | '/employers_/leave'
+    | '/employers_/remove'
+    | '/employers_/submit'
+    | '/_authenticated/admin/employers'
     | '/_authenticated/admin/jobs'
     | '/_authenticated/admin/support'
     | '/_authenticated/checkout/return'
@@ -526,10 +599,15 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CookiesRoute: typeof CookiesRoute
+  EmployersRoute: typeof EmployersRoute
   HelpRoute: typeof HelpRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
+  EmployersConfirmRoute: typeof EmployersConfirmRoute
+  EmployersLeaveRoute: typeof EmployersLeaveRoute
+  EmployersRemoveRoute: typeof EmployersRemoveRoute
+  EmployersSubmitRoute: typeof EmployersSubmitRoute
   PSlugProjectIdRoute: typeof PSlugProjectIdRoute
   PSlugIndexRoute: typeof PSlugIndexRoute
   ApiPublicHooksPurgeExportsRoute: typeof ApiPublicHooksPurgeExportsRoute
@@ -568,6 +646,13 @@ declare module '@tanstack/react-router' {
       path: '/cookies'
       fullPath: '/cookies'
       preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employers': {
+      id: '/employers'
+      path: '/employers'
+      fullPath: '/employers'
+      preLoaderRoute: typeof EmployersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/help': {
@@ -639,6 +724,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/confirm'
       preLoaderRoute: typeof AuthConfirmRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/employers_/confirm': {
+      id: '/employers_/confirm'
+      path: '/employers/confirm'
+      fullPath: '/employers/confirm'
+      preLoaderRoute: typeof EmployersConfirmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employers_/leave': {
+      id: '/employers_/leave'
+      path: '/employers/leave'
+      fullPath: '/employers/leave'
+      preLoaderRoute: typeof EmployersLeaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employers_/remove': {
+      id: '/employers_/remove'
+      path: '/employers/remove'
+      fullPath: '/employers/remove'
+      preLoaderRoute: typeof EmployersRemoveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employers_/submit': {
+      id: '/employers_/submit'
+      path: '/employers/submit'
+      fullPath: '/employers/submit'
+      preLoaderRoute: typeof EmployersSubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/employers': {
+      id: '/_authenticated/admin/employers'
+      path: '/admin/employers'
+      fullPath: '/admin/employers'
+      preLoaderRoute: typeof AuthenticatedAdminEmployersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/jobs': {
       id: '/_authenticated/admin/jobs'
@@ -832,6 +952,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRolesRoute: typeof AuthenticatedRolesRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSubscribeRoute: typeof AuthenticatedSubscribeRoute
+  AuthenticatedAdminEmployersRoute: typeof AuthenticatedAdminEmployersRoute
   AuthenticatedAdminJobsRoute: typeof AuthenticatedAdminJobsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedCheckoutReturnRoute: typeof AuthenticatedCheckoutReturnRoute
@@ -859,6 +980,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRolesRoute: AuthenticatedRolesRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSubscribeRoute: AuthenticatedSubscribeRoute,
+  AuthenticatedAdminEmployersRoute: AuthenticatedAdminEmployersRoute,
   AuthenticatedAdminJobsRoute: AuthenticatedAdminJobsRoute,
   AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
   AuthenticatedCheckoutReturnRoute: AuthenticatedCheckoutReturnRoute,
@@ -891,10 +1013,15 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CookiesRoute: CookiesRoute,
+  EmployersRoute: EmployersRoute,
   HelpRoute: HelpRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   AuthConfirmRoute: AuthConfirmRoute,
+  EmployersConfirmRoute: EmployersConfirmRoute,
+  EmployersLeaveRoute: EmployersLeaveRoute,
+  EmployersRemoveRoute: EmployersRemoveRoute,
+  EmployersSubmitRoute: EmployersSubmitRoute,
   PSlugProjectIdRoute: PSlugProjectIdRoute,
   PSlugIndexRoute: PSlugIndexRoute,
   ApiPublicHooksPurgeExportsRoute: ApiPublicHooksPurgeExportsRoute,

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { MapPin, Bookmark, ArrowUpRight } from 'lucide-react';
 import { ROLE_REGISTRY } from '@/lib/role-registry';
 import { salaryLabel, type Job } from '@/lib/job-center';
+import { PROVENANCE_BADGE } from '@/lib/employer';
 export function jobRole(j:Job) { return j.role_key==='data_analyst'?ROLE_REGISTRY.data_analyst.name:j.role_key==='customer_support'?ROLE_REGISTRY.customer_support.name:j.other_role; }
 export function JobCard({job,saved,onSave}:{job:Job;saved:boolean;onSave:()=>void}) {
   return <article className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-5">
@@ -11,7 +12,7 @@ export function JobCard({job,saved,onSave}:{job:Job;saved:boolean;onSave:()=>voi
     <Link to="/jobs/$jobId" params={{jobId:job.id}} className="mt-4 font-display text-lg font-semibold text-foreground hover:text-primary">{job.title}</Link>
     <p className="mt-1 text-sm">{job.company}</p><p className="mt-3 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="h-4 w-4 shrink-0"/>{[job.city,job.country].filter(Boolean).join(', ')||'Location not specified'}</p>
     <div className="mt-3 flex flex-wrap gap-2"><Badge variant="secondary">{job.arrangement}</Badge><Badge variant="outline">{job.employment}</Badge><Badge variant="outline">{jobRole(job)}</Badge></div>
-    {salaryLabel(job)&&<p className="mt-4 text-sm font-medium">{salaryLabel(job)}</p>}
+    {job.source_type==='employer_submitted'&&<p className="mt-3 text-xs text-muted-foreground">{PROVENANCE_BADGE}</p>}{salaryLabel(job)&&<p className="mt-4 text-sm font-medium">{salaryLabel(job)}</p>}
     <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-5 text-xs text-muted-foreground"><span>External listing · {job.posted_date}</span><Link to="/jobs/$jobId" params={{jobId:job.id}} aria-label={`View ${job.title}`}><ArrowUpRight className="h-4 w-4"/></Link></div>
   </article>;
 }
