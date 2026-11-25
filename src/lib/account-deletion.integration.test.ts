@@ -67,7 +67,9 @@ async function seedAccount() {
 
     // Application profile with a project, plus one frozen snapshot and consent.
     { const r = await admin.from('application_profiles').insert({ user_id: uid, headline: 'App headline', project_attempt_ids: [attempt.id] }); if (r.error) throw new Error('application profile: ' + r.error.message); }
-    { const { createSnapshot } = await import('./application-profile.server'); await createSnapshot(admin, uid, { employerRef: 'test-employer' }); }
+    { const { createSnapshot } = await import('./application-profile.server'); const snap = await createSnapshot(admin, uid, { employerRef: 'test-employer' });
+      must(await admin.storage.from('application-cvs').upload(`${uid}/${snap.snapshotId}/cv.pdf`, file('%PDF', 'application/pdf')), 'cv copy');
+      { const r = await admin.from('job_applications').insert({ user_id: uid, snapshot_id: snap.snapshotId, job_title: 'Applied job', company_name: 'Co', cv_copy_path: `${uid}/${snap.snapshotId}/cv.pdf` }); if (r.error) throw new Error('application: ' + r.error.message); } }
 
     // Real Stripe test-mode subscription (trial, so no card needed).
     const customer = await stripe.customers.create({ email, name: 'Erasure Test', metadata: { userId: uid } });
@@ -83,7 +85,7 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
     const { admin, stripe, must, eraseAccount, listUserFiles, USER_TABLES, email, uid, slug, sim, task, attempt, sess, q, ticket, msg, customer, live, liveMsg, listing } = await seedAccount();
     const legal = must(await admin.from('legal_acceptances').select('id').eq('user_id', uid), 'legal');
     expect(legal.length).toBeGreaterThan(0);
-    expect((await listUserFiles(admin, uid)).length).toBe(6);
+    expect((await listUserFiles(admin, uid)).length).toBe(7);
     const { loadPublicPortfolioRow } = await import('./portfolio.server');
     expect((await loadPublicPortfolioRow(admin, slug))?.user_id).toBe(uid);
 
@@ -158,9 +160,9 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
       expect(JSON.stringify(all)).not.toContain('"reason":"test"');
       expect(JSON.stringify(all)).not.toContain('steering test');
       // All six files are inside the zip.
-      for (const prefix of ['files/deliverables/', 'files/deliverables/interview-prep-cv/', 'files/attempt-recordings/', 'files/credentials/', 'files/support-attachments/', 'files/portfolio-photos/'])
+      for (const prefix of ['files/deliverables/', 'files/deliverables/interview-prep-cv/', 'files/attempt-recordings/', 'files/credentials/', 'files/support-attachments/', 'files/portfolio-photos/', 'files/application-cvs/'])
         expect(names.some((n) => n.startsWith(prefix)), prefix).toBe(true);
-      expect(names.filter((n) => n.startsWith('files/')).length).toBe(6);
+      expect(names.filter((n) => n.startsWith('files/')).length).toBe(7);
       const readme = strFromU8(files['README.txt']);
       for (const s of SECTIONS) expect(readme).toContain(`data/${s.file}.csv`);
       expect(readme).toContain(NOT_INCLUDED[0]);

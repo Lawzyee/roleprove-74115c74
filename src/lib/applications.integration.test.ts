@@ -15,7 +15,7 @@ describe.skipIf(!ready)('apply in RoleProve (live database)', () => {
     const tag = crypto.randomUUID().slice(0, 8); const ids: string[] = []; const companies: string[] = [];
     const user = async (kind: 'employer' | 'candidate', local: string) => {
       const email = `${local}-${tag}@example.com`, password = crypto.randomUUID();
-      const u = must(await a.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { account_type: kind } }), 'user').user; ids.push(u.id);
+      const cu = await a.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { account_type: kind } }); if (cu.error || !cu.data.user) throw new Error('user'); const u = cu.data.user; ids.push(u.id);
       const db = client(); const l = await db.auth.signInWithPassword({ email, password }); if (l.error) throw l.error; return { id: u.id, db };
     };
     const company = async (owner: string, domain: string) => { const c = must(await a.from('companies').insert({ name: `Apply QA ${tag}`, website: `https://${domain}`, email_domain: domain, country: 'Nigeria', size_band: '1-10', industry: 'technology', status: 'approved' }).select('*').single(), 'company'); companies.push(c.id); must(await a.from('company_members').insert({ company_id: c.id, user_id: owner, role: 'owner' }).select('*').single(), 'member'); return c; };
@@ -120,7 +120,7 @@ describe.skipIf(!ready)('apply in RoleProve (live database)', () => {
     const { supabaseAdmin: a } = await import('@/integrations/supabase/client.server');
     const s = await import('./applications.server');
     const tag = crypto.randomUUID().slice(0, 8);
-    const u = must(await a.auth.admin.createUser({ email: `ret-${tag}@example.com`, password: crypto.randomUUID(), email_confirm: true }), 'user').user;
+    const cu = await a.auth.admin.createUser({ email: `ret-${tag}@example.com`, password: crypto.randomUUID(), email_confirm: true }); if (cu.error || !cu.data.user) throw new Error('user'); const u = cu.data.user;
     const c = must(await a.from('companies').insert({ name: `Ret ${tag}`, website: `https://ret-${tag}.example.com`, email_domain: `ret-${tag}.example.com`, country: 'Nigeria', size_band: '1-10', industry: 'technology', status: 'approved' }).select('id').single(), 'company');
     try {
       const mk = async () => { const snap = must(await a.from('application_snapshots').insert({ user_id: u.id, content: { name: 'X', contact: { mode: 'inbox' } }, included_items: ['name'] }).select('id').single(), 'snap'); const p = `${u.id}/${snap.id}/cv.pdf`; must(await a.storage.from('application-cvs').upload(p, file('%PDF', 'application/pdf')), 'copy'); return must(await a.from('job_applications').insert({ user_id: u.id, company_id: c.id, snapshot_id: snap.id, job_title: 'J', company_name: 'C', cv_copy_path: p }).select('id,snapshot_id,cv_copy_path').single(), 'app'); };

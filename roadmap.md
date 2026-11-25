@@ -7,6 +7,6 @@
 ## Open
 - [ ] Job center: publish and daily safe link checks — the link checker can't be reached from the sandbox; pinned TLS check unverified on the published site.
 - [ ] Job center: staff publication, "Other" interview prep and real generation-limit exhaustion not yet verified in the browser.
-- [ ] Later: applying to jobs, review screen before sending, employer views of applications.
+- [ ] Apply in RoleProve (5a): built and live-tested; not yet clicked through in the browser. Privacy/Terms application wording is a placeholder.
 - [ ] Employer Terms, Privacy/Terms job-posting wording and posting standards (placeholders) — waits on legal text from you.
 - [ ] Employer flow in the browser while signed in as an employer (confirm, set up, approve, invite, remove, delete) — covered by the live test, not clicked through.

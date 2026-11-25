@@ -33,3 +33,4 @@
 - Absolute links are built only in src/lib/site-url.ts from config, never request host/headers; site-url.test.ts enforces it.
 - Employer accounts: kind in account_types; route gate + requireCandidate + restrictive RLS separate them; status via audited staffAction — layered so one bypass isn't enough.
 - Employer postings: employer_jobs is company-owned and server-written; atomic triggers project only public fields to candidate listings and practice to the private table, preserving candidate-table restrictions.
+- Applications: job_applications rows are server-written; employers read snapshots only via applications.server (approved company re-checked, opens logged/rate-limited); CV copies live per snapshot in application-cvs/{userId}/; table grants are column-limited.
