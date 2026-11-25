@@ -67,6 +67,9 @@ export async function sendBillingEmail(sub: { metadata: Record<string, string>; 
   const { data: profile } = await supabaseAdmin.from('profiles').select('email, name').eq('id', userId).maybeSingle();
   if (!profile?.email) return; // deleted accounts get no email
   const end = sub.items.data[0]?.current_period_end;
+  const { notify } = await import('./notifications.server');
+  const notice = { started: ['Your subscription has started', 'Your Practice/Prep subscription is active.'], payment_failed: ['A subscription payment failed', 'Please update your payment details to keep access.'], cancelled: ['Your subscription was cancelled', 'Your subscription has been cancelled.'] }[kind];
+  await notify(supabaseAdmin, { userId, type: 'account', title: notice[0], body: notice[1], link: '/settings', relatedType: 'billing_event', relatedId: eventId }).catch((e) => console.error('notify billing', e));
   const { sendTemplateEmail } = await import('./email-templates/send-email');
   await sendTemplateEmail('billing-update', profile.email, {
     idempotencyKey: `billing-${eventId}`,

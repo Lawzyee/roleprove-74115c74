@@ -36,6 +36,9 @@ export type Database = {
           launch_free_until: string | null
           max_interview_turns: number
           max_upload_mb: number
+          notification_read_retention_days: number
+          notification_retention_days: number
+          notifications_per_hour: number
           paywall_enforced: boolean
           paywall_enforced_since: string | null
           recruiter_visibility_enabled: boolean
@@ -64,6 +67,9 @@ export type Database = {
           launch_free_until?: string | null
           max_interview_turns?: number
           max_upload_mb?: number
+          notification_read_retention_days?: number
+          notification_retention_days?: number
+          notifications_per_hour?: number
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           recruiter_visibility_enabled?: boolean
@@ -92,6 +98,9 @@ export type Database = {
           launch_free_until?: string | null
           max_interview_turns?: number
           max_upload_mb?: number
+          notification_read_retention_days?: number
+          notification_retention_days?: number
+          notifications_per_hour?: number
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           recruiter_visibility_enabled?: boolean
@@ -1122,6 +1131,78 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          email_account: boolean
+          email_data_export_ready: boolean
+          email_job_unavailable: boolean
+          email_support_reply: boolean
+          email_support_status: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          email_account?: boolean
+          email_data_export_ready?: boolean
+          email_job_unavailable?: boolean
+          email_support_reply?: boolean
+          email_support_status?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          email_account?: boolean
+          email_data_export_ready?: boolean
+          email_job_unavailable?: boolean
+          email_support_reply?: boolean
+          email_support_status?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          email_pending: boolean
+          id: string
+          link: string | null
+          read_at: string | null
+          related_id: string | null
+          related_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          email_pending?: boolean
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          email_pending?: boolean
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       portfolio_projects: {
         Row: {
           attempt_id: string
@@ -1735,6 +1816,18 @@ export type Database = {
       }
       billing_email_hash: { Args: { p_email: string }; Returns: string }
       billing_hmac_of_md5: { Args: { p_md5: string }; Returns: string }
+      create_notification: {
+        Args: {
+          p_body: string
+          p_link: string
+          p_related_id: string
+          p_related_type: string
+          p_title: string
+          p_type: string
+          p_user: string
+        }
+        Returns: Json
+      }
       get_billing_access: { Args: { p_env: string }; Returns: Json }
       increment_job_apply: { Args: { p_job: string }; Returns: undefined }
       is_support_staff: { Args: { _user_id: string }; Returns: boolean }

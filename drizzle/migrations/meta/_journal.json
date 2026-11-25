@@ -127,6 +127,13 @@
       "when": 1794748668559,
       "tag": "0017_employer_waitlist_and_submissions",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795615966160,
+      "tag": "0018_user_inbox_notifications",
+      "breakpoints": true
     }
   ]
 }

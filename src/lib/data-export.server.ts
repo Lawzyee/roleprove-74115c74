@@ -43,6 +43,8 @@ const by = (table: string, column: string, key?: string) => async ({ admin, user
 };
 
 export const SECTIONS: Array<{ label: string; file: string; about: string; load: (c: Ctx) => Promise<Row[]>; keep?: string }> = [
+  { label: 'inbox notifications', file: 'notifications', about: 'Notifications in your RoleProve inbox, and when you read them.', load: by('notifications', 'user_id') },
+  { label: 'notification settings', file: 'notification_settings', about: 'Which notification categories you chose to also receive by email.', load: by('notification_settings', 'user_id') },
   { label: 'saved jobs and application tracker', file: 'job_tracker', about: 'Jobs you saved, your application statuses and private notes.', load: by('job_tracker', 'user_id') },
   { label: 'job preferences', file: 'job_preferences', about: 'Your preferred roles, work arrangements, employment types and countries.', load: by('job_preferences', 'user_id') },
   { label: 'profile', file: 'profile', about: 'Your profile: name, email, headline, links, target role and settings.', load: by('profiles', 'id') },

@@ -50,6 +50,8 @@ export const requestDataExport = createServerFn({ method: 'POST' })
     if (signed.error || !signed.data) return fail('download link', { code: 'section', error: 'Your export was stopped because the download link could not be created.' });
     const expiresAt = new Date(Date.now() + LINK_SECONDS * 1000).toISOString();
     await admin.from('data_exports').update({ status: 'ready', file_path: path }).eq('id', row.id);
+    const { notify } = await import('./notifications.server');
+    await notify(admin, { userId, type: 'data_export_ready', title: 'Your data export is ready', body: 'Your download link lasts one hour. You can request a new export from Settings once a day.', link: '/settings', relatedType: 'data_export', relatedId: row.id }).catch((e) => console.error('notify export', e));
     return { exportId: row.id, url: signed.data.signedUrl, expiresAt, largeRecordings: built.links.length };
   });
 

@@ -48,6 +48,8 @@ async function seedAccount() {
 
     const ticket = must(await admin.from('support_tickets').insert({ user_id: uid, category: 'other', subject: 'Help', attempt_id: attempt.id }).select('id').single(), 'ticket');
     const msg = must(await admin.from('support_messages').insert({ ticket_id: ticket.id, sender: 'user', body: 'hi' }).select('id').single(), 'message');
+    { const { notify } = await import('./notifications.server'); const r = await notify(admin, { userId: uid, type: 'support_reply', title: 'Support replied to your ticket', link: `/support/${ticket.id}`, relatedType: 'support_message', relatedId: msg.id }); if (!r.created) throw new Error('notification: ' + r.reason); }
+    { const r = await admin.from('notification_settings').insert({ user_id: uid, email_support_reply: false }); if (r.error) throw new Error('notification settings: ' + r.error.message); }
     const shot = `${uid}/${crypto.randomUUID()}.png`;
     must(await admin.storage.from('support-attachments').upload(shot, file('png', 'image/png')), 'screenshot');
     { const r = await admin.from('support_attachments').insert({ message_id: msg.id, file_path: shot, file_name: 's.png' }); if (r.error) throw new Error('attachment' + ": " + r.error.message); }
@@ -82,6 +84,7 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
     expect((await loadPublicPortfolioRow(admin, slug))?.user_id).toBe(uid);
 
     const result = await eraseAccount({ admin, userId: uid, stripeFor: (env) => (env === 'sandbox' ? stripe : null) });
+    expect(USER_TABLES.map((t) => t.table)).toEqual(expect.arrayContaining(['notifications', 'notification_settings']));
     expect(result.stripe).toEqual([{ env: 'sandbox', customerId: customer.id, action: 'deleted' }]);
 
     for (const { table, column } of USER_TABLES) expect(must(await admin.from(table as never).select('*').eq(column, uid), table), table).toEqual([]);

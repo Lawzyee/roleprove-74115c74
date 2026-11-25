@@ -84,6 +84,10 @@ export const replyTicketFn = createServerFn({ method: 'POST' }).middleware([requ
     if (data.attachment) await supabaseAdmin.from('support_attachments').insert({ message_id: message.id, file_path: data.attachment.path, file_name: data.attachment.name });
     const now = new Date().toISOString();
     await supabaseAdmin.from('support_tickets').update({ status: statusAfterMessage(sender), updated_at: now, ...(staff ? { staff_last_read_at: now } : { user_last_read_at: now }) }).eq('id', ticket.id);
+    if (staff) {
+      const { notifySafe } = await import('./notifications.server');
+      await notifySafe({ userId: ticket.user_id, type: 'support_reply', title: 'Support replied to your ticket', body: 'Open the ticket to read the reply.', link: `/support/${ticket.id}`, relatedType: 'support_message', relatedId: message.id });
+    }
     return { ok: true as const };
   });
 
@@ -96,7 +100,12 @@ export const setTicketStatusFn = createServerFn({ method: 'POST' }).middleware([
     const owner = ticket.user_id === context.userId;
     if (!owner && !(await isStaff(context.supabase, context.userId))) return { error: 'Ticket not found.' };
     if (owner && data.status !== 'resolved' && !(await isStaff(context.supabase, context.userId))) return { error: 'Reply to reopen this ticket.' };
+    const { data: before } = await supabaseAdmin.from('support_tickets').select('status').eq('id', ticket.id).single();
     await supabaseAdmin.from('support_tickets').update({ status: data.status, updated_at: new Date().toISOString() }).eq('id', ticket.id);
+    if (!owner && data.status === 'resolved' && before?.status !== 'resolved') {
+      const { notifySafe } = await import('./notifications.server');
+      await notifySafe({ userId: ticket.user_id, type: 'support_status', title: 'Your support ticket was resolved', body: 'Reply on the ticket if you still need help.', link: `/support/${ticket.id}`, relatedType: 'ticket_resolved', relatedId: `${ticket.id}:${new Date().toISOString().slice(0, 13)}` });
+    }
     return { ok: true as const };
   });
 

@@ -36,3 +36,6 @@
 
 ## For employers page
 - [x] Public /employers page, waitlist with double opt-in, work-email job submission with 24h session, staff flags/reject reasons, decision emails with removal links, staff waitlist page, hourly cleanup, legal placeholders, tests
+
+## User inbox (notifications)
+- [x] Notifications table/settings, bell + inbox page, email choices, triggers (support reply/resolve, job closed, export ready, billing notices), hourly cleanup + pending emails, deletion/export, privacy placeholder; 125 tests pass; phone browser flow verified

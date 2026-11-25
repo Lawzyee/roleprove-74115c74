@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { SiteHeader } from "@/components/SiteHeader";
+import { NotificationSettingsCard } from "@/components/inbox/NotificationSettingsCard";
 import { getStripeEnvironment } from "@/lib/stripe";
 import { deleteAccountFn } from "@/lib/payments.functions";
 import { confirmExportDownloaded, requestDataExport } from "@/lib/data-export.functions";
@@ -159,6 +160,8 @@ function SettingsPage() {
               />
             </CardContent>
           </Card>
+
+          <NotificationSettingsCard />
 
           <Card className="border-border shadow-none">
             <CardHeader>

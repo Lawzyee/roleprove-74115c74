@@ -4,6 +4,7 @@ import { LayoutDashboard, LogOut, Settings, User as UserIcon, Library, MessagesS
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTickets } from "@/components/support/SupportParts";
 import { Button } from "@/components/ui/button";
+import { InboxBell } from "@/components/inbox/InboxBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,7 @@ export function SiteHeader() {
                 <Link to="/jobs">Job center</Link>
               </Button>
 
+              <InboxBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button

@@ -10,6 +10,8 @@ export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings'
  * Personalised simulations are removed when the sign-in account is deleted (owner cascade).
  */
 export const USER_TABLES: Array<{ table: string; column: string }> = [
+  { table: 'notifications', column: 'user_id' },
+  { table: 'notification_settings', column: 'user_id' },
   { table: 'job_tracker', column: 'user_id' },
   { table: 'job_preferences', column: 'user_id' },
   { table: 'portfolio_projects', column: 'user_id' },
