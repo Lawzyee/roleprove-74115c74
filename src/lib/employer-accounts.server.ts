@@ -1,4 +1,5 @@
 // Server-only: employer accounts, companies, team, staff review, cleanup and erasure steps.
+import { reviewEmailSafe } from './staff-review.server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { emailDomain, baseDomain } from './employer';
 import { newToken, hashToken } from './employer.server';
@@ -115,6 +116,7 @@ export async function createCompany(a: A, userId: string, input: CompanyInput) {
   if (mErr) { await a.from('companies').delete().eq('id', c!.id); fail('Could not save the company. Please try again.'); }
   await a.from('company_join_requests').delete().eq('user_id', userId);
   await audit(a, c!.id, userId, 'employer', 'company_created');
+  await reviewEmailSafe(a);
   return { ok: true as const, companyId: c!.id as string };
 }
 

@@ -1,3 +1,4 @@
+import { StaffReviewNav } from '@/components/jobs/StaffReviewNav';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,7 +54,7 @@ function AdminSupport() {
   const set = (patch: Search) => nav({ search: (prev) => ({ ...prev, ...patch }) });
   return <><SiteHeader /><main className="mx-auto grid max-w-6xl gap-6 px-5 py-10 lg:grid-cols-[22rem_1fr]">
     <aside>
-      <h1 className="font-display text-2xl font-semibold">Support inbox</h1>
+      <h1 className="font-display text-2xl font-semibold">Support inbox</h1><StaffReviewNav/>
       <Button asChild variant="outline" size="sm" className="mt-3"><Link to="/admin/jobs">Jobs</Link></Button>
       <div className="mt-4 flex gap-2">
         <Select value={search.status ?? 'all'} onValueChange={(v) => set({ status: v === 'all' ? undefined : v })}><SelectTrigger aria-label="Status filter"><SelectValue /></SelectTrigger>

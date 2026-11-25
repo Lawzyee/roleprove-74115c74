@@ -5,6 +5,7 @@
 - Rule for later employer screens: view in the app only — no bulk export, no file downloads except the CV in that snapshot; read only via readSnapshotForEmployer (withdrawn = no access).
 
 ## Open
+- [ ] Shareable public jobs: allow-list, availability, aggregate counters, safe auth returns, staff controls/notices/badges, tests and mobile verification.
 - [ ] Job center: publish and daily safe link checks — the link checker can't be reached from the sandbox; pinned TLS check unverified on the published site.
 - [ ] Job center: staff publication, "Other" interview prep and real generation-limit exhaustion not yet verified in the browser.
 - [ ] Apply in RoleProve (5a): built and live-tested; not yet clicked through in the browser. Privacy/Terms application wording is a placeholder.

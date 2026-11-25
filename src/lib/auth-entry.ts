@@ -1,7 +1,8 @@
 // Sign-in / sign-up entry rules shared by the first screen (/), /auth and their tests.
+import { safeReturnTo } from './job-sharing';
 export type EntryKind = 'candidate' | 'employer';
 export type SignupChoice = 'seeker' | 'hiring';
-export type AuthSearch = { mode?: 'login' | 'signup'; as?: SignupChoice; confirmed?: boolean; confirmationError?: boolean };
+export type AuthSearch = { mode?: 'login' | 'signup'; as?: SignupChoice; confirmed?: boolean; confirmationError?: boolean; returnTo?: string };
 
 /** Where a signed-in person belongs. One sign-in serves both account types. */
 export const homeFor = (kind: EntryKind): '/dashboard' | '/employer' => (kind === 'employer' ? '/employer' : '/dashboard');
@@ -19,6 +20,8 @@ export function parseAuthSearch(s: Record<string, unknown>): AuthSearch {
   if (s['as'] === 'seeker' || s['as'] === 'hiring') out.as = s['as'];
   if (truthy(s['confirmed'])) out.confirmed = true;
   if (truthy(s['confirmationError'])) out.confirmationError = true;
+  const back = safeReturnTo(s['returnTo']);
+  if (back) out.returnTo = back;
   return out;
 }
 
@@ -35,7 +38,7 @@ export const PLACEHOLDERS = {
 export const PUBLIC_ROUTE_FILES = [
   'index.tsx', 'about.tsx', 'auth.tsx', 'auth_.confirm.tsx', 'reset-password.tsx', 'terms.tsx', 'privacy.tsx', 'cookies.tsx', 'help.tsx',
   'employers.tsx', 'posting-standards.tsx', 'employer-terms.tsx', 'employers_.confirm.tsx', 'employers_.remove.tsx',
-  'employers_.leave.tsx', 'employers_.invite.tsx', 'employers_.submit.tsx', 'employers_.sign-up.tsx', 'p',
+  'employers_.leave.tsx', 'employers_.invite.tsx', 'employers_.submit.tsx', 'employers_.sign-up.tsx', 'p', 'j',
 ] as const;
 
 export type AuthView = 'login' | 'choose' | 'seeker' | 'hiring';

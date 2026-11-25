@@ -21,8 +21,11 @@ import { listPublicRolesFn } from "@/lib/roles.functions";
 import { employerSignUpFn } from "@/lib/employer-accounts.functions";
 import { employerSignUpSchema } from "@/lib/employer-accounts";
 import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION } from "@/lib/legal";
-import { authErrorMessage, confirmationRedirect, CONFIRMATION_COOLDOWN_SECONDS, isDuplicateSignup, resendSecondsRemaining } from "@/lib/auth-flow";
+import { authErrorMessage, CONFIRMATION_COOLDOWN_SECONDS, isDuplicateSignup, resendSecondsRemaining } from "@/lib/auth-flow";
 import { homeFor, initialView, PLACEHOLDERS, type AuthSearch, type AuthView } from "@/lib/auth-entry";
+
+import { safeReturnTo } from '@/lib/job-sharing';
+import { absoluteUrl } from '@/lib/site-url';
 
 type View = AuthView | "forgot";
 const RESET_COOLDOWN_MS = 60_000;
@@ -72,13 +75,22 @@ export function AuthPanel({ search }: { search: AuthSearch }) {
   const signUpEmployer = useServerFn(employerSignUpFn);
   const roles = useQuery({ queryKey: ["roles-list"], queryFn: () => listPublicRolesFn(), enabled: view === "seeker" });
 
-  // Signed in: send each account type to its own area.
+  const returnTarget = () => safeReturnTo(search.returnTo) ?? safeReturnTo(sessionStorage.getItem('auth-return-to'));
+  const confirmationTarget = () => absoluteUrl('/auth/confirm', { returnTo: returnTarget() });
+  const finishSignIn = async (kind: 'candidate' | 'employer') => {
+    const target = returnTarget();
+    sessionStorage.removeItem('auth-return-to');
+    if (target) await router.navigate({ href: target, replace: true });
+    else await router.navigate({ to: homeFor(kind), replace: true });
+  };
+  useEffect(() => { if (safeReturnTo(search.returnTo)) sessionStorage.setItem('auth-return-to', search.returnTo ?? ''); }, [search.returnTo]);
+  // Return to a validated internal target; otherwise use the account's normal home.
   useEffect(() => {
     if (loading || !user || search.confirmed || running.current || sentTo) return;
     let cancelled = false;
-    fetchAccountKind(user.id).then((kind) => { if (!cancelled) router.navigate({ to: homeFor(kind), replace: true }); });
+    fetchAccountKind(user.id).then((kind) => { if (!cancelled) void finishSignIn(kind); });
     return () => { cancelled = true; };
-  }, [loading, user, router, search.confirmed, sentTo]);
+  }, [loading, user, router, search.confirmed, search.returnTo, sentTo]);
 
   useEffect(() => {
     const tick = () => setResendSeconds(resendSecondsRemaining(resendAt));
@@ -103,7 +115,7 @@ export function AuthPanel({ search }: { search: AuthSearch }) {
     if (err) throw err;
     const kind = await fetchAccountKind(data.user.id);
     toast.success("Welcome back.");
-    await router.navigate({ to: homeFor(kind), replace: true });
+    await finishSignIn(kind);
   }); };
 
   const signUpSeeker = (e: React.FormEvent) => { e.preventDefault();
@@ -113,7 +125,7 @@ export function AuthPanel({ search }: { search: AuthSearch }) {
     void run(async () => {
       const email = f.email.trim();
       const { data, error: err } = await supabase.auth.signUp({ email, password: f.password, options: {
-        emailRedirectTo: confirmationRedirect(window.location.origin),
+        emailRedirectTo: confirmationTarget(),
         data: { name: f.name.trim(), target_role_id: f.target_role_id || null, age_confirmed: true, terms_version: CURRENT_TERMS_VERSION, privacy_version: CURRENT_PRIVACY_VERSION },
       } });
       if (err) throw err;
@@ -148,7 +160,7 @@ export function AuthPanel({ search }: { search: AuthSearch }) {
     if (running.current || resendSecondsRemaining(resendAt) > 0) return;
     cooldown();
     await run(async () => {
-      const { error: err } = await supabase.auth.resend({ type: "signup", email: sentTo ?? f.email.trim(), options: { emailRedirectTo: confirmationRedirect(window.location.origin) } });
+      const { error: err } = await supabase.auth.resend({ type: "signup", email: sentTo ?? f.email.trim(), options: { emailRedirectTo: confirmationTarget() } });
       if (err) throw err;
       setResendMessage("Confirmation email sent. Please check your inbox and spam folder.");
     });

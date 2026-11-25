@@ -1,3 +1,4 @@
+import { StaffReviewNav } from '@/components/jobs/StaffReviewNav';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
@@ -28,7 +29,7 @@ function Page() {
   const rows = (q.data?.rows ?? []).filter((r) => filter === 'all' || r.status === filter);
   return <><SiteHeader /><main className="mx-auto max-w-6xl px-5 py-9">
     <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="font-display text-3xl font-semibold">Companies</h1><Button asChild variant="outline"><Link to="/admin/employers">Employer waitlist</Link></Button></div>
-    <div className="mt-5 flex flex-wrap gap-2">{(['pending', 'approved', 'rejected', 'suspended', 'all'] as const).map((s) => <Button key={s} size="sm" variant={filter === s ? 'default' : 'outline'} onClick={() => setFilter(s)}>{s === 'all' ? 'All' : STATUS_LABEL[s]} ({(q.data?.rows ?? []).filter((r) => s === 'all' || r.status === s).length})</Button>)}</div>
+    <StaffReviewNav/><div className="mt-5 flex flex-wrap gap-2">{(['pending', 'approved', 'rejected', 'suspended', 'all'] as const).map((s) => <Button key={s} size="sm" variant={filter === s ? 'default' : 'outline'} onClick={() => setFilter(s)}>{s === 'all' ? 'All' : STATUS_LABEL[s]} ({(q.data?.rows ?? []).filter((r) => s === 'all' || r.status === s).length})</Button>)}</div>
     {q.isPending ? <p className="mt-6">Loading…</p> : !rows.length ? <p className="mt-6 text-muted-foreground">No companies here.</p> : <div className="mt-6 space-y-4">{rows.map((r) => <CompanyCard key={r.id} r={r} />)}</div>}
     <DomainLists />
   </main></>;

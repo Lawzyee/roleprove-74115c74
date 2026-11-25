@@ -38,9 +38,11 @@ import { Route as EmployersLeaveRouteImport } from './routes/employers_.leave'
 import { Route as EmployersRemoveRouteImport } from './routes/employers_.remove'
 import { Route as EmployersSignUpRouteImport } from './routes/employers_.sign-up'
 import { Route as EmployersSubmitRouteImport } from './routes/employers_.submit'
+import { Route as JJobIdRouteImport } from './routes/j/$jobId'
 import { Route as AuthenticatedAdminCompaniesRouteImport } from './routes/_authenticated/admin.companies'
 import { Route as AuthenticatedAdminEmployersRouteImport } from './routes/_authenticated/admin.employers'
 import { Route as AuthenticatedAdminJobsRouteImport } from './routes/_authenticated/admin.jobs'
+import { Route as AuthenticatedAdminReviewRouteImport } from './routes/_authenticated/admin.review'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedApplyJobIdRouteImport } from './routes/_authenticated/apply.$jobId'
 import { Route as AuthenticatedCheckoutReturnRouteImport } from './routes/_authenticated/checkout.return'
@@ -222,6 +224,11 @@ const EmployersSubmitRoute = EmployersSubmitRouteImport.update({
   path: '/employers/submit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JJobIdRoute = JJobIdRouteImport.update({
+  id: '/j/$jobId',
+  path: '/j/$jobId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminCompaniesRoute =
   AuthenticatedAdminCompaniesRouteImport.update({
     id: '/admin/companies',
@@ -239,6 +246,12 @@ const AuthenticatedAdminJobsRoute = AuthenticatedAdminJobsRouteImport.update({
   path: '/admin/jobs',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminReviewRoute =
+  AuthenticatedAdminReviewRouteImport.update({
+    id: '/admin/review',
+    path: '/admin/review',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminSupportRoute =
   AuthenticatedAdminSupportRouteImport.update({
     id: '/admin/support',
@@ -459,9 +472,11 @@ export interface FileRoutesByFullPath {
   '/employers/remove': typeof EmployersRemoveRoute
   '/employers/sign-up': typeof EmployersSignUpRoute
   '/employers/submit': typeof EmployersSubmitRoute
+  '/j/$jobId': typeof JJobIdRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRoute
   '/admin/employers': typeof AuthenticatedAdminEmployersRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
+  '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/apply/$jobId': typeof AuthenticatedApplyJobIdRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
@@ -524,9 +539,11 @@ export interface FileRoutesByTo {
   '/employers/remove': typeof EmployersRemoveRoute
   '/employers/sign-up': typeof EmployersSignUpRoute
   '/employers/submit': typeof EmployersSubmitRoute
+  '/j/$jobId': typeof JJobIdRoute
   '/admin/companies': typeof AuthenticatedAdminCompaniesRoute
   '/admin/employers': typeof AuthenticatedAdminEmployersRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
+  '/admin/review': typeof AuthenticatedAdminReviewRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/apply/$jobId': typeof AuthenticatedApplyJobIdRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
@@ -592,9 +609,11 @@ export interface FileRoutesById {
   '/employers_/remove': typeof EmployersRemoveRoute
   '/employers_/sign-up': typeof EmployersSignUpRoute
   '/employers_/submit': typeof EmployersSubmitRoute
+  '/j/$jobId': typeof JJobIdRoute
   '/_authenticated/admin/companies': typeof AuthenticatedAdminCompaniesRoute
   '/_authenticated/admin/employers': typeof AuthenticatedAdminEmployersRoute
   '/_authenticated/admin/jobs': typeof AuthenticatedAdminJobsRoute
+  '/_authenticated/admin/review': typeof AuthenticatedAdminReviewRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/apply/$jobId': typeof AuthenticatedApplyJobIdRoute
   '/_authenticated/checkout/return': typeof AuthenticatedCheckoutReturnRoute
@@ -660,9 +679,11 @@ export interface FileRouteTypes {
     | '/employers/remove'
     | '/employers/sign-up'
     | '/employers/submit'
+    | '/j/$jobId'
     | '/admin/companies'
     | '/admin/employers'
     | '/admin/jobs'
+    | '/admin/review'
     | '/admin/support'
     | '/apply/$jobId'
     | '/checkout/return'
@@ -725,9 +746,11 @@ export interface FileRouteTypes {
     | '/employers/remove'
     | '/employers/sign-up'
     | '/employers/submit'
+    | '/j/$jobId'
     | '/admin/companies'
     | '/admin/employers'
     | '/admin/jobs'
+    | '/admin/review'
     | '/admin/support'
     | '/apply/$jobId'
     | '/checkout/return'
@@ -792,9 +815,11 @@ export interface FileRouteTypes {
     | '/employers_/remove'
     | '/employers_/sign-up'
     | '/employers_/submit'
+    | '/j/$jobId'
     | '/_authenticated/admin/companies'
     | '/_authenticated/admin/employers'
     | '/_authenticated/admin/jobs'
+    | '/_authenticated/admin/review'
     | '/_authenticated/admin/support'
     | '/_authenticated/apply/$jobId'
     | '/_authenticated/checkout/return'
@@ -850,6 +875,7 @@ export interface RootRouteChildren {
   EmployersRemoveRoute: typeof EmployersRemoveRoute
   EmployersSignUpRoute: typeof EmployersSignUpRoute
   EmployersSubmitRoute: typeof EmployersSubmitRoute
+  JJobIdRoute: typeof JJobIdRoute
   PSlugProjectIdRoute: typeof PSlugProjectIdRoute
   PSlugIndexRoute: typeof PSlugIndexRoute
   ApiPublicHooksPurgeExportsRoute: typeof ApiPublicHooksPurgeExportsRoute
@@ -1065,6 +1091,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployersSubmitRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/j/$jobId': {
+      id: '/j/$jobId'
+      path: '/j/$jobId'
+      fullPath: '/j/$jobId'
+      preLoaderRoute: typeof JJobIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin/companies': {
       id: '/_authenticated/admin/companies'
       path: '/admin/companies'
@@ -1084,6 +1117,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/jobs'
       fullPath: '/admin/jobs'
       preLoaderRoute: typeof AuthenticatedAdminJobsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/review': {
+      id: '/_authenticated/admin/review'
+      path: '/admin/review'
+      fullPath: '/admin/review'
+      preLoaderRoute: typeof AuthenticatedAdminReviewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/support': {
@@ -1361,6 +1401,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminCompaniesRoute: typeof AuthenticatedAdminCompaniesRoute
   AuthenticatedAdminEmployersRoute: typeof AuthenticatedAdminEmployersRoute
   AuthenticatedAdminJobsRoute: typeof AuthenticatedAdminJobsRoute
+  AuthenticatedAdminReviewRoute: typeof AuthenticatedAdminReviewRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedApplyJobIdRoute: typeof AuthenticatedApplyJobIdRoute
   AuthenticatedCheckoutReturnRoute: typeof AuthenticatedCheckoutReturnRoute
@@ -1395,6 +1436,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminCompaniesRoute: AuthenticatedAdminCompaniesRoute,
   AuthenticatedAdminEmployersRoute: AuthenticatedAdminEmployersRoute,
   AuthenticatedAdminJobsRoute: AuthenticatedAdminJobsRoute,
+  AuthenticatedAdminReviewRoute: AuthenticatedAdminReviewRoute,
   AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
   AuthenticatedApplyJobIdRoute: AuthenticatedApplyJobIdRoute,
   AuthenticatedCheckoutReturnRoute: AuthenticatedCheckoutReturnRoute,
@@ -1442,6 +1484,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmployersRemoveRoute: EmployersRemoveRoute,
   EmployersSignUpRoute: EmployersSignUpRoute,
   EmployersSubmitRoute: EmployersSubmitRoute,
+  JJobIdRoute: JJobIdRoute,
   PSlugProjectIdRoute: PSlugProjectIdRoute,
   PSlugIndexRoute: PSlugIndexRoute,
   ApiPublicHooksPurgeExportsRoute: ApiPublicHooksPurgeExportsRoute,

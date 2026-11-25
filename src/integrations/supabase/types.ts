@@ -71,9 +71,12 @@ export type Database = {
           paywall_enforced: boolean
           paywall_enforced_since: string | null
           personal_email_domains: string[]
+          public_jobs_enabled: boolean
+          public_jobs_indexable: boolean
           recruiter_visibility_enabled: boolean
           report_open_retention_days: number
           report_resolved_retention_days: number
+          staff_review_email_at: string | null
           trial_days: number
         }
         Insert: {
@@ -114,9 +117,12 @@ export type Database = {
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           personal_email_domains?: string[]
+          public_jobs_enabled?: boolean
+          public_jobs_indexable?: boolean
           recruiter_visibility_enabled?: boolean
           report_open_retention_days?: number
           report_resolved_retention_days?: number
+          staff_review_email_at?: string | null
           trial_days?: number
         }
         Update: {
@@ -157,9 +163,12 @@ export type Database = {
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
           personal_email_domains?: string[]
+          public_jobs_enabled?: boolean
+          public_jobs_indexable?: boolean
           recruiter_visibility_enabled?: boolean
           report_open_retention_days?: number
           report_resolved_retention_days?: number
+          staff_review_email_at?: string | null
           trial_days?: number
         }
         Relationships: []
@@ -1368,12 +1377,14 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           employment: string
+          ever_published: boolean
           expires_date: string
           external_id: string | null
           full_description: string
           id: string
           other_role: string
           posted_date: string
+          public_page_enabled: boolean
           role_key: string
           salary_currency: string | null
           salary_max: number | null
@@ -1401,12 +1412,14 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           employment: string
+          ever_published?: boolean
           expires_date?: string
           external_id?: string | null
           full_description?: string
           id?: string
           other_role?: string
           posted_date?: string
+          public_page_enabled?: boolean
           role_key: string
           salary_currency?: string | null
           salary_max?: number | null
@@ -1434,12 +1447,14 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           employment?: string
+          ever_published?: boolean
           expires_date?: string
           external_id?: string | null
           full_description?: string
           id?: string
           other_role?: string
           posted_date?: string
+          public_page_enabled?: boolean
           role_key?: string
           salary_currency?: string | null
           salary_max?: number | null
@@ -1464,6 +1479,7 @@ export type Database = {
           job_id: string
           last_checked_at: string | null
           link_broken: boolean
+          page_views: number
           practice_text: string
           reject_note: string
           reject_reason: string | null
@@ -1481,6 +1497,7 @@ export type Database = {
           job_id: string
           last_checked_at?: string | null
           link_broken?: boolean
+          page_views?: number
           practice_text?: string
           reject_note?: string
           reject_reason?: string | null
@@ -1498,6 +1515,7 @@ export type Database = {
           job_id?: string
           last_checked_at?: string | null
           link_broken?: boolean
+          page_views?: number
           practice_text?: string
           reject_note?: string
           reject_reason?: string | null
@@ -2530,7 +2548,12 @@ export type Database = {
         Args: { p_company: string; p_user: string }
         Returns: boolean
       }
+      claim_staff_review_email: { Args: never; Returns: boolean }
       company_of: { Args: { _user_id: string }; Returns: string }
+      count_public_job: {
+        Args: { p_apply?: boolean; p_job: string }
+        Returns: boolean
+      }
       create_notification: {
         Args: {
           p_body: string
@@ -2553,6 +2576,8 @@ export type Database = {
         Returns: boolean
       }
       portfolio_report_ip_hash: { Args: { p_ip: string }; Returns: string }
+      public_job_rate: { Args: { p_hash: string }; Returns: boolean }
+      read_public_job: { Args: { p_job: string }; Returns: Json }
       record_job_view: { Args: { p_job: string }; Returns: undefined }
       report_job_center: {
         Args: { p_details: string; p_job: string; p_reason: string }

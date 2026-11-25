@@ -183,6 +183,20 @@
       "when": 1795630071936,
       "tag": "0025_record_age_confirmation",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795638232862,
+      "tag": "0026_public_job_sharing_and_review_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1795638732890,
+      "tag": "0027_public_job_view_aggregates",
+      "breakpoints": true
     }
   ]
 }

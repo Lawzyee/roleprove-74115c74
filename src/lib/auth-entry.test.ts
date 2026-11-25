@@ -27,7 +27,7 @@ describe('first screen redirects', () => {
     expect(panel).toMatch(/navigate\(\{ to: homeFor\(kind\)/);
   });
   it('signed-out visitor to a signed-in page is sent to sign in', () => {
-    expect(read('src/routes/_authenticated/route.tsx')).toMatch(/redirect\(\{ to: "\/auth" \}\)/);
+    expect(read('src/routes/_authenticated/route.tsx')).toMatch(/redirect\(\{ to: "\/auth", search: \{ returnTo: safeReturnTo\(location\.href\) \} \}\)/);
   });
   it('public pages stay outside the signed-in area', () => {
     for (const f of PUBLIC_ROUTE_FILES) expect(existsSync(join('src/routes', f)), f).toBe(true);

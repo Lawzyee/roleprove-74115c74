@@ -102,6 +102,8 @@ export const submitEmployerJobFn = createServerFn({ method: 'POST' }).inputValid
   if (error || !job) return { error: 'Could not submit the job. Please try again.' };
   const { error: pErr } = await a.from('job_center_private').insert({ job_id: job.id, practice_text: data.practice_consent ? data.practice_text : '', submitter_name: data.submitter_name, submitter_email: session.email, source_note: 'Submitted via the For employers page.' });
   if (pErr) { await a.from('job_center_jobs').delete().eq('id', job.id); return { error: 'Could not submit the job. Please try again.' }; }
+  const { reviewEmailSafe } = await import('./staff-review.server');
+  await reviewEmailSafe(a);
   if (data.join_waitlist) {
     try { await addToWaitlist({ full_name: data.submitter_name, email: session.email, company: data.company, job_title: '', company_size: null, country: data.country, roles: [data.role_key], other_role: data.role_key === 'other' ? data.other_role : '', hiring_types: [], arrangements: [data.arrangement], hires_per_year: null, message: '' }); }
     catch (e) { console.error('waitlist from submission', e); }

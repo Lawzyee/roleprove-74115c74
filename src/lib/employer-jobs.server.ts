@@ -1,3 +1,4 @@
+import { reviewEmailSafe } from './staff-review.server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { postingSchema, expiryProblem, postingFlags, reviewRequired, criticalEdit, dateAfter, type Posting, type PostingInput } from './employer-jobs';
 import { membershipOf, accountKind, audit } from './employer-accounts.server';
@@ -58,6 +59,7 @@ export async function savePosting(db: A, a: A, userId: string, raw: unknown, id?
   const r = previous ? await a.from('employer_jobs').update(row).eq('id', previous.id).eq('company_id', company.id).eq('version', previous.version).select(COLS).single() : await a.from('employer_jobs').insert(row).select(COLS).single();
   fail(r.error); if (!r.data) throw new Error('Job changed. Reload and try again.');
   await event(a, company.id, r.data.id, userId, submit ? 'submit' : 'edit');
+  if(status==='pending_review' && previous?.status!=='pending_review')await reviewEmailSafe(a);
   return r.data as Posting;
 }
 async function event(a: A, companyId: string, jobId: string, actorId: string, action: string, reason = '') { const r = await a.from('employer_job_events').insert({ company_id: companyId, job_id: jobId, actor_id: actorId, action, reason }); fail(r.error); }
@@ -76,7 +78,7 @@ export async function postingAction(db: A, a: A, userId: string, id: string, act
     status = level.required || flags.length ? 'pending_review' : 'published';
   }
   const upd = await a.from('employer_jobs').update({ status, moderation_reason: '' }).eq('id', id).eq('company_id', company.id).eq('version', j.version).select(COLS).single(); fail(upd.error);
-  await event(a, company.id, id, userId, action); return upd.data as Posting;
+  await event(a, company.id, id, userId, action); if(status==='pending_review'&&j.status!=='pending_review')await reviewEmailSafe(a); return upd.data as Posting;
 }
 export async function moderatePosting(a: A, staffId: string, id: string, action: 'approve' | 'reject' | 'unpublish', reason: string, checker = checkApplicationLink) {
   const staff = await a.rpc('is_support_staff', { _user_id: staffId }); if (staff.error || staff.data !== true) throw new Error('Staff only.');

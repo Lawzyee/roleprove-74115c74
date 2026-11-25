@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { safeReturnTo } from '@/lib/job-sharing';
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/auth_/confirm")({
@@ -46,7 +47,7 @@ function ConfirmEmailPage() {
         if (userError || !user?.email_confirmed_at) throw new Error("Email not confirmed");
         const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
         if (signOutError) throw signOutError;
-        await router.navigate({ to: "/auth", search: { confirmed: true }, replace: true });
+        await router.navigate({ to: "/auth", search: { confirmed: true, returnTo: safeReturnTo(url.searchParams.get("returnTo")) }, replace: true });
       } catch {
         setFailed(true);
       }

@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { safeReturnTo } from '@/lib/job-sharing';
 import { supabase } from "@/integrations/supabase/client";
 import { employerMayOpen, fetchAccountKind, isEmployerArea } from "@/hooks/useAccountKind";
 
@@ -6,7 +7,7 @@ export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
+    if (error || !data.user) throw redirect({ to: "/auth", search: { returnTo: safeReturnTo(location.href) } });
     // Candidate and employer accounts are kept apart (also enforced on the server and by row-level security).
     const kind = await fetchAccountKind(data.user.id);
     if (kind === "employer" && !employerMayOpen(location.pathname)) throw redirect({ to: "/employer" });

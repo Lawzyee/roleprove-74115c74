@@ -1,3 +1,4 @@
+import { template as staffReview } from './staff-review'
 import type { ComponentType } from 'react'
 import { template as billingUpdate } from './billing-update'
 import { template as dataExportRequested } from './data-export-requested'
@@ -27,6 +28,7 @@ export interface TemplateEntry {
  *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
+  'staff-review': staffReview,
   'billing-update': billingUpdate,
   'data-export-requested': dataExportRequested,
   'employer-waitlist-confirm': employerWaitlistConfirm,

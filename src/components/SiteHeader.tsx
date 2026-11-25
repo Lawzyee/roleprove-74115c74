@@ -1,3 +1,4 @@
+import { StaffReviewNav } from '@/components/jobs/StaffReviewNav';
 import { Link, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { LayoutDashboard, LogOut, Settings, User as UserIcon, Library, MessagesSquare, LifeBuoy, HelpCircle, FolderOpen, Send } from "lucide-react";
@@ -61,6 +62,7 @@ export function SiteHeader() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
+                  <div className="px-1"><StaffReviewNav /></div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="sm:hidden"><Link to="/employer"><LayoutDashboard className="mr-2 h-4 w-4" /> Employer area</Link></DropdownMenuItem>
                   <DropdownMenuItem asChild className="sm:hidden"><Link to="/employer/company"><Building2 className="mr-2 h-4 w-4" /> Company</Link></DropdownMenuItem>
@@ -108,6 +110,7 @@ export function SiteHeader() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
+                  <div className="px-1"><StaffReviewNav /></div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="sm:hidden">
                     <Link to="/dashboard">
