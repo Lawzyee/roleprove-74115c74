@@ -107,6 +107,7 @@ export const terms: LegalDocument = {
       id: "employer-terms",
       heading: "10a. Employer Terms",
       blocks: [
+        p("Approved companies may post external-link jobs through authorised owners and recruiters. Initial postings require review; established posting history may allow publication after safe-link checks. RoleProve may require review again, decline or unpublish a posting with a reason, or suspend a company. Jobs belong to the company rather than the author. Private practice text is removed on closure or expiry; retention of closed postings defaults to 12 months unless candidates track them. [[PLACEHOLDER: confirm wording and retention]]"),
         p("These terms apply when you submit a job listing or join the employer waitlist. [[PLACEHOLDER: Employer Terms wording]]"),
         p("By submitting a listing you confirm that you are authorised to post it for the company, that the job is genuine, lawful and non-discriminatory, and that candidates are never charged to apply. We review every listing and may decline or remove any listing at our discretion. Listings are shown as external listings and RoleProve does not verify employers. [[PLACEHOLDER: Employer Terms wording]]"),
       ],

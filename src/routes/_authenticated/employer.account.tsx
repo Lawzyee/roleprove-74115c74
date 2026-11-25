@@ -13,8 +13,9 @@ import { getStripeEnvironment } from '@/lib/stripe';
 import { deleteAccountFn } from '@/lib/payments.functions';
 import { confirmExportDownloaded, requestDataExport } from '@/lib/data-export.functions';
 import { NotificationSettingsCard } from '@/components/inbox/NotificationSettingsCard';
+import { employerHead } from '@/components/employers/Fields';
 
-export const Route = createFileRoute('/_authenticated/employer/account')({ component: AccountPage });
+export const Route = createFileRoute('/_authenticated/employer/account')({ head:()=>employerHead('Employer account and data','Your employer account, notification preferences and company data export.',false), component: AccountPage });
 
 function AccountPage() {
   const { user, signOut } = useAuth(); const router = useRouter(); const qc = useQueryClient();

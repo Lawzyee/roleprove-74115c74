@@ -129,6 +129,8 @@ export const rejectJobFn = createServerFn({ method: 'POST' }).middleware([requir
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid(), reason: z.enum(REJECT_REASONS), note: z.string().trim().max(1000) }).parse(d))
   .handler(async ({ data, context }) => {
     await requireStaff(context);
+    const existing = await context.supabase.from('job_center_jobs').select('source_type').eq('id', data.id).single();
+    if (existing.data?.source_type === 'employer_account') throw new Error('Use the employer posting review controls.');
     const { data: rows, error } = await context.supabase.from('job_center_jobs').update({ status: 'rejected', updated_at: new Date().toISOString() }).eq('id', data.id).eq('status', 'pending_review').select('id');
     if (error || !rows?.length) throw new Error('Only jobs waiting for review can be rejected.');
     const { error: p } = await context.supabase.from('job_center_private').update({ reject_reason: data.reason, reject_note: data.note, reviewed_at: new Date().toISOString() }).eq('job_id', data.id);

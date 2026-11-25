@@ -391,4 +391,8 @@ export async function prepareEmployerErasure(a: A, userId: string) {
   if (u1.error) throw new Error(`Could not anonymise the company audit log: ${u1.error.message}`);
   const u2 = await a.from('company_invites').update({ invited_by: null }).eq('invited_by', userId);
   if (u2.error) throw new Error(`Could not update invites: ${u2.error.message}`);
+  const jobs = await a.from('employer_jobs').update({ author_id: null }).eq('author_id', userId);
+  if (jobs.error) throw new Error(`Could not anonymise job authors: ${jobs.error.message}`);
+  const events = await a.from('employer_job_events').update({ actor_id: null }).eq('actor_id', userId);
+  if (events.error) throw new Error(`Could not anonymise job activity: ${events.error.message}`);
 }

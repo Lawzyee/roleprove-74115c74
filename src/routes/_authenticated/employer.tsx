@@ -7,7 +7,7 @@ export const Route = createFileRoute('/_authenticated/employer')({
   component: Layout,
 });
 
-const tabs = [{ to: '/employer', label: 'Overview', exact: true }, { to: '/employer/company', label: 'Company' }, { to: '/employer/team', label: 'Team' }, { to: '/employer/account', label: 'Account' }] as const;
+const tabs = [{ to: '/employer', label: 'Overview', exact: true }, { to: '/employer/jobs', label: 'Jobs' }, { to: '/employer/company', label: 'Company' }, { to: '/employer/team', label: 'Team' }, { to: '/employer/account', label: 'Account' }] as const;
 function Layout() {
   return <><SiteHeader /><main className="mx-auto max-w-5xl px-5 py-8">
     <nav aria-label="Employer area" className="mb-6 flex gap-1 overflow-x-auto border-b border-border">

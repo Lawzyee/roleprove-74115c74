@@ -8,8 +8,9 @@ import { Tick } from '@/components/employers/Fields';
 import { CompanyForm, HowWeReview, Levels, StatusBanner, emptyCompany } from '@/components/employers/AccountParts';
 import { useEmployerState } from '@/components/employers/useEmployerState';
 import { acceptInviteFn, createCompanyFn, mySubmissionsFn, requestJoinFn } from '@/lib/employer-accounts.functions';
+import { employerHead } from '@/components/employers/Fields';
 
-export const Route = createFileRoute('/_authenticated/employer/')({ component: Overview });
+export const Route = createFileRoute('/_authenticated/employer/')({ head: () => employerHead('Employer overview', 'Your company status, job postings and team on RoleProve.', false), component: Overview });
 
 function Overview() {
   const q = useEmployerState();
@@ -22,7 +23,7 @@ function Overview() {
     <StatusBanner status={s.company.status} reason={s.company.status_reason} />
     <div><p className="mb-2 text-sm font-medium">Labels</p><Levels levels={s.levels} /></div>
     {s.access.full && <Submissions />}
-    <div className="rounded-lg border border-dashed border-border p-4"><p className="font-medium">Coming soon: post jobs and review applicants</p><p className="mt-1 text-sm text-muted-foreground">These aren't available yet. You can still <Link to="/employers" className="text-primary underline">list a job link for free</Link>.</p></div>
+    {s.access.full && <Button asChild><Link to="/employer/jobs">Company jobs</Link></Button>}
     <HowWeReview compact />
   </div>;
 }

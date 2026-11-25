@@ -19,7 +19,7 @@ export async function checkOneJob(admin:SupabaseClient,id:string,force=false) {
   const result=failureState(rows[0].consecutive_failures,success);
   const {error:saveError}=await admin.from('job_center_private').update({last_checked_at:new Date().toISOString(),check_started_at:null,consecutive_failures:result.failures,link_broken:result.hide}).eq('job_id',id);
   if(saveError)throw saveError;
-  if(result.hide){const {error:e}=await admin.from('job_center_jobs').update({status:'hidden',updated_at:new Date().toISOString()}).eq('id',id).eq('apply_url',job.apply_url);if(e)throw e;}
+  if(result.hide){const {error:e}=await admin.from('job_center_jobs').update({status:'hidden',updated_at:new Date().toISOString()}).eq('id',id).eq('apply_url',job.apply_url);if(e)throw e;const paused=await admin.from('employer_jobs').update({status:'paused',moderation_reason:'Apply link failed three checks. Verify it before resuming.'}).eq('id',id).eq('status','published');if(paused.error)throw paused.error;}
   return {skipped:false,success,hidden:result.hide};
 }
 export async function cleanJobCenter(admin:SupabaseClient) {
@@ -32,6 +32,6 @@ export async function cleanJobCenter(admin:SupabaseClient) {
     if(e)throw e;jobs.push(...(page??[]));if(!page||page.length<1000)break;
   }
   const results=[];
-  for(let offset=0;offset<jobs.length;offset+=10)results.push(...await Promise.all(jobs.slice(offset,offset+10).map(j=>checkOneJob(admin,j.id))));
+  for(let offset=0;offset<jobs.length;offset+=10)results.push(...await Promise.all(jobs.slice(offset,offset+10).map(async j=>{try{return await checkOneJob(admin,j.id);}catch(e){if(e instanceof LinkCheckUnavailable)return {skipped:true,success:false,hidden:false};throw e;}})));
   return {checked:results.filter(r=>!r.skipped).length,hidden:results.filter(r=>r.hidden).length};
 }

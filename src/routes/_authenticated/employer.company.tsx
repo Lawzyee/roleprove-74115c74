@@ -6,8 +6,9 @@ import { CompanyForm, Levels, StatusBanner } from '@/components/employers/Accoun
 import { useEmployerState } from '@/components/employers/useEmployerState';
 import { updateCompanyFn } from '@/lib/employer-accounts.functions';
 import type { CompanyInput } from '@/lib/employer-accounts';
+import { employerHead } from '@/components/employers/Fields';
 
-export const Route = createFileRoute('/_authenticated/employer/company')({ component: CompanyPage });
+export const Route = createFileRoute('/_authenticated/employer/company')({ head:()=>employerHead('Company profile','Your company profile and verification status on RoleProve.',false), component: CompanyPage });
 
 function CompanyPage() {
   const q = useEmployerState(); const qc = useQueryClient(); const save = useServerFn(updateCompanyFn);

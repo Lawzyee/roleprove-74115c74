@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { jobSchema, ARRANGEMENTS, EMPLOYMENT, TRACKER_STATUSES, JOB_REPORT_REASONS } from './job-center';
 
 const idSchema=z.object({id:z.string().uuid()});
+export const recordJobViewFn=createServerFn({method:'POST'}).middleware([requireCandidate]).inputValidator((d:unknown)=>idSchema.parse(d)).handler(async({data,context})=>{const r=await context.supabase.rpc('record_job_view',{p_job:data.id});if(r.error)throw new Error('Job unavailable.');return {ok:true};});
 const preferencesSchema=z.object({roles:z.array(z.enum(['data_analyst','customer_support','other'])).max(3),arrangements:z.array(z.enum(ARRANGEMENTS)).max(3),employment_types:z.array(z.enum(EMPLOYMENT)).max(5),countries:z.array(z.string().trim().min(1).max(100)).max(30)});
 export const getJobCenterFn=createServerFn({method:'POST'}).middleware([requireCandidate]).handler(async({context})=>{
   const [jobs,tracker,prefs,profile]=await Promise.all([
@@ -37,6 +38,8 @@ export const getStaffJobsFn=createServerFn({method:'POST'}).middleware([requireC
 });
 export const saveStaffJobFn=createServerFn({method:'POST'}).middleware([requireCandidate]).inputValidator((d:unknown)=>jobSchema.parse(d)).handler(async({data,context})=>{
   const {data:staff,error}=await context.supabase.rpc('is_support_staff',{_user_id:context.userId});if(error||staff!==true)throw new Error('Staff only.');
+  if(data.source_type==='employer_account')throw new Error('Use the employer posting review controls.');
+  if(data.id){const r=await context.supabase.from('job_center_jobs').select('source_type').eq('id',data.id).single();if(r.error||r.data?.source_type==='employer_account')throw new Error('Use the employer posting review controls.');}
   if(data.status==='published'){const {resolvePublicLink}=await import('./job-links.server');await resolvePublicLink(data.apply_url);if(data.company_website)await resolvePublicLink(data.company_website);}
   let previousStatus:string|null=null;if(data.id){const {data:prev}=await context.supabase.from('job_center_jobs').select('status').eq('id',data.id).maybeSingle();previousStatus=prev?.status??null;}
   const {id,practice_text,source_note,staff_notes,submitter_name,submitter_email,...publicJob}=data;
@@ -50,6 +53,7 @@ export const saveStaffJobFn=createServerFn({method:'POST'}).middleware([requireC
 });
 export const deleteStaffJobFn=createServerFn({method:'POST'}).middleware([requireCandidate]).inputValidator((d:unknown)=>idSchema.parse(d)).handler(async({data,context})=>{
   const {data:staff,error}=await context.supabase.rpc('is_support_staff',{_user_id:context.userId});if(error||staff!==true)throw new Error('Staff only.');
+  const existing=await context.supabase.from('job_center_jobs').select('source_type').eq('id',data.id).single();if(existing.data?.source_type==='employer_account')throw new Error('Unpublish this employer posting with a reason.');
   const {error:e}=await context.supabase.from('job_center_jobs').update({status:'hidden',deleted_at:new Date().toISOString()}).eq('id',data.id);if(e)throw e;
   const {error:p}=await context.supabase.from('job_center_private').delete().eq('job_id',data.id);if(p)throw p;return {ok:true};
 });

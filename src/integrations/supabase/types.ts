@@ -40,9 +40,13 @@ export type Database = {
           daily_interview_turns: number
           daily_interviews: number
           disposable_email_domains: string[]
+          employer_active_jobs: number
           employer_contact_days: number
+          employer_daily_jobs: number
           employer_daily_submissions: number
           employer_invite_days: number
+          employer_job_retention_months: number
+          employer_job_review_count: number
           employer_max_pending: number
           employer_max_seats: number
           employer_pending_days: number
@@ -76,9 +80,13 @@ export type Database = {
           daily_interview_turns?: number
           daily_interviews?: number
           disposable_email_domains?: string[]
+          employer_active_jobs?: number
           employer_contact_days?: number
+          employer_daily_jobs?: number
           employer_daily_submissions?: number
           employer_invite_days?: number
+          employer_job_retention_months?: number
+          employer_job_review_count?: number
           employer_max_pending?: number
           employer_max_seats?: number
           employer_pending_days?: number
@@ -112,9 +120,13 @@ export type Database = {
           daily_interview_turns?: number
           daily_interviews?: number
           disposable_email_domains?: string[]
+          employer_active_jobs?: number
           employer_contact_days?: number
+          employer_daily_jobs?: number
           employer_daily_submissions?: number
           employer_invite_days?: number
+          employer_job_retention_months?: number
+          employer_job_review_count?: number
           employer_max_pending?: number
           employer_max_seats?: number
           employer_pending_days?: number
@@ -512,6 +524,8 @@ export type Database = {
           name: string
           public_page_url: string
           registration_number: string
+          review_every_posting: boolean
+          review_reset_at: string | null
           reviewed_at: string | null
           size_band: string
           status: string
@@ -530,6 +544,8 @@ export type Database = {
           name: string
           public_page_url?: string
           registration_number?: string
+          review_every_posting?: boolean
+          review_reset_at?: string | null
           reviewed_at?: string | null
           size_band: string
           status?: string
@@ -548,6 +564,8 @@ export type Database = {
           name?: string
           public_page_url?: string
           registration_number?: string
+          review_every_posting?: boolean
+          review_reset_at?: string | null
           reviewed_at?: string | null
           size_band?: string
           status?: string
@@ -872,6 +890,122 @@ export type Database = {
           },
         ]
       }
+      employer_job_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          company_id: string
+          created_at: string
+          id: string
+          job_id: string
+          reason: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          company_id: string
+          created_at?: string
+          id?: string
+          job_id: string
+          reason?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          company_id?: string
+          created_at?: string
+          id?: string
+          job_id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employer_job_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employer_job_events_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "employer_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employer_jobs: {
+        Row: {
+          apply_clicks: number
+          approved_at: string | null
+          approved_once: boolean
+          author_id: string | null
+          company_id: string
+          created_at: string
+          expiring_notice_date: string | null
+          flags: string[]
+          id: string
+          moderation_reason: string
+          payload: Json
+          practice_text: string
+          status: string
+          submitted_at: string | null
+          terminal_at: string | null
+          updated_at: string
+          version: number
+          views: number
+        }
+        Insert: {
+          apply_clicks?: number
+          approved_at?: string | null
+          approved_once?: boolean
+          author_id?: string | null
+          company_id: string
+          created_at?: string
+          expiring_notice_date?: string | null
+          flags?: string[]
+          id?: string
+          moderation_reason?: string
+          payload?: Json
+          practice_text?: string
+          status?: string
+          submitted_at?: string | null
+          terminal_at?: string | null
+          updated_at?: string
+          version?: number
+          views?: number
+        }
+        Update: {
+          apply_clicks?: number
+          approved_at?: string | null
+          approved_once?: boolean
+          author_id?: string | null
+          company_id?: string
+          created_at?: string
+          expiring_notice_date?: string | null
+          flags?: string[]
+          id?: string
+          moderation_reason?: string
+          payload?: Json
+          practice_text?: string
+          status?: string
+          submitted_at?: string | null
+          terminal_at?: string | null
+          updated_at?: string
+          version?: number
+          views?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employer_jobs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employer_rate_hits: {
         Row: {
           created_at: string
@@ -1097,11 +1231,13 @@ export type Database = {
       }
       job_center_jobs: {
         Row: {
+          application_method: string
           apply_url: string
           apply_url_hash: string | null
           arrangement: string
           city: string
           company: string
+          company_approved: boolean
           company_website: string | null
           country: string
           created_at: string
@@ -1109,6 +1245,7 @@ export type Database = {
           employment: string
           expires_date: string
           external_id: string | null
+          full_description: string
           id: string
           other_role: string
           posted_date: string
@@ -1121,16 +1258,19 @@ export type Database = {
           source_ref: string | null
           source_type: string
           status: string
+          suggested_practice_role: string | null
           summary: string
           title: string
           updated_at: string
         }
         Insert: {
+          application_method?: string
           apply_url: string
           apply_url_hash?: string | null
           arrangement: string
           city?: string
           company: string
+          company_approved?: boolean
           company_website?: string | null
           country?: string
           created_at?: string
@@ -1138,6 +1278,7 @@ export type Database = {
           employment: string
           expires_date?: string
           external_id?: string | null
+          full_description?: string
           id?: string
           other_role?: string
           posted_date?: string
@@ -1150,16 +1291,19 @@ export type Database = {
           source_ref?: string | null
           source_type?: string
           status?: string
+          suggested_practice_role?: string | null
           summary: string
           title: string
           updated_at?: string
         }
         Update: {
+          application_method?: string
           apply_url?: string
           apply_url_hash?: string | null
           arrangement?: string
           city?: string
           company?: string
+          company_approved?: boolean
           company_website?: string | null
           country?: string
           created_at?: string
@@ -1167,6 +1311,7 @@ export type Database = {
           employment?: string
           expires_date?: string
           external_id?: string | null
+          full_description?: string
           id?: string
           other_role?: string
           posted_date?: string
@@ -1179,6 +1324,7 @@ export type Database = {
           source_ref?: string | null
           source_type?: string
           status?: string
+          suggested_practice_role?: string | null
           summary?: string
           title?: string
           updated_at?: string
@@ -2249,6 +2395,10 @@ export type Database = {
       }
       billing_email_hash: { Args: { p_email: string }; Returns: string }
       billing_hmac_of_md5: { Args: { p_md5: string }; Returns: string }
+      can_post_company: {
+        Args: { p_company: string; p_user: string }
+        Returns: boolean
+      }
       company_of: { Args: { _user_id: string }; Returns: string }
       create_notification: {
         Args: {
@@ -2272,6 +2422,7 @@ export type Database = {
         Returns: boolean
       }
       portfolio_report_ip_hash: { Args: { p_ip: string }; Returns: string }
+      record_job_view: { Args: { p_job: string }; Returns: undefined }
       report_job_center: {
         Args: { p_details: string; p_job: string; p_reason: string }
         Returns: string

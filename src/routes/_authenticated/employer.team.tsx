@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StatusBanner } from '@/components/employers/AccountParts';
 import { useEmployerState } from '@/components/employers/useEmployerState';
 import { createInviteFn, decideJoinFn, listTeamFn, removeMemberFn, revokeInviteFn, transferOwnershipFn } from '@/lib/employer-accounts.functions';
+import { employerHead } from '@/components/employers/Fields';
 
-export const Route = createFileRoute('/_authenticated/employer/team')({ component: TeamPage });
+export const Route = createFileRoute('/_authenticated/employer/team')({ head:()=>employerHead('Company team','Manage company membership and invitations on RoleProve.',false), component: TeamPage });
 const ROLE_HELP = { owner: 'Manages the company and team', recruiter: 'Will post jobs and review applicants in later versions', viewer: 'Read-only' } as const;
 
 function TeamPage() {

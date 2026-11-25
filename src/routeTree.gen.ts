@@ -16,6 +16,7 @@ import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as EmployerTermsRouteImport } from './routes/employer-terms'
 import { Route as EmployersRouteImport } from './routes/employers'
 import { Route as HelpRouteImport } from './routes/help'
+import { Route as PostingStandardsRouteImport } from './routes/posting-standards'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedApplicationProfileRouteImport } from './routes/_authenticated/application-profile'
@@ -42,6 +43,7 @@ import { Route as AuthenticatedCheckoutReturnRouteImport } from './routes/_authe
 import { Route as AuthenticatedEmployerIndexRouteImport } from './routes/_authenticated/employer.index'
 import { Route as AuthenticatedEmployerAccountRouteImport } from './routes/_authenticated/employer.account'
 import { Route as AuthenticatedEmployerCompanyRouteImport } from './routes/_authenticated/employer.company'
+import { Route as AuthenticatedEmployerJobsRouteImport } from './routes/_authenticated/employer.jobs'
 import { Route as AuthenticatedEmployerTeamRouteImport } from './routes/_authenticated/employer.team'
 import { Route as AuthenticatedInterviewPrepIndexRouteImport } from './routes/_authenticated/interview-prep.index'
 import { Route as AuthenticatedInterviewPrepSessionIdRouteImport } from './routes/_authenticated/interview-prep.$sessionId'
@@ -99,6 +101,11 @@ const EmployersRoute = EmployersRouteImport.update({
 const HelpRoute = HelpRouteImport.update({
   id: '/help',
   path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostingStandardsRoute = PostingStandardsRouteImport.update({
+  id: '/posting-standards',
+  path: '/posting-standards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -238,6 +245,12 @@ const AuthenticatedEmployerCompanyRoute =
   AuthenticatedEmployerCompanyRouteImport.update({
     id: '/company',
     path: '/company',
+    getParentRoute: () => AuthenticatedEmployerRoute,
+  } as any)
+const AuthenticatedEmployerJobsRoute =
+  AuthenticatedEmployerJobsRouteImport.update({
+    id: '/jobs',
+    path: '/jobs',
     getParentRoute: () => AuthenticatedEmployerRoute,
   } as any)
 const AuthenticatedEmployerTeamRoute =
@@ -385,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/employer-terms': typeof EmployerTermsRoute
   '/employers': typeof EmployersRoute
   '/help': typeof HelpRoute
+  '/posting-standards': typeof PostingStandardsRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/application-profile': typeof AuthenticatedApplicationProfileRoute
@@ -410,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/employer/account': typeof AuthenticatedEmployerAccountRoute
   '/employer/company': typeof AuthenticatedEmployerCompanyRoute
+  '/employer/jobs': typeof AuthenticatedEmployerJobsRoute
   '/employer/team': typeof AuthenticatedEmployerTeamRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
@@ -443,6 +458,7 @@ export interface FileRoutesByTo {
   '/employer-terms': typeof EmployerTermsRoute
   '/employers': typeof EmployersRoute
   '/help': typeof HelpRoute
+  '/posting-standards': typeof PostingStandardsRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/application-profile': typeof AuthenticatedApplicationProfileRoute
@@ -467,6 +483,7 @@ export interface FileRoutesByTo {
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/employer/account': typeof AuthenticatedEmployerAccountRoute
   '/employer/company': typeof AuthenticatedEmployerCompanyRoute
+  '/employer/jobs': typeof AuthenticatedEmployerJobsRoute
   '/employer/team': typeof AuthenticatedEmployerTeamRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
@@ -502,6 +519,7 @@ export interface FileRoutesById {
   '/employer-terms': typeof EmployerTermsRoute
   '/employers': typeof EmployersRoute
   '/help': typeof HelpRoute
+  '/posting-standards': typeof PostingStandardsRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
   '/_authenticated/application-profile': typeof AuthenticatedApplicationProfileRoute
@@ -527,6 +545,7 @@ export interface FileRoutesById {
   '/_authenticated/checkout/return': typeof AuthenticatedCheckoutReturnRoute
   '/_authenticated/employer/account': typeof AuthenticatedEmployerAccountRoute
   '/_authenticated/employer/company': typeof AuthenticatedEmployerCompanyRoute
+  '/_authenticated/employer/jobs': typeof AuthenticatedEmployerJobsRoute
   '/_authenticated/employer/team': typeof AuthenticatedEmployerTeamRoute
   '/_authenticated/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
   '/_authenticated/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
@@ -562,6 +581,7 @@ export interface FileRouteTypes {
     | '/employer-terms'
     | '/employers'
     | '/help'
+    | '/posting-standards'
     | '/privacy'
     | '/terms'
     | '/application-profile'
@@ -587,6 +607,7 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/employer/account'
     | '/employer/company'
+    | '/employer/jobs'
     | '/employer/team'
     | '/interview-prep/$sessionId'
     | '/jobs/$jobId'
@@ -620,6 +641,7 @@ export interface FileRouteTypes {
     | '/employer-terms'
     | '/employers'
     | '/help'
+    | '/posting-standards'
     | '/privacy'
     | '/terms'
     | '/application-profile'
@@ -644,6 +666,7 @@ export interface FileRouteTypes {
     | '/checkout/return'
     | '/employer/account'
     | '/employer/company'
+    | '/employer/jobs'
     | '/employer/team'
     | '/interview-prep/$sessionId'
     | '/jobs/$jobId'
@@ -678,6 +701,7 @@ export interface FileRouteTypes {
     | '/employer-terms'
     | '/employers'
     | '/help'
+    | '/posting-standards'
     | '/privacy'
     | '/terms'
     | '/_authenticated/application-profile'
@@ -703,6 +727,7 @@ export interface FileRouteTypes {
     | '/_authenticated/checkout/return'
     | '/_authenticated/employer/account'
     | '/_authenticated/employer/company'
+    | '/_authenticated/employer/jobs'
     | '/_authenticated/employer/team'
     | '/_authenticated/interview-prep/$sessionId'
     | '/_authenticated/jobs/$jobId'
@@ -738,6 +763,7 @@ export interface RootRouteChildren {
   EmployerTermsRoute: typeof EmployerTermsRoute
   EmployersRoute: typeof EmployersRoute
   HelpRoute: typeof HelpRoute
+  PostingStandardsRoute: typeof PostingStandardsRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
@@ -806,6 +832,13 @@ declare module '@tanstack/react-router' {
       path: '/help'
       fullPath: '/help'
       preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/posting-standards': {
+      id: '/posting-standards'
+      path: '/posting-standards'
+      fullPath: '/posting-standards'
+      preLoaderRoute: typeof PostingStandardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -990,6 +1023,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEmployerCompanyRouteImport
       parentRoute: typeof AuthenticatedEmployerRoute
     }
+    '/_authenticated/employer/jobs': {
+      id: '/_authenticated/employer/jobs'
+      path: '/jobs'
+      fullPath: '/employer/jobs'
+      preLoaderRoute: typeof AuthenticatedEmployerJobsRouteImport
+      parentRoute: typeof AuthenticatedEmployerRoute
+    }
     '/_authenticated/employer/team': {
       id: '/_authenticated/employer/team'
       path: '/team'
@@ -1164,6 +1204,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedEmployerRouteChildren {
   AuthenticatedEmployerAccountRoute: typeof AuthenticatedEmployerAccountRoute
   AuthenticatedEmployerCompanyRoute: typeof AuthenticatedEmployerCompanyRoute
+  AuthenticatedEmployerJobsRoute: typeof AuthenticatedEmployerJobsRoute
   AuthenticatedEmployerTeamRoute: typeof AuthenticatedEmployerTeamRoute
   AuthenticatedEmployerIndexRoute: typeof AuthenticatedEmployerIndexRoute
 }
@@ -1171,6 +1212,7 @@ interface AuthenticatedEmployerRouteChildren {
 const AuthenticatedEmployerRouteChildren: AuthenticatedEmployerRouteChildren = {
   AuthenticatedEmployerAccountRoute: AuthenticatedEmployerAccountRoute,
   AuthenticatedEmployerCompanyRoute: AuthenticatedEmployerCompanyRoute,
+  AuthenticatedEmployerJobsRoute: AuthenticatedEmployerJobsRoute,
   AuthenticatedEmployerTeamRoute: AuthenticatedEmployerTeamRoute,
   AuthenticatedEmployerIndexRoute: AuthenticatedEmployerIndexRoute,
 }
@@ -1259,6 +1301,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmployerTermsRoute: EmployerTermsRoute,
   EmployersRoute: EmployersRoute,
   HelpRoute: HelpRoute,
+  PostingStandardsRoute: PostingStandardsRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   AuthConfirmRoute: AuthConfirmRoute,

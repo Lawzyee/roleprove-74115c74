@@ -6,7 +6,7 @@ export const TRACKER_STATUSES = ['saved','applied','interviewing','offer','rejec
 export const JOB_REPORT_REASONS = ['looks like a scam','link broken or job closed','wrong information','other'] as const;
 export const PAGE_SIZE = 20;
 export const JOB_STATUSES = ['draft','pending_review','published','rejected','expired','hidden'] as const;
-export const SOURCE_TYPES = ['staff','company_board','employer_submitted'] as const;
+export const SOURCE_TYPES = ['staff','company_board','employer_submitted','employer_account'] as const;
 export function publicAddress(value: string): boolean {
   try { const addr = ipaddr.process(value.replace(/^\[|\]$/g,'')); return addr.range() === 'unicast'; } catch { return false; }
 }
@@ -34,11 +34,11 @@ export const jobSchema = z.object({
   if(v.salary_min!==null&&v.salary_max!==null&&v.salary_max<v.salary_min) c.addIssue({code:'custom',path:['salary_max'],message:'Maximum must be at least the minimum.'});
   if((v.salary_min!==null||v.salary_max!==null)&&(!v.salary_currency||!v.salary_period)) c.addIssue({code:'custom',path:['salary_currency'],message:'Choose currency and salary period.'});
   if(v.expires_date<v.posted_date) c.addIssue({code:'custom',path:['expires_date'],message:'Expiry must be on or after posting.'});
-  if(v.status==='published'&&!v.practice_text&&v.source_type!=='employer_submitted') c.addIssue({code:'custom',path:['practice_text'],message:'Add practice text before publishing.'});
+  if(v.status==='published'&&!v.practice_text&&!['employer_submitted','employer_account'].includes(v.source_type)) c.addIssue({code:'custom',path:['practice_text'],message:'Add practice text before publishing.'});
   if(v.company_website&&applyLinkProblem(v.company_website)) c.addIssue({code:'custom',path:['company_website'],message:'Use a public HTTPS website.'});
 });
 export type JobInput = z.infer<typeof jobSchema>;
-export type Job = { id:string;title:string;company:string;company_website:string|null;city:string;country:string;arrangement:string;employment:string;role_key:string;other_role:string;seniority:string;salary_currency:string|null;salary_min:number|null;salary_max:number|null;salary_period:string|null;summary:string;apply_url:string;posted_date:string;expires_date:string;status:string;deleted_at:string|null;source_type?:string };
+export type Job = { id:string;title:string;company:string;company_website:string|null;city:string;country:string;arrangement:string;employment:string;role_key:string;other_role:string;seniority:string;salary_currency:string|null;salary_min:number|null;salary_max:number|null;salary_period:string|null;summary:string;apply_url:string;posted_date:string;expires_date:string;status:string;deleted_at:string|null;source_type?:string;full_description?:string;company_approved?:boolean;suggested_practice_role?:string|null };
 export type Preferences = { roles:string[];arrangements:string[];employment_types:string[];countries:string[] };
 export const EMPTY_PREFERENCES: Preferences = { roles:[], arrangements:[], employment_types:[], countries:[] };
 export type Filters = Preferences & { keyword:string;location:string;days:string;salary:string;sort:string;seniority:string };

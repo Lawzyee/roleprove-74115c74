@@ -32,3 +32,4 @@
 - Application sharing (src/lib/application-profile*.ts): employer views only from buildShareView; snapshots/consents owner-read, server-written, frozen by trigger; employer reads via readSnapshotForEmployer, in-app only.
 - Absolute links are built only in src/lib/site-url.ts from config, never request host/headers; site-url.test.ts enforces it.
 - Employer accounts: kind in account_types; route gate + requireCandidate + restrictive RLS separate them; status via audited staffAction — layered so one bypass isn't enough.
+- Employer postings: employer_jobs is company-owned and server-written; atomic triggers project only public fields to candidate listings and practice to the private table, preserving candidate-table restrictions.

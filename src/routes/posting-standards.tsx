@@ -1,0 +1,5 @@
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { SiteHeader } from '@/components/SiteHeader';
+import { employerHead } from '@/components/employers/Fields';
+export const Route = createFileRoute('/posting-standards')({ head: () => employerHead('Job posting standards', 'RoleProve standards for genuine, lawful and non-discriminatory job postings.'), component: Standards });
+function Standards() { return <><SiteHeader /><main className="mx-auto max-w-3xl px-5 py-10"><h1 className="font-display text-3xl font-semibold">Job posting standards</h1><div className="mt-6 space-y-4 leading-relaxed"><p>Post genuine, lawful and non-discriminatory roles. Describe duties, skills and requirements, not protected characteristics.</p><p>Never charge candidates to apply. Use an accurate description, company information and a safe HTTPS application link.</p><p>[[PLACEHOLDER: posting standards wording]]</p><Link to="/employer-terms" className="text-primary underline">Employer Terms</Link></div></main></>; }

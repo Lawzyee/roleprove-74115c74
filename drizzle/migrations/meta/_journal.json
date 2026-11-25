@@ -148,6 +148,20 @@
       "when": 1795621997484,
       "tag": "0020_employer_accounts_and_companies",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795624420096,
+      "tag": "0021_employer_job_posting",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795625091978,
+      "tag": "0022_employer_job_read_and_candidate_rpc_guards",
+      "breakpoints": true
     }
   ]
 }
