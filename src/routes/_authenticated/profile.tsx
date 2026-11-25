@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PLACEHOLDERS } from "@/lib/auth-entry";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -245,7 +246,7 @@ function ProfilePage() {
               </div>
               {(
                 [
-                  ["name", "Full name", "Ada Okafor"],
+                  ["name", "Full name", PLACEHOLDERS.name],
                   ["headline", "Headline", "e.g. Senior Marketing Manager moving into Data"],
                   ["location", "Location", "Manchester, UK"],
                 ] as const

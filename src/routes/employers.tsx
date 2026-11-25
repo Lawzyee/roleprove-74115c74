@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { PLACEHOLDERS } from "@/lib/auth-entry";
 import { useServerFn } from '@tanstack/react-start';
 import { useState } from 'react';
 import { Briefcase, Users } from 'lucide-react';
@@ -25,7 +26,7 @@ function Employers() {
       <p className="text-sm font-medium text-primary">For employers</p>
       <h1 className="mt-2 font-display text-4xl font-semibold leading-tight">Hire on what people can actually do</h1>
       <p className="mt-4 text-lg text-muted-foreground">Candidates on RoleProve complete realistic job simulations for roles like Data Analyst and Customer Support. They can share a portfolio and verified practice score, but only with employers they choose.</p>
-      <div className="mt-6 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-accent p-4 text-sm"><span>Hiring? Create an employer account with your work email.</span><Button asChild size="sm"><Link to="/employers/sign-up">Create an employer account</Link></Button></div>
+      <div className="mt-6 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-accent p-4 text-sm"><span>Hiring? Create an employer account with your work email.</span><Button asChild size="sm"><Link to="/auth" search={{ mode: "signup", as: "hiring" }}>Create an employer account</Link></Button></div>
       <div className="mt-6 flex flex-wrap gap-3"><Button asChild size="lg"><a href="#list-a-job"><Briefcase className="mr-2 h-4 w-4" />List a job</a></Button><Button asChild size="lg" variant="outline"><a href="#waitlist"><Users className="mr-2 h-4 w-4" />Join the waitlist</a></Button></div>
     </section>
     <div className="mt-14 grid gap-10 lg:grid-cols-2">
@@ -52,7 +53,7 @@ function ListJob() {
     <p className="mt-2 text-sm text-muted-foreground">No account needed. Enter your work email and we'll send a link that lets you submit jobs for 24 hours. Our team reviews each listing before it appears.</p>
     {msg?.ok ? <p role="status" className="mt-5 rounded-md bg-accent p-4 text-sm">{msg.text}</p> :
     <form className="mt-5 space-y-4" onSubmit={async e => { e.preventDefault(); setBusy(true); setMsg(null); try { const r = await request({ data: { email, website: hp } }); setMsg('error' in r && r.error ? { ok: false, text: r.error } : { ok: true, text: 'Check your inbox for a confirmation link. It opens the job form.' }); } catch { setMsg({ ok: false, text: 'Enter a valid email address.' }); } finally { setBusy(false); } }}>
-      <Label className="block space-y-2">Work email<Input type="email" required autoComplete="email" placeholder="you@yourcompany.com" value={email} onChange={e => setEmail(e.target.value)} /></Label>
+      <Label className="block space-y-2">Work email<Input type="email" required autoComplete="email" placeholder={PLACEHOLDERS.workEmail} value={email} onChange={e => setEmail(e.target.value)} /></Label>
       <Honeypot value={hp} onChange={setHp} />
       {msg && <p role="alert" className="text-sm text-destructive">{msg.text}</p>}
       <Button type="submit" disabled={busy}>{busy ? 'Sending…' : 'Send confirmation link'}</Button>
@@ -66,7 +67,7 @@ function Waitlist() {
   const [v, setV] = useState<W>({ full_name: '', email: '', company: '', job_title: '', company_size: '', country: '', roles: [], other_role: '', hiring_types: [], arrangements: [], hires_per_year: '', message: '', consent: false });
   const [hp, setHp] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState(''); const [done, setDone] = useState('');
   const set = <K extends keyof W>(k: K, x: W[K]) => setV(p => ({ ...p, [k]: x }));
-  const text = (k: keyof W, label: string, type = 'text', required = false) => <Label className="block space-y-2">{label}{required && ' *'}<Input type={type} required={required} value={String(v[k])} onChange={e => set(k, e.target.value as never)} /></Label>;
+  const text = (k: keyof W, label: string, type = 'text', required = false, placeholder?: string) => <Label className="block space-y-2">{label}{required && ' *'}<Input type={type} required={required} placeholder={placeholder} value={String(v[k])} onChange={e => set(k, e.target.value as never)} /></Label>;
   const pick = (k: 'company_size' | 'hires_per_year', label: string, opts: readonly string[]) => <Label className="block space-y-2">{label}<Select value={v[k]} onValueChange={x => set(k, x)}><SelectTrigger aria-label={label}><SelectValue placeholder="Choose" /></SelectTrigger><SelectContent>{opts.map(o => <SelectItem key={o} value={o}>{o.replace('-', ' to ')}</SelectItem>)}</SelectContent></Select></Label>;
   return <section id="waitlist" className="relative scroll-mt-20 rounded-lg border border-border p-6">
     <h2 className="font-display text-2xl font-semibold">Join the employer waitlist</h2>
@@ -76,7 +77,7 @@ function Waitlist() {
       const parsed = waitlistSchema.safeParse({ ...v, company_size: v.company_size || null, hires_per_year: v.hires_per_year || null, website: hp });
       if (!parsed.success) { setErr(parsed.error.issues[0]?.message ?? 'Check the form.'); return; }
       setBusy(true); try { const r = await join({ data: parsed.data }); if ('error' in r && r.error) setErr(r.error); else if ('message' in r) setDone(r.message); } catch { setErr('Could not join the waitlist. Please try again.'); } finally { setBusy(false); } }}>
-      <div className="grid gap-4 sm:grid-cols-2">{text('full_name', 'Full name')}{text('email', 'Work email', 'email', true)}{text('company', 'Company name')}{text('job_title', 'Job title')}{pick('company_size', 'Company size', COMPANY_SIZES)}{text('country', 'Country')}</div>
+      <div className="grid gap-4 sm:grid-cols-2">{text('full_name', 'Full name', 'text', false, PLACEHOLDERS.name)}{text('email', 'Work email', 'email', true, PLACEHOLDERS.workEmail)}{text('company', 'Company name', 'text', false, PLACEHOLDERS.company)}{text('job_title', 'Job title', 'text', false, PLACEHOLDERS.jobTitle)}{pick('company_size', 'Company size', COMPANY_SIZES)}{text('country', 'Country')}</div>
       <MultiTicks legend="Roles you hire for" options={EMPLOYER_ROLES} value={v.roles as never} onChange={x => set('roles', x)} labels={ROLE_LABELS} />
       {v.roles.includes('other') && text('other_role', 'Other role')}
       <MultiTicks legend="Hiring types" options={HIRING_TYPES} value={v.hiring_types as never} onChange={x => set('hiring_types', x)} />

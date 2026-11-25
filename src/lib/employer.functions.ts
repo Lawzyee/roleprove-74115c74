@@ -52,7 +52,7 @@ export const leaveWaitlistFn = createServerFn({ method: 'POST' }).inputValidator
 /** Step 1 of listing a job: work email only (personal domains refused), then a confirmation link. */
 export const requestSubmitLinkFn = createServerFn({ method: 'POST' }).inputValidator((d: unknown) => workEmailSchema.parse(d)).handler(async ({ data }) => {
   if (data.website) return { ok: true as const };
-  if (isPersonalEmail(data.email)) return { error: 'Please use your work email address (for example you@yourcompany.com). We can\u2019t accept job listings from personal email addresses like Gmail or Outlook, because the company email helps candidates trust the listing.' };
+  if (isPersonalEmail(data.email)) return { error: 'Please use your work email address (for example jane.doe@yourcompany.com). We can\u2019t accept job listings from personal email addresses like Gmail or Outlook, because the company email helps candidates trust the listing.' };
   const a = await admin(); const s = await server();
   if (!(await s.rateHit(a, 'link'))) return { error: LIMITED };
   const token = s.newToken(); const hash = await s.hashToken(token);

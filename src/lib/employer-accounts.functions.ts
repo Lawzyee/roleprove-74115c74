@@ -30,7 +30,7 @@ export const employerSignUpFn = createServerFn({ method: 'POST' }).inputValidato
   });
   const { data: res, error } = await pub.auth.signUp({ email: data.email, password: data.password, options: {
     emailRedirectTo: absoluteUrl('/auth/confirm'),
-    data: { name: data.name, account_type: 'employer', employer_terms_version: CURRENT_EMPLOYER_TERMS_VERSION, privacy_version: CURRENT_PRIVACY_VERSION },
+    data: { name: data.name, company_name: data.company_name, job_title: data.job_title ?? '', account_type: 'employer', employer_terms_version: CURRENT_EMPLOYER_TERMS_VERSION, privacy_version: CURRENT_PRIVACY_VERSION },
   } });
   if (error) {
     if (/database error|work email/i.test(error.message)) return { error: WORK_EMAIL_MESSAGE };

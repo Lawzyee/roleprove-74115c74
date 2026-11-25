@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { PLACEHOLDERS } from "@/lib/auth-entry";
 import { useServerFn } from '@tanstack/react-start';
 import { useEffect, useRef, useState } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -31,7 +32,7 @@ function Page() {
   useEffect(() => { if (!token) { setSession('invalid'); return; } if (started.current) return; started.current = true;
     open({ data: { token } }).then(r => setSession(r.ok ? { email: r.email, expiresAt: r.expiresAt } : 'expired' in r && r.expired ? 'expired' : 'invalid')).catch(() => setSession('invalid')); }, [token, open]);
   const set = <K extends keyof F>(k: K, x: F[K]) => setF(p => ({ ...p, [k]: x }));
-  const text = (k: keyof F, label: string, type = 'text') => <Label className="block min-w-0 space-y-2">{label}<Input type={type} value={String(f[k])} onChange={e => set(k, e.target.value as never)} /></Label>;
+  const text = (k: keyof F, label: string, type = 'text', placeholder?: string) => <Label className="block min-w-0 space-y-2">{label}<Input type={type} placeholder={placeholder} value={String(f[k])} onChange={e => set(k, e.target.value as never)} /></Label>;
   const pick = (k: keyof F, label: string, opts: readonly string[], labels?: Record<string, string>) => <Label className="block space-y-2">{label}<Select value={String(f[k])} onValueChange={x => set(k, x as never)}><SelectTrigger aria-label={label}><SelectValue placeholder="Choose" /></SelectTrigger><SelectContent>{opts.map(o => <SelectItem key={o} value={o}>{labels?.[o] ?? o}</SelectItem>)}</SelectContent></Select></Label>;
   const shell = (body: React.ReactNode) => <><SiteHeader /><main className="mx-auto max-w-3xl px-5 py-12"><h1 className="font-display text-3xl font-semibold">List a job</h1>{body}</main></>;
   if (session === 'loading') return shell(<p className="mt-4">Checking your link…</p>);
@@ -44,7 +45,7 @@ function Page() {
       const parsed = employerJobSchema().safeParse({ ...f, token, website: hp, salary_currency: f.salary_currency.toUpperCase() || null, salary_min: num(f.salary_min), salary_max: num(f.salary_max), salary_period: f.salary_period || null });
       if (!parsed.success) { setErr(parsed.error.issues[0]?.message ?? 'Check the form.'); return; }
       setBusy(true); try { const r = await submit({ data: parsed.data }); if ('error' in r && r.error) setErr(r.error); else setSent(n => n + 1); } catch { setErr('Could not submit the job. Please try again.'); } finally { setBusy(false); } }}>
-      <div className="grid gap-4 sm:grid-cols-2">{text('submitter_name', 'Your name')}{text('title', 'Job title')}{text('company', 'Company name')}{text('company_website', 'Company website (https://…)', 'url')}{text('city', 'City')}{text('country', 'Country')}
+      <div className="grid gap-4 sm:grid-cols-2">{text('submitter_name', 'Your name', 'text', PLACEHOLDERS.name)}{text('title', 'Job title')}{text('company', 'Company name')}{text('company_website', 'Company website (https://…)', 'url')}{text('city', 'City')}{text('country', 'Country')}
         {pick('arrangement', 'Work arrangement', ARRANGEMENTS)}{pick('employment', 'Employment type', EMPLOYMENT)}{pick('role_key', 'Role', EMPLOYER_ROLES, ROLE_LABELS)}{f.role_key === 'other' && text('other_role', 'Role name')}{pick('seniority', 'Seniority', ['entry', 'mid', 'senior'])}
         {text('apply_url', 'Apply link (https://…)', 'url')}<Label className="block space-y-2">Expiry date (max {MAX_EXPIRY_DAYS} days)<Input type="date" min={today()} max={addDays(today(), MAX_EXPIRY_DAYS)} value={f.expires_date} onChange={e => set('expires_date', e.target.value)} /></Label></div>
       <fieldset className="grid gap-3 sm:grid-cols-4"><legend className="mb-2 text-sm font-medium">Salary range (optional)</legend>{text('salary_currency', 'Currency (e.g. USD)')}{text('salary_min', 'Minimum', 'number')}{text('salary_max', 'Maximum', 'number')}{pick('salary_period', 'Period', ['hour', 'month', 'year'])}</fieldset>

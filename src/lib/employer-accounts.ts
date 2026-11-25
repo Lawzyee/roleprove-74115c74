@@ -13,7 +13,7 @@ export type StaffAction = (typeof STAFF_ACTIONS)[number];
 
 /** Same answer whether the email belongs to a candidate, an employer or nobody we can tell apart. */
 export const ACCOUNT_EXISTS_MESSAGE = 'Use a different work email or contact support.';
-export const WORK_EMAIL_MESSAGE = 'Please use your work email address (for example you@yourcompany.com). We can\u2019t accept personal or temporary email addresses for employer accounts.';
+export const WORK_EMAIL_MESSAGE = 'Please use your work email address (for example jane.doe@yourcompany.com). We can\u2019t accept personal or temporary email addresses for employer accounts.';
 export const LEVEL_EMAIL = 'Work email confirmed';
 export const LEVEL_REVIEWED = 'Reviewed by RoleProve';
 
@@ -90,6 +90,8 @@ export const employerSignUpSchema = z.object({
   name: text(180).min(1, 'Enter your name.'),
   email: z.string().trim().toLowerCase().email('Enter a valid email address.').max(254),
   password: z.string().min(8, 'Use at least 8 characters.').max(200),
+  company_name: text(180).min(1, 'Enter your company name.'),
+  job_title: text(120).optional(),
   terms: z.literal(true, { errorMap: () => ({ message: 'Please accept the Employer Terms and Privacy Policy.' }) }),
   website: z.string().max(300).optional(),
 });

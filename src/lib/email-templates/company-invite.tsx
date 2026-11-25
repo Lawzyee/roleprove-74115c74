@@ -15,5 +15,5 @@ export const template = {
   component: Email,
   subject: (d: Record<string, any>) => `Join ${d.company ?? 'your company'} on RoleProve`,
   displayName: 'Company team invite',
-  previewData: { company: 'Acme', inviter: 'Ada Okafor', url: absoluteUrl('/employers/invite', { token: 'example' }), days: 7 },
+  previewData: { company: 'Acme', inviter: 'Jane Doe', url: absoluteUrl('/employers/invite', { token: 'example' }), days: 7 },
 } satisfies TemplateEntry

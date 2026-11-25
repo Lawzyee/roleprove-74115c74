@@ -177,10 +177,10 @@ export function SiteHeader() {
                 <Link to="/help">Help</Link>
               </Button>
               <Button asChild variant="ghost" size="sm" className="px-2 sm:px-3">
-                <Link to="/auth">Log in</Link>
+                <Link to="/auth" search={{ mode: "login" }}>Log in</Link>
               </Button>
               <Button asChild size="sm">
-                <Link to="/auth">Get started</Link>
+                <Link to="/auth" search={{ mode: "signup" }}>Get started</Link>
               </Button>
             </>
           )}

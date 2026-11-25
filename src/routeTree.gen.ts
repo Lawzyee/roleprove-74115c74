@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as EmployerTermsRouteImport } from './routes/employer-terms'
@@ -18,6 +19,7 @@ import { Route as EmployersRouteImport } from './routes/employers'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as PostingStandardsRouteImport } from './routes/posting-standards'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedApplicationProfileRouteImport } from './routes/_authenticated/application-profile'
 import { Route as AuthenticatedApplicationsRouteImport } from './routes/_authenticated/applications'
@@ -82,6 +84,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -115,6 +122,11 @@ const PostingStandardsRoute = PostingStandardsRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -420,6 +432,7 @@ const LovableEmailTransactionalPreviewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/cookies': typeof CookiesRoute
   '/employer-terms': typeof EmployerTermsRoute
@@ -427,6 +440,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof HelpRoute
   '/posting-standards': typeof PostingStandardsRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/application-profile': typeof AuthenticatedApplicationProfileRoute
   '/applications': typeof AuthenticatedApplicationsRoute
@@ -484,6 +498,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/cookies': typeof CookiesRoute
   '/employer-terms': typeof EmployerTermsRoute
@@ -491,6 +506,7 @@ export interface FileRoutesByTo {
   '/help': typeof HelpRoute
   '/posting-standards': typeof PostingStandardsRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/application-profile': typeof AuthenticatedApplicationProfileRoute
   '/applications': typeof AuthenticatedApplicationsRoute
@@ -549,6 +565,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/about': typeof AboutRoute
   '/auth': typeof AuthRoute
   '/cookies': typeof CookiesRoute
   '/employer-terms': typeof EmployerTermsRoute
@@ -556,6 +573,7 @@ export interface FileRoutesById {
   '/help': typeof HelpRoute
   '/posting-standards': typeof PostingStandardsRoute
   '/privacy': typeof PrivacyRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
   '/_authenticated/application-profile': typeof AuthenticatedApplicationProfileRoute
   '/_authenticated/applications': typeof AuthenticatedApplicationsRoute
@@ -615,6 +633,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/auth'
     | '/cookies'
     | '/employer-terms'
@@ -622,6 +641,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/posting-standards'
     | '/privacy'
+    | '/reset-password'
     | '/terms'
     | '/application-profile'
     | '/applications'
@@ -679,6 +699,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/auth'
     | '/cookies'
     | '/employer-terms'
@@ -686,6 +707,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/posting-standards'
     | '/privacy'
+    | '/reset-password'
     | '/terms'
     | '/application-profile'
     | '/applications'
@@ -743,6 +765,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/about'
     | '/auth'
     | '/cookies'
     | '/employer-terms'
@@ -750,6 +773,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/posting-standards'
     | '/privacy'
+    | '/reset-password'
     | '/terms'
     | '/_authenticated/application-profile'
     | '/_authenticated/applications'
@@ -809,6 +833,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AboutRoute: typeof AboutRoute
   AuthRoute: typeof AuthRoute
   CookiesRoute: typeof CookiesRoute
   EmployerTermsRoute: typeof EmployerTermsRoute
@@ -816,6 +841,7 @@ export interface RootRouteChildren {
   HelpRoute: typeof HelpRoute
   PostingStandardsRoute: typeof PostingStandardsRoute
   PrivacyRoute: typeof PrivacyRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   AuthConfirmRoute: typeof AuthConfirmRoute
   EmployersConfirmRoute: typeof EmployersConfirmRoute
@@ -848,6 +874,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -897,6 +930,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -1385,6 +1425,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AboutRoute: AboutRoute,
   AuthRoute: AuthRoute,
   CookiesRoute: CookiesRoute,
   EmployerTermsRoute: EmployerTermsRoute,
@@ -1392,6 +1433,7 @@ const rootRouteChildren: RootRouteChildren = {
   HelpRoute: HelpRoute,
   PostingStandardsRoute: PostingStandardsRoute,
   PrivacyRoute: PrivacyRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   AuthConfirmRoute: AuthConfirmRoute,
   EmployersConfirmRoute: EmployersConfirmRoute,

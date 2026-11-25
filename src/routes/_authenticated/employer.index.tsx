@@ -9,6 +9,7 @@ import { CompanyForm, HowWeReview, Levels, StatusBanner, emptyCompany } from '@/
 import { useEmployerState } from '@/components/employers/useEmployerState';
 import { acceptInviteFn, createCompanyFn, mySubmissionsFn, requestJoinFn } from '@/lib/employer-accounts.functions';
 import { employerHead } from '@/components/employers/Fields';
+import { useAuth } from '@/hooks/useAuth';
 
 export const Route = createFileRoute('/_authenticated/employer/')({ head: () => employerHead('Employer overview', 'Your company status, job postings and team on RoleProve.', false), component: Overview });
 
@@ -40,7 +41,7 @@ function Submissions() {
 
 type State = NonNullable<ReturnType<typeof useEmployerState>['data']>;
 function Onboarding({ state }: { state: State }) {
-  const qc = useQueryClient();
+  const qc = useQueryClient(); const { user } = useAuth();
   const create = useServerFn(createCompanyFn); const join = useServerFn(requestJoinFn); const accept = useServerFn(acceptInviteFn);
   const [terms, setTerms] = useState(false); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
   const refresh = () => qc.invalidateQueries({ queryKey: ['employer-state'] });
@@ -57,6 +58,6 @@ function Onboarding({ state }: { state: State }) {
     <p className="text-sm text-muted-foreground">If this isn't your company, <Link to="/support/new" className="text-primary underline">contact support</Link>.</p></div>;
   return <div className="max-w-2xl space-y-4"><h1 className="font-display text-3xl font-semibold">Set up your company</h1>
     <p className="text-muted-foreground">You'll be the company owner. Our team reviews every company before it can do anything beyond editing its profile.</p>
-    <CompanyForm initial={emptyCompany()} domain={state.domain} submitLabel="Send for review" onSubmit={async (v) => { const r = await create({ data: v }); if ('error' in r) return r.error; await refresh(); return null; }} />
+    <CompanyForm initial={{ ...emptyCompany(), name: typeof user?.user_metadata?.['company_name'] === 'string' ? String(user.user_metadata['company_name']).slice(0, 180) : '' }} domain={state.domain} submitLabel="Send for review" onSubmit={async (v) => { const r = await create({ data: v }); if ('error' in r) return r.error; await refresh(); return null; }} />
   </div>;
 }

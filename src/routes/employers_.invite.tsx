@@ -26,7 +26,7 @@ function Page() {
   else if (inv?.expired) body = <p>This invite has expired. Ask the company owner to send a new one.</p>;
   else if (done) body = <><p role="status">You've joined {inv!.company}.</p><Button asChild className="mt-4"><Link to="/employer">Open the employer area</Link></Button></>;
   else if (!user) body = <><p><strong>{inv!.company}</strong> invited {inv!.email} to join as a {inv!.role}.</p><p className="mt-2 text-sm text-muted-foreground">Create an employer account with {inv!.email}, or sign in if you have one, then open this link again.</p>
-    <div className="mt-4 flex flex-wrap gap-3"><Button asChild><Link to="/employers/sign-up">Create employer account</Link></Button><Button asChild variant="outline"><Link to="/auth">Sign in</Link></Button></div></>;
+    <div className="mt-4 flex flex-wrap gap-3"><Button asChild><Link to="/auth" search={{ mode: "signup", as: "hiring" }}>Create employer account</Link></Button><Button asChild variant="outline"><Link to="/auth" search={{ mode: "login" }}>Sign in</Link></Button></div></>;
   else body = <><p><strong>{inv!.company}</strong> invited {inv!.email} to join as a {inv!.role}.</p>
     <div className="mt-4"><Tick id="inv-terms" checked={terms} onChange={setTerms}>I agree to the <Link to="/employer-terms" target="_blank" className="text-primary underline">Employer Terms</Link> and <Link to="/privacy" target="_blank" className="text-primary underline">Privacy Policy</Link></Tick></div>
     {err && <p role="alert" className="mt-2 text-sm text-destructive">{err}</p>}
