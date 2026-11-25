@@ -161,6 +161,14 @@ function SettingsPage() {
             </CardContent>
           </Card>
 
+          <Card className="border-border shadow-none">
+            <CardHeader>
+              <CardTitle className="font-display text-lg">Application profile</CardTitle>
+              <CardDescription>Choose what an employer may see when you apply. Nothing is shared until you apply and confirm.</CardDescription>
+            </CardHeader>
+            <CardContent><Button asChild variant="outline"><Link to="/application-profile">Set up application profile</Link></Button></CardContent>
+          </Card>
+
           <NotificationSettingsCard />
 
           <Card className="border-border shadow-none">

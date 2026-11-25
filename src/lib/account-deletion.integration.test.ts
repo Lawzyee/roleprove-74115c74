@@ -65,6 +65,10 @@ async function seedAccount() {
     must(await admin.from('job_tracker').insert({user_id:uid,job_id:listing.id,status:'applied',notes:'My job note'}).select('id').single(),'tracker');
     must(await admin.from('job_preferences').insert({user_id:uid,roles:['data_analyst'],countries:['Nigeria']}).select('user_id').single(),'preferences');
 
+    // Application profile with a project, plus one frozen snapshot and consent.
+    { const r = await admin.from('application_profiles').insert({ user_id: uid, headline: 'App headline', project_attempt_ids: [attempt.id] }); if (r.error) throw new Error('application profile: ' + r.error.message); }
+    { const { createSnapshot } = await import('./application-profile.server'); await createSnapshot(admin, uid, { employerRef: 'test-employer' }); }
+
     // Real Stripe test-mode subscription (trial, so no card needed).
     const customer = await stripe.customers.create({ email, name: 'Erasure Test', metadata: { userId: uid } });
     const price = (await stripe.prices.list({ lookup_keys: ['roleprove_practice_prep_monthly'], limit: 1 })).data[0];
@@ -84,7 +88,7 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
     expect((await loadPublicPortfolioRow(admin, slug))?.user_id).toBe(uid);
 
     const result = await eraseAccount({ admin, userId: uid, stripeFor: (env) => (env === 'sandbox' ? stripe : null) });
-    expect(USER_TABLES.map((t) => t.table)).toEqual(expect.arrayContaining(['notifications', 'notification_settings']));
+    expect(USER_TABLES.map((t) => t.table)).toEqual(expect.arrayContaining(['notifications', 'notification_settings', 'application_profiles', 'application_snapshots', 'application_consents']));
     expect(result.stripe).toEqual([{ env: 'sandbox', customerId: customer.id, action: 'deleted' }]);
 
     for (const { table, column } of USER_TABLES) expect(must(await admin.from(table as never).select('*').eq(column, uid), table), table).toEqual([]);
@@ -138,6 +142,10 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
       expect(all.job_tracker[0].status).toBe('applied');
       expect(all.job_tracker[0].notes).toBe('My job note');
       expect(all.job_preferences[0].countries).toEqual(['Nigeria']);
+      expect(all.application_profile[0].headline).toBe('App headline');
+      expect(all.application_consents[0].employer_ref).toBe('test-employer');
+      expect(all.application_consents[0].wording_version).toMatch(/\d{4}-\d{2}-\d{2}/);
+      expect(all.application_snapshots[0].content.headline).toBe('App headline');
       expect(JSON.stringify(all)).not.toContain('STAFF PRIVATE');
       expect(JSON.stringify(all)).not.toContain('STAFF NOTE');
       expect(JSON.stringify(all)).not.toContain('PRIVATE SUBMITTER');

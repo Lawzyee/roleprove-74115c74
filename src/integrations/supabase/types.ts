@@ -110,6 +110,180 @@ export type Database = {
         }
         Relationships: []
       }
+      application_consents: {
+        Row: {
+          consented_at: string
+          employer_ref: string | null
+          id: string
+          included_items: string[]
+          job_id: string | null
+          snapshot_id: string
+          user_id: string
+          withdrawn_at: string | null
+          wording_version: string
+        }
+        Insert: {
+          consented_at?: string
+          employer_ref?: string | null
+          id?: string
+          included_items: string[]
+          job_id?: string | null
+          snapshot_id: string
+          user_id: string
+          withdrawn_at?: string | null
+          wording_version: string
+        }
+        Update: {
+          consented_at?: string
+          employer_ref?: string | null
+          id?: string
+          included_items?: string[]
+          job_id?: string | null
+          snapshot_id?: string
+          user_id?: string
+          withdrawn_at?: string | null
+          wording_version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_consents_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "application_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_profiles: {
+        Row: {
+          availability: string | null
+          bio: string | null
+          city: string | null
+          contact_mode: string
+          country: string | null
+          created_at: string
+          credential_ids: string[]
+          cv_session_id: string | null
+          display_name: string | null
+          github_url: string | null
+          headline: string | null
+          include_bio: boolean
+          include_headline: boolean
+          include_links: boolean
+          include_location: boolean
+          include_photo: boolean
+          include_pillars: boolean
+          include_target_score: boolean
+          include_work: boolean
+          linkedin_url: string | null
+          other_url: string | null
+          project_attempt_ids: string[]
+          updated_at: string
+          user_id: string
+          work_arrangement: string | null
+        }
+        Insert: {
+          availability?: string | null
+          bio?: string | null
+          city?: string | null
+          contact_mode?: string
+          country?: string | null
+          created_at?: string
+          credential_ids?: string[]
+          cv_session_id?: string | null
+          display_name?: string | null
+          github_url?: string | null
+          headline?: string | null
+          include_bio?: boolean
+          include_headline?: boolean
+          include_links?: boolean
+          include_location?: boolean
+          include_photo?: boolean
+          include_pillars?: boolean
+          include_target_score?: boolean
+          include_work?: boolean
+          linkedin_url?: string | null
+          other_url?: string | null
+          project_attempt_ids?: string[]
+          updated_at?: string
+          user_id: string
+          work_arrangement?: string | null
+        }
+        Update: {
+          availability?: string | null
+          bio?: string | null
+          city?: string | null
+          contact_mode?: string
+          country?: string | null
+          created_at?: string
+          credential_ids?: string[]
+          cv_session_id?: string | null
+          display_name?: string | null
+          github_url?: string | null
+          headline?: string | null
+          include_bio?: boolean
+          include_headline?: boolean
+          include_links?: boolean
+          include_location?: boolean
+          include_photo?: boolean
+          include_pillars?: boolean
+          include_target_score?: boolean
+          include_work?: boolean
+          linkedin_url?: string | null
+          other_url?: string | null
+          project_attempt_ids?: string[]
+          updated_at?: string
+          user_id?: string
+          work_arrangement?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_snapshots: {
+        Row: {
+          content: Json
+          created_at: string
+          id: string
+          included_items: string[]
+          replaces_snapshot_id: string | null
+          user_id: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          id?: string
+          included_items: string[]
+          replaces_snapshot_id?: string | null
+          user_id: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          id?: string
+          included_items?: string[]
+          replaces_snapshot_id?: string | null
+          user_id?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_snapshots_replaces_snapshot_id_fkey"
+            columns: ["replaces_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "application_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attempt_deliverables: {
         Row: {
           attempt_id: string

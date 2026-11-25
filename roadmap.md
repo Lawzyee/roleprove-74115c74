@@ -39,3 +39,8 @@
 
 ## User inbox (notifications)
 - [x] Notifications table/settings, bell + inbox page, email choices, triggers (support reply/resolve, job closed, export ready, billing notices), hourly cleanup + pending emails, deletion/export, privacy placeholder; 125 tests pass; phone browser flow verified
+
+## Application profile and sharing consent
+- [x] Application profile, employer preview, frozen share snapshots, per-application consent, withdrawal
+- Rule for later employer screens: view in the app only — no bulk export, no file downloads except the CV the candidate included in that snapshot; read only via readSnapshotForEmployer (withdrawn = no access).
+- [ ] Later (out of scope now): employer accounts, applying, review screen before sending, employer views

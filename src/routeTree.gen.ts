@@ -17,6 +17,7 @@ import { Route as EmployersRouteImport } from './routes/employers'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AuthenticatedApplicationProfileRouteImport } from './routes/_authenticated/application-profile'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenticated/performance'
@@ -96,6 +97,12 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedApplicationProfileRoute =
+  AuthenticatedApplicationProfileRouteImport.update({
+    id: '/application-profile',
+    path: '/application-profile',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -320,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/help': typeof HelpRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/application-profile': typeof AuthenticatedApplicationProfileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/performance': typeof AuthenticatedPerformanceRoute
@@ -368,6 +376,7 @@ export interface FileRoutesByTo {
   '/help': typeof HelpRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/application-profile': typeof AuthenticatedApplicationProfileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/performance': typeof AuthenticatedPerformanceRoute
@@ -418,6 +427,7 @@ export interface FileRoutesById {
   '/help': typeof HelpRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/application-profile': typeof AuthenticatedApplicationProfileRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/performance': typeof AuthenticatedPerformanceRoute
@@ -468,6 +478,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/privacy'
     | '/terms'
+    | '/application-profile'
     | '/dashboard'
     | '/inbox'
     | '/performance'
@@ -516,6 +527,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/privacy'
     | '/terms'
+    | '/application-profile'
     | '/dashboard'
     | '/inbox'
     | '/performance'
@@ -565,6 +577,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/privacy'
     | '/terms'
+    | '/_authenticated/application-profile'
     | '/_authenticated/dashboard'
     | '/_authenticated/inbox'
     | '/_authenticated/performance'
@@ -687,6 +700,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/application-profile': {
+      id: '/_authenticated/application-profile'
+      path: '/application-profile'
+      fullPath: '/application-profile'
+      preLoaderRoute: typeof AuthenticatedApplicationProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -965,6 +985,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedApplicationProfileRoute: typeof AuthenticatedApplicationProfileRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedPerformanceRoute: typeof AuthenticatedPerformanceRoute
@@ -994,6 +1015,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedApplicationProfileRoute: AuthenticatedApplicationProfileRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedPerformanceRoute: AuthenticatedPerformanceRoute,

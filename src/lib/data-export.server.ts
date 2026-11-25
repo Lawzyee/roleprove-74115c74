@@ -43,6 +43,9 @@ const by = (table: string, column: string, key?: string) => async ({ admin, user
 };
 
 export const SECTIONS: Array<{ label: string; file: string; about: string; load: (c: Ctx) => Promise<Row[]>; keep?: string }> = [
+  { label: 'application profile', file: 'application_profile', about: 'Your application profile: what you chose to share with employers when you apply, and each item\'s include setting.', load: by('application_profiles', 'user_id') },
+  { label: 'application share snapshots', file: 'application_snapshots', about: 'Frozen copies of what you shared at the moment of each application, and when you withdrew them.', load: by('application_snapshots', 'user_id') },
+  { label: 'application consent records', file: 'application_consents', about: 'Each consent you gave: the exact items included, the wording version shown, when, and when withdrawn.', load: by('application_consents', 'user_id') },
   { label: 'inbox notifications', file: 'notifications', about: 'Notifications in your RoleProve inbox, and when you read them.', load: by('notifications', 'user_id') },
   { label: 'notification settings', file: 'notification_settings', about: 'Which notification categories you chose to also receive by email.', load: by('notification_settings', 'user_id') },
   { label: 'saved jobs and application tracker', file: 'job_tracker', about: 'Jobs you saved, your application statuses and private notes.', load: by('job_tracker', 'user_id') },
