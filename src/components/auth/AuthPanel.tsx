@@ -25,6 +25,7 @@ import { authErrorMessage, confirmationRedirect, CONFIRMATION_COOLDOWN_SECONDS, 
 import { homeFor, initialView, PLACEHOLDERS, type AuthSearch, type AuthView } from "@/lib/auth-entry";
 
 type View = AuthView | "forgot";
+const RESET_COOLDOWN_MS = 60_000;
 
 
 function Field({ id, label, hint, error, children }: { id: string; label: string; hint?: string; error?: string | null; children: React.ReactNode }) {
@@ -62,6 +63,7 @@ export function AuthPanel({ search }: { search: AuthSearch }) {
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [resetSentTo, setResetSentTo] = useState<string | null>(null);
   const [resendAt, setResendAt] = useState(0);
+  const [resetAt, setResetAt] = useState(0);
   const [resendSeconds, setResendSeconds] = useState(0);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [f, setF] = useState({ name: "", email: "", password: "", target_role_id: "", company_name: "", job_title: "", terms: false });
@@ -112,7 +114,7 @@ export function AuthPanel({ search }: { search: AuthSearch }) {
       const email = f.email.trim();
       const { data, error: err } = await supabase.auth.signUp({ email, password: f.password, options: {
         emailRedirectTo: confirmationRedirect(window.location.origin),
-        data: { name: f.name.trim(), target_role_id: f.target_role_id || null, terms_version: CURRENT_TERMS_VERSION, privacy_version: CURRENT_PRIVACY_VERSION },
+        data: { name: f.name.trim(), target_role_id: f.target_role_id || null, age_confirmed: true, terms_version: CURRENT_TERMS_VERSION, privacy_version: CURRENT_PRIVACY_VERSION },
       } });
       if (err) throw err;
       if (isDuplicateSignup(data.user)) { setError("This email is already registered. Please sign in instead."); return; }
@@ -131,8 +133,12 @@ export function AuthPanel({ search }: { search: AuthSearch }) {
     });
   };
 
-  const forgot = (e: React.FormEvent) => { e.preventDefault(); void run(async () => {
+  // Same message whether or not the email has an account; one request per minute from this screen.
+  const forgot = (e: React.FormEvent) => { e.preventDefault();
+    if (Date.now() < resetAt) return setError(`Please wait ${Math.ceil((resetAt - Date.now()) / 1000)}s before requesting another link.`);
+    void run(async () => {
     const email = f.email.trim();
+    setResetAt(Date.now() + RESET_COOLDOWN_MS);
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
     if (err) throw err;
     setResetSentTo(email);
@@ -197,7 +203,7 @@ export function AuthPanel({ search }: { search: AuthSearch }) {
         ) : resetSentTo ? (
           <div className="space-y-4" aria-live="polite">
             <MailCheck className="h-8 w-8 text-primary" aria-hidden="true" />
-            <p className="break-words text-sm">If an account exists for <strong>{resetSentTo}</strong>, we've sent a link to reset your password.</p>
+            <p className="break-words text-sm">If an account exists for <strong>{resetSentTo}</strong>, we've sent a link to reset your password. The link works once and expires after 1 hour.</p>
             <Button type="button" variant="link" className="w-full" onClick={() => { setResetSentTo(null); go("login"); }}>Back to sign in</Button>
           </div>
         ) : view === "login" ? (

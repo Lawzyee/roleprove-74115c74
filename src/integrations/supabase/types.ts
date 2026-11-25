@@ -1670,6 +1670,7 @@ export type Database = {
       legal_acceptances: {
         Row: {
           accepted_at: string
+          age_confirmed: boolean | null
           employer_terms_version: string | null
           id: string
           privacy_version: string
@@ -1679,6 +1680,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string
+          age_confirmed?: boolean | null
           employer_terms_version?: string | null
           id?: string
           privacy_version: string
@@ -1688,6 +1690,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string
+          age_confirmed?: boolean | null
           employer_terms_version?: string | null
           id?: string
           privacy_version?: string

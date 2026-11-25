@@ -84,3 +84,33 @@ describe('placeholders', () => {
     for (const f of walk('src').filter((x) => !x.endsWith('auth-entry.test.ts'))) expect(read(f), f).not.toMatch(/placeholder="you@/);
   });
 });
+
+describe('age confirmation, password reset and share tags', () => {
+  const panel = read('src/components/auth/AuthPanel.tsx');
+  it('job seeker sign-up requires the 18+ tick and records it', () => {
+    expect(panel).toMatch(/I am 18 or over and I agree/);
+    expect(panel).toMatch(/if \(!f\.terms\) return setError/);
+    expect(panel).toMatch(/age_confirmed: true/);
+    expect(read('drizzle/migrations/0025_record_age_confirmation.sql')).toMatch(/age_confirmed/);
+  });
+  it('reset shows one message whether or not the account exists', () => {
+    const forgot = panel.slice(panel.indexOf('const forgot'), panel.indexOf('async function resend'));
+    expect(forgot).toMatch(/setResetSentTo\(email\)/);
+    expect(forgot).not.toMatch(/not found|no account|isn't registered/i);
+    expect(panel).toMatch(/If an account exists for/);
+    expect(panel).toMatch(/RESET_COOLDOWN_MS = 60_000/);
+  });
+  it('reset link returns to the reset page and is rewritten to the site address', async () => {
+    expect(panel).toMatch(/redirectTo: `\$\{window\.location\.origin\}\/reset-password`/);
+    process.env['SITE_URL'] = 'https://roleprove.com';
+    const { authActionLink } = await import('./site-url');
+    const out = new URL(authActionLink('https://auth.example/verify?token=x&type=recovery&redirect_to=http://localhost:8080/reset-password'));
+    expect(out.searchParams.get('redirect_to')).toMatch(/\/reset-password$/);
+    expect(out.searchParams.get('redirect_to')).not.toMatch(/localhost/);
+  });
+  it('the sign-in screen has its own title, description and share tags', () => {
+    const idx = read('src/routes/index.tsx');
+    for (const t of ['{ title: TITLE }', 'name: "description", content: DESC', 'property: "og:title", content: TITLE', 'property: "og:description", content: DESC', 'property: "og:url", content: "https://roleprove.com/"', 'rel: "canonical", href: "https://roleprove.com/"']) expect(idx).toContain(t);
+    expect(idx).not.toMatch(/Lovable App/);
+  });
+});
