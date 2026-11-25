@@ -56,6 +56,7 @@ export type Database = {
           employer_rejected_days: number
           employer_unconfirmed_days: number
           employer_waitlist_max_months: number | null
+          fetch_block_domains: string[]
           free_interview_prep: number
           free_regrades: number
           free_simulations: number
@@ -76,6 +77,8 @@ export type Database = {
           recruiter_visibility_enabled: boolean
           report_open_retention_days: number
           report_resolved_retention_days: number
+          staff_audit_retention_months: number
+          staff_fetch_per_hour: number
           staff_review_email_at: string | null
           trial_days: number
         }
@@ -102,6 +105,7 @@ export type Database = {
           employer_rejected_days?: number
           employer_unconfirmed_days?: number
           employer_waitlist_max_months?: number | null
+          fetch_block_domains?: string[]
           free_interview_prep?: number
           free_regrades?: number
           free_simulations?: number
@@ -122,6 +126,8 @@ export type Database = {
           recruiter_visibility_enabled?: boolean
           report_open_retention_days?: number
           report_resolved_retention_days?: number
+          staff_audit_retention_months?: number
+          staff_fetch_per_hour?: number
           staff_review_email_at?: string | null
           trial_days?: number
         }
@@ -148,6 +154,7 @@ export type Database = {
           employer_rejected_days?: number
           employer_unconfirmed_days?: number
           employer_waitlist_max_months?: number | null
+          fetch_block_domains?: string[]
           free_interview_prep?: number
           free_regrades?: number
           free_simulations?: number
@@ -168,6 +175,8 @@ export type Database = {
           recruiter_visibility_enabled?: boolean
           report_open_retention_days?: number
           report_resolved_retention_days?: number
+          staff_audit_retention_months?: number
+          staff_fetch_per_hour?: number
           staff_review_email_at?: string | null
           trial_days?: number
         }
@@ -2361,6 +2370,33 @@ export type Database = {
           },
         ]
       }
+      staff_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          detail: string
+          id: string
+          job_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string
+          id?: string
+          job_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          detail?: string
+          id?: string
+          job_id?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at_period_end: boolean
@@ -2571,6 +2607,10 @@ export type Database = {
       is_employer: { Args: { _user_id: string }; Returns: boolean }
       is_support_staff: { Args: { _user_id: string }; Returns: boolean }
       normalized_job_apply_url: { Args: { value: string }; Returns: string }
+      notify_staff: {
+        Args: { p_dest: string; p_related: string }
+        Returns: undefined
+      }
       portfolio_rate_hit: {
         Args: { p_key: string; p_limit: number }
         Returns: boolean
@@ -2583,6 +2623,7 @@ export type Database = {
         Args: { p_details: string; p_job: string; p_reason: string }
         Returns: string
       }
+      require_staff: { Args: never; Returns: undefined }
       reserve_billing_usage: {
         Args: { p_env: string; p_kind: string; p_user: string }
         Returns: Json
@@ -2591,6 +2632,15 @@ export type Database = {
         Args: { p_env: string; p_kind: string; p_user: string }
         Returns: Json
       }
+      staff_accounts: {
+        Args: never
+        Returns: {
+          email: string
+          since: string
+        }[]
+      }
+      staff_dashboard: { Args: never; Returns: Json }
+      staff_duplicate_links: { Args: { p_urls: string[] }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never
