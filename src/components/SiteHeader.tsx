@@ -1,6 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LayoutDashboard, LogOut, Settings, User as UserIcon, Library, MessagesSquare, LifeBuoy, HelpCircle, FolderOpen } from "lucide-react";
+import { LayoutDashboard, LogOut, Settings, User as UserIcon, Library, MessagesSquare, LifeBuoy, HelpCircle, FolderOpen, Send } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyTickets } from "@/components/support/SupportParts";
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,9 @@ export function SiteHeader() {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="sm:hidden">
                     <Link to="/jobs"><Library className="mr-2 h-4 w-4" /> Job center</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/applications"><Send className="mr-2 h-4 w-4" /> My applications</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link to="/settings">

@@ -13,7 +13,7 @@ describe('employer posting rules', () => {
   it('requires company authorisation', () => expect(postingSchema.safeParse({ ...samplePosting('https://example.com'), authorised: false }).success).toBe(false));
   it('requires Employer Terms acceptance', () => expect(postingSchema.safeParse({ ...samplePosting('https://example.com'), terms: false }).success).toBe(false));
   it('requires practice-text rights only when text exists', () => { expect(postingSchema.safeParse({ ...samplePosting('https://example.com'), practice_rights: false }).success).toBe(false); expect(postingSchema.safeParse({ ...samplePosting('https://example.com'), practice_text: '', practice_rights: false }).success).toBe(true); });
-  it('accepts only external applications', () => expect(postingSchema.safeParse({ ...samplePosting('https://example.com'), application_method: 'native' }).success).toBe(false));
+  it('accepts only external link, RoleProve or both as application methods', () => { expect(postingSchema.safeParse({ ...samplePosting('https://example.com'), application_method: 'native' }).success).toBe(false); for (const m of ['external_link', 'roleprove', 'both']) expect(postingSchema.safeParse({ ...samplePosting('https://example.com'), application_method: m }).success).toBe(true); });
   it('requires review until three distinct approvals', () => { expect(reviewRequired(false, 2, 3)).toBe(true); expect(reviewRequired(false, 3, 3)).toBe(false); });
   it('keeps forced-review companies in review', () => expect(reviewRequired(true, 20, 3)).toBe(true));
   it('apply-link edits are critical', () => expect(criticalEdit({ apply_url: 'old' }, { apply_url: 'new' })).toBe(true));
@@ -28,7 +28,7 @@ describe('employer posting rules', () => {
 });
 describe('candidate table separation inventory', () => {
   // Every generated table must be classified, so a future table cannot silently escape the inventory.
-  const sharedOrStaff = ['account_types', 'app_settings', 'billing_trial_history', 'billing_usage', 'companies', 'company_audit_log', 'company_invites', 'company_join_requests', 'company_members', 'company_staff_notes', 'data_exports', 'employer_rate_hits', 'employer_sessions', 'employer_waitlist', 'employer_jobs', 'employer_job_events', 'job_sources', 'legal_acceptances', 'notification_settings', 'notifications', 'portfolio_rate', 'portfolio_reports', 'profiles', 'roles', 'subscriptions', 'support_attachments', 'support_messages', 'support_tickets'];
+  const sharedOrStaff = ['account_types', 'app_settings', 'billing_trial_history', 'billing_usage', 'companies', 'company_audit_log', 'company_invites', 'company_join_requests', 'company_members', 'company_staff_notes', 'data_exports', 'employer_rate_hits', 'employer_sessions', 'employer_waitlist', 'employer_jobs', 'employer_job_events', 'job_applications', 'application_access_log', 'job_sources', 'legal_acceptances', 'notification_settings', 'notifications', 'portfolio_rate', 'portfolio_reports', 'profiles', 'roles', 'subscriptions', 'support_attachments', 'support_messages', 'support_tickets'];
   const types = readFileSync('src/integrations/supabase/types.ts', 'utf8');
   const names = [...types.matchAll(/^      (\w+): \{\n        Row:/gm)].map(m => m[1]);
   const sql = readdirSync('drizzle/migrations').filter(n => n.endsWith('.sql')).map(n => readFileSync(`drizzle/migrations/${n}`, 'utf8')).join('\n');

@@ -14,6 +14,6 @@ describe('inbox rules', () => {
     expect(badgeText(0)).toBe(''); expect(badgeText(9)).toBe('9'); expect(badgeText(10)).toBe('9+');
   });
   it('emails only support replies by default', () => {
-    expect(EMAIL_DEFAULTS).toEqual({ support_reply: true, support_status: false, job_unavailable: false, data_export_ready: false, account: false });
+    expect(EMAIL_DEFAULTS).toEqual({ support_reply: true, support_status: false, job_unavailable: false, data_export_ready: false, account: false, application_update: false });
   });
 });

@@ -162,6 +162,20 @@
       "when": 1795625091978,
       "tag": "0022_employer_job_read_and_candidate_rpc_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795626864522,
+      "tag": "0023_apply_in_roleprove",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795627272563,
+      "tag": "0024_applications_tighten_grants",
+      "breakpoints": true
     }
   ]
 }

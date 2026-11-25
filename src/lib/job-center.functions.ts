@@ -6,10 +6,12 @@ import { jobSchema, ARRANGEMENTS, EMPLOYMENT, TRACKER_STATUSES, JOB_REPORT_REASO
 const idSchema=z.object({id:z.string().uuid()});
 export const recordJobViewFn=createServerFn({method:'POST'}).middleware([requireCandidate]).inputValidator((d:unknown)=>idSchema.parse(d)).handler(async({data,context})=>{const r=await context.supabase.rpc('record_job_view',{p_job:data.id});if(r.error)throw new Error('Job unavailable.');return {ok:true};});
 const preferencesSchema=z.object({roles:z.array(z.enum(['data_analyst','customer_support','other'])).max(3),arrangements:z.array(z.enum(ARRANGEMENTS)).max(3),employment_types:z.array(z.enum(EMPLOYMENT)).max(5),countries:z.array(z.string().trim().min(1).max(100)).max(30)});
+/** Candidate-visible listing columns only (no source refs, external ids or link hashes). */
+export const PUBLIC_JOB_COLS='id,title,company,company_website,city,country,arrangement,employment,role_key,other_role,seniority,salary_currency,salary_min,salary_max,salary_period,summary,apply_url,posted_date,expires_date,status,deleted_at,source_type,full_description,application_method,suggested_practice_role,company_approved';
 export const getJobCenterFn=createServerFn({method:'POST'}).middleware([requireCandidate]).handler(async({context})=>{
   const [jobs,tracker,prefs,profile]=await Promise.all([
-    context.supabase.from('job_center_jobs').select('*').order('posted_date',{ascending:false}),
-    context.supabase.from('job_tracker').select('*,job_center_jobs(*)').eq('user_id',context.userId),
+    context.supabase.from('job_center_jobs').select(PUBLIC_JOB_COLS).order('posted_date',{ascending:false}),
+    context.supabase.from('job_tracker').select(`*,job_center_jobs(${PUBLIC_JOB_COLS})`).eq('user_id',context.userId),
     context.supabase.from('job_preferences').select('*').eq('user_id',context.userId).maybeSingle(),
     context.supabase.from('profiles').select('target_role_id').eq('id',context.userId).maybeSingle(),
   ]);

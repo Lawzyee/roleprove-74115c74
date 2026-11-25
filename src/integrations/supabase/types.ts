@@ -34,6 +34,9 @@ export type Database = {
       }
       app_settings: {
         Row: {
+          application_opens_per_hour: number
+          application_retention_months: number
+          candidate_daily_applications: number
           company_delete_notice_days: number
           daily_generation_cap: number
           daily_grading_cap: number
@@ -74,6 +77,9 @@ export type Database = {
           trial_days: number
         }
         Insert: {
+          application_opens_per_hour?: number
+          application_retention_months?: number
+          candidate_daily_applications?: number
           company_delete_notice_days?: number
           daily_generation_cap?: number
           daily_grading_cap?: number
@@ -114,6 +120,9 @@ export type Database = {
           trial_days?: number
         }
         Update: {
+          application_opens_per_hour?: number
+          application_retention_months?: number
+          candidate_daily_applications?: number
           company_delete_notice_days?: number
           daily_generation_cap?: number
           daily_grading_cap?: number
@@ -152,6 +161,33 @@ export type Database = {
           report_open_retention_days?: number
           report_resolved_retention_days?: number
           trial_days?: number
+        }
+        Relationships: []
+      }
+      application_access_log: {
+        Row: {
+          action: string
+          application_id: string
+          company_id: string | null
+          created_at: string
+          id: string
+          member_id: string | null
+        }
+        Insert: {
+          action: string
+          application_id: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
+        }
+        Update: {
+          action?: string
+          application_id?: string
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          member_id?: string | null
         }
         Relationships: []
       }
@@ -1229,6 +1265,95 @@ export type Database = {
         }
         Relationships: []
       }
+      job_applications: {
+        Row: {
+          company_id: string | null
+          company_name: string
+          consent_id: string | null
+          cover_note: string
+          created_at: string
+          cv_copy_path: string | null
+          id: string
+          job_ended_at: string | null
+          job_id: string | null
+          job_title: string
+          purged_at: string | null
+          snapshot_id: string | null
+          status: string
+          status_changed_at: string | null
+          user_id: string | null
+          viewed_at: string | null
+          withdrawn_at: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          company_name: string
+          consent_id?: string | null
+          cover_note?: string
+          created_at?: string
+          cv_copy_path?: string | null
+          id?: string
+          job_ended_at?: string | null
+          job_id?: string | null
+          job_title: string
+          purged_at?: string | null
+          snapshot_id?: string | null
+          status?: string
+          status_changed_at?: string | null
+          user_id?: string | null
+          viewed_at?: string | null
+          withdrawn_at?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          company_name?: string
+          consent_id?: string | null
+          cover_note?: string
+          created_at?: string
+          cv_copy_path?: string | null
+          id?: string
+          job_ended_at?: string | null
+          job_id?: string | null
+          job_title?: string
+          purged_at?: string | null
+          snapshot_id?: string | null
+          status?: string
+          status_changed_at?: string | null
+          user_id?: string | null
+          viewed_at?: string | null
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_consent_id_fkey"
+            columns: ["consent_id"]
+            isOneToOne: false
+            referencedRelation: "application_consents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "employer_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_applications_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "application_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_center_jobs: {
         Row: {
           application_method: string
@@ -1713,6 +1838,7 @@ export type Database = {
       notification_settings: {
         Row: {
           email_account: boolean
+          email_application_update: boolean
           email_data_export_ready: boolean
           email_job_unavailable: boolean
           email_support_reply: boolean
@@ -1722,6 +1848,7 @@ export type Database = {
         }
         Insert: {
           email_account?: boolean
+          email_application_update?: boolean
           email_data_export_ready?: boolean
           email_job_unavailable?: boolean
           email_support_reply?: boolean
@@ -1731,6 +1858,7 @@ export type Database = {
         }
         Update: {
           email_account?: boolean
+          email_application_update?: boolean
           email_data_export_ready?: boolean
           email_job_unavailable?: boolean
           email_support_reply?: boolean

@@ -44,6 +44,7 @@ const by = (table: string, column: string, key?: string) => async ({ admin, user
 
 export const SECTIONS: Array<{ label: string; file: string; about: string; load: (c: Ctx) => Promise<Row[]>; keep?: string; employerOnly?: boolean }> = [
   { label: 'company jobs and aggregate counts', file: 'employer_jobs', about: 'Company-owned job postings, private practice text you provided, and aggregate views and apply clicks; no candidate identities.', employerOnly: true, load: async ({ admin, userId }) => { const m = await admin.from('company_members').select('company_id').eq('user_id', userId).maybeSingle(); if(m.error)throw new Error(m.error.message); if(!m.data)return []; const r=await admin.from('employer_jobs').select('id,company_id,payload,practice_text,status,moderation_reason,views,apply_clicks,created_at,updated_at').eq('company_id',m.data.company_id);if(r.error)throw new Error(r.error.message);return (r.data??[]) as Row[]; } },
+  { label: 'company application counts', file: 'company_application_counts', about: 'For each company job: how many applications are in each status. No candidate names or content.', employerOnly: true, load: async ({ admin, userId }) => { const m = await admin.from('company_members').select('company_id').eq('user_id', userId).maybeSingle(); if (m.error) throw new Error(m.error.message); if (!m.data) return []; const r = await admin.from('job_applications').select('job_id,job_title,status').eq('company_id', m.data.company_id); if (r.error) throw new Error(r.error.message); const agg = new Map<string, Row>(); for (const x of r.data ?? []) { const k = `${x.job_id}|${x.status}`; const row = agg.get(k) ?? { job_id: x.job_id, job_title: x.job_title, status: x.status, count: 0 }; row['count'] = Number(row['count']) + 1; agg.set(k, row); } return [...agg.values()]; } },
   { label: 'account type', file: 'account_type', about: 'Whether your account is a candidate or an employer account.', load: by('account_types', 'user_id') },
   { label: 'company membership', file: 'company_membership', about: 'Your employer team membership and role.', load: by('company_members', 'user_id'), employerOnly: true },
   { label: 'company profile', file: 'company', about: 'The profile and review status of the company you belong to.', load: async ({ admin, userId }) => { const { data: m, error: e } = await admin.from('company_members').select('company_id').eq('user_id', userId); if (e) throw new Error(e.message); const ids = (m ?? []).map((r) => r.company_id); if (!ids.length) return []; const { data, error } = await admin.from('companies').select('*').in('id', ids); if (error) throw new Error(error.message); return (data ?? []) as Row[]; }, employerOnly: true },
@@ -53,6 +54,7 @@ export const SECTIONS: Array<{ label: string; file: string; about: string; load:
   { label: 'application profile', file: 'application_profile', about: 'Your application profile: what you chose to share with employers when you apply, and each item\'s include setting.', load: by('application_profiles', 'user_id') },
   { label: 'application share snapshots', file: 'application_snapshots', about: 'Frozen copies of what you shared at the moment of each application, and when you withdrew them.', load: by('application_snapshots', 'user_id') },
   { label: 'application consent records', file: 'application_consents', about: 'Each consent you gave: the exact items included, the wording version shown, when, and when withdrawn.', load: by('application_consents', 'user_id') },
+  { label: 'job applications', file: 'job_applications', about: 'Jobs you applied to through RoleProve: job, company, cover note, status and dates. What you shared is in application_snapshots; CV copies are in files/application-cvs/.', load: by('job_applications', 'user_id') },
   { label: 'inbox notifications', file: 'notifications', about: 'Notifications in your RoleProve inbox, and when you read them.', load: by('notifications', 'user_id') },
   { label: 'notification settings', file: 'notification_settings', about: 'Which notification categories you chose to also receive by email.', load: by('notification_settings', 'user_id') },
   { label: 'saved jobs and application tracker', file: 'job_tracker', about: 'Jobs you saved, your application statuses and private notes.', load: by('job_tracker', 'user_id') },
@@ -87,6 +89,7 @@ const FILE_BUCKETS: Array<{ bucket: string; label: string }> = [
   { bucket: 'attempt-recordings', label: 'recordings' },
   { bucket: 'support-attachments', label: 'support screenshot files' },
   { bucket: 'portfolio-photos', label: 'portfolio photo' },
+  { bucket: 'application-cvs', label: 'CV copies attached to applications' },
 ];
 
 export const NOT_INCLUDED = [

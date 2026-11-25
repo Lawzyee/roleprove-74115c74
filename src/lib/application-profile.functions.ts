@@ -1,7 +1,7 @@
 import { requireCandidate } from './candidate-middleware';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { cleanText, safeUrl } from './portfolio';
+import { settingsInputSchema } from './application-profile';
 
 const admin = async () => (await import('@/integrations/supabase/client.server')).supabaseAdmin;
 
@@ -25,39 +25,14 @@ export const getApplicationProfileFn = createServerFn({ method: 'POST' }).middle
     return { saved: (count ?? 0) > 0, suggest, settings: s.settings, sources: { ...s.sources, cvs, photoRef: s.sources.photoRef ? 'yes' : null }, preview: view, items: s.items, photo, snapshots: snaps ?? [] };
   });
 
-const t = (n: number) => z.string().max(n * 2).nullable();
 export const saveApplicationProfileFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
-  .inputValidator((d: unknown) => z.object({
-    display_name: t(80), headline: t(160), bio: t(500),
-    include_headline: z.boolean(), include_bio: z.boolean(), include_target_score: z.boolean(), include_pillars: z.boolean(),
-    project_attempt_ids: z.array(z.string().uuid()).max(20), credential_ids: z.array(z.string().uuid()).max(50), cv_session_id: z.string().uuid().nullable(),
-    include_links: z.boolean(), linkedin_url: t(300), github_url: t(300), other_url: t(300),
-    include_location: z.boolean(), city: t(80), country: t(80),
-    include_work: z.boolean(), work_arrangement: t(120), availability: t(120),
-    include_photo: z.boolean(), contact_mode: z.enum(['inbox', 'email']),
-  }).parse(d))
+  .inputValidator((d: unknown) => settingsInputSchema.parse(d))
   .handler(async ({ data, context }) => {
-    let links: Record<string, string | null>;
-    try { links = { linkedin_url: safeUrl(data.linkedin_url), github_url: safeUrl(data.github_url), other_url: safeUrl(data.other_url) }; }
-    catch (e) { return { error: (e as Error).message }; }
     const a = await admin();
-    // Only the candidate's own completed, graded attempts, credentials and CVs can be picked.
-    const { loadSources } = await import('./application-profile.server');
-    const src = await loadSources(a, context.userId);
-    const own = (ids: string[], valid: string[]) => ids.filter((id) => valid.includes(id));
-    const cv = data.cv_session_id && src.cvs.some((c) => c.sessionId === data.cv_session_id) ? data.cv_session_id : null;
-    const c = (v: string | null, n: number) => cleanText(v, n) || null;
-    const { error } = await a.from('application_profiles').upsert({
-      user_id: context.userId,
-      display_name: c(data.display_name, 80), headline: c(data.headline, 160), bio: c(data.bio, 500),
-      include_headline: data.include_headline, include_bio: data.include_bio, include_target_score: data.include_target_score, include_pillars: data.include_pillars,
-      project_attempt_ids: own(data.project_attempt_ids, src.projects.map((p) => p.attemptId)),
-      credential_ids: own(data.credential_ids, src.credentials.map((x) => x.id)), cv_session_id: cv,
-      include_links: data.include_links, ...links,
-      include_location: data.include_location, city: c(data.city, 80), country: c(data.country, 80),
-      include_work: data.include_work, work_arrangement: c(data.work_arrangement, 120), availability: c(data.availability, 120),
-      include_photo: data.include_photo, contact_mode: data.contact_mode, updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id' });
+    const { loadSources, sanitizeSettings } = await import('./application-profile.server');
+    let clean;
+    try { clean = sanitizeSettings(data, await loadSources(a, context.userId)); } catch (e) { return { error: (e as Error).message }; }
+    const { error } = await a.from('application_profiles').upsert({ user_id: context.userId, ...clean, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
     if (error) return { error: 'Could not save your application profile.' };
     return { ok: true as const };
   });

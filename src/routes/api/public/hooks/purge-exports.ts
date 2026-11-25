@@ -21,13 +21,15 @@ export const Route = createFileRoute('/api/public/hooks/purge-exports')({
           const { cleanEmployerJobs } = await import('@/lib/employer-jobs.server')
           const employerJobs = await cleanEmployerJobs(supabaseAdmin)
           const jobs = await cleanJobCenter(supabaseAdmin)
+          const { cleanApplications } = await import('@/lib/applications.server')
+          const applications = await cleanApplications(supabaseAdmin)
           const { cleanEmployerData } = await import('@/lib/employer.server')
           const employers = await cleanEmployerData(supabaseAdmin)
           const { cleanEmployerAccounts } = await import('@/lib/employer-accounts.server')
           const { eraseAccount } = await import('@/lib/account-deletion.server')
           // Unconfirmed employer sign-ups never reached billing, so no payment provider is needed.
           const employerAccounts = await cleanEmployerAccounts(supabaseAdmin, (userId) => eraseAccount({ admin: supabaseAdmin, userId, stripeFor: () => null }))
-          return Response.json({ removed, reportsRemoved, jobs, employerJobs, employers, employerAccounts, notificationsRemoved, notificationEmails })
+          return Response.json({ removed, reportsRemoved, jobs, employerJobs, applications, employers, employerAccounts, notificationsRemoved, notificationEmails })
         } catch (e) {
           console.error('purge exports', e)
           return new Response('Purge failed', { status: 500 })

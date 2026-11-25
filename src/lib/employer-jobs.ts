@@ -11,7 +11,7 @@ export const postingSchema = z.object({
   role_key: z.enum(['data_analyst', 'customer_support', 'other']), other_role: text(100), seniority: z.enum(['entry', 'mid', 'senior']),
   salary_currency: text(3).nullable(), salary_min: z.number().nonnegative().nullable(), salary_max: z.number().nonnegative().nullable(), salary_period: z.enum(['hour', 'month', 'year']).nullable(),
   summary: text(600).min(1), full_description: text(6000).min(1), apply_url: text(2000).refine(v => !applyLinkProblem(v), 'Use a safe public HTTPS apply link.'),
-  expires_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), application_method: z.literal('external_link').default('external_link'),
+  expires_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), application_method: z.enum(['external_link', 'roleprove', 'both']).default('external_link'),
   suggested_practice_role: z.enum(['data_analyst', 'customer_support']).nullable(), practice_text: text(20000),
   practice_rights: z.boolean(), genuine: z.literal(true), no_fee: z.literal(true), authorised: z.literal(true), terms: z.literal(true),
 }).superRefine((v, c) => {

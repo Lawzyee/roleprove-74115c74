@@ -38,7 +38,7 @@ export const jobSchema = z.object({
   if(v.company_website&&applyLinkProblem(v.company_website)) c.addIssue({code:'custom',path:['company_website'],message:'Use a public HTTPS website.'});
 });
 export type JobInput = z.infer<typeof jobSchema>;
-export type Job = { id:string;title:string;company:string;company_website:string|null;city:string;country:string;arrangement:string;employment:string;role_key:string;other_role:string;seniority:string;salary_currency:string|null;salary_min:number|null;salary_max:number|null;salary_period:string|null;summary:string;apply_url:string;posted_date:string;expires_date:string;status:string;deleted_at:string|null;source_type?:string;full_description?:string;company_approved?:boolean;suggested_practice_role?:string|null };
+export type Job = { id:string;title:string;company:string;company_website:string|null;city:string;country:string;arrangement:string;employment:string;role_key:string;other_role:string;seniority:string;salary_currency:string|null;salary_min:number|null;salary_max:number|null;salary_period:string|null;summary:string;apply_url:string;posted_date:string;expires_date:string;status:string;deleted_at:string|null;source_type?:string;full_description?:string;company_approved?:boolean;suggested_practice_role?:string|null;application_method?:string };
 export type Preferences = { roles:string[];arrangements:string[];employment_types:string[];countries:string[] };
 export const EMPTY_PREFERENCES: Preferences = { roles:[], arrangements:[], employment_types:[], countries:[] };
 export type Filters = Preferences & { keyword:string;location:string;days:string;salary:string;sort:string;seniority:string };

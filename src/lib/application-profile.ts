@@ -8,6 +8,7 @@
 //   interview transcripts, interview prep, recordings, uploaded work files, dispute history.
 // - Consent is per application (one consent row per snapshot), never blanket.
 // - Scores come from stored server results only; the candidate cannot type or edit them.
+import { z } from 'zod';
 import { cleanText, displayUrl } from './portfolio';
 
 export const CONSENT_WORDING_VERSION = '2026-11-25';
@@ -113,3 +114,15 @@ export function freezeSnapshot<T>(value: T): T {
   deep(copy);
   return copy;
 }
+
+const nt = (n: number) => z.string().max(n * 2).nullable();
+/** Input for the saved defaults and for a one-off per-application choice. Ownership is re-checked on the server. */
+export const settingsInputSchema = z.object({
+  display_name: nt(80), headline: nt(160), bio: nt(500),
+  include_headline: z.boolean(), include_bio: z.boolean(), include_target_score: z.boolean(), include_pillars: z.boolean(),
+  project_attempt_ids: z.array(z.string().uuid()).max(20), credential_ids: z.array(z.string().uuid()).max(50), cv_session_id: z.string().uuid().nullable(),
+  include_links: z.boolean(), linkedin_url: nt(300), github_url: nt(300), other_url: nt(300),
+  include_location: z.boolean(), city: nt(80), country: nt(80),
+  include_work: z.boolean(), work_arrangement: nt(120), availability: nt(120),
+  include_photo: z.boolean(), contact_mode: z.enum(['inbox', 'email']),
+});

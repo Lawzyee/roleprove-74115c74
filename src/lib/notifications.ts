@@ -1,7 +1,7 @@
 /** Shared inbox rules (browser + server). */
-export const NOTIFICATION_TYPES = ['support_reply', 'support_status', 'job_unavailable', 'data_export_ready', 'account'] as const;
+export const NOTIFICATION_TYPES = ['support_reply', 'support_status', 'job_unavailable', 'data_export_ready', 'account', 'application_update'] as const;
 /** Reserved for later builds; the database accepts them but nothing creates them yet. */
-export const RESERVED_TYPES = ['employer_message', 'application_update'] as const;
+export const RESERVED_TYPES = ['employer_message'] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export const CATEGORY_LABELS: Record<NotificationType, string> = {
@@ -10,9 +10,10 @@ export const CATEGORY_LABELS: Record<NotificationType, string> = {
   job_unavailable: 'Saved jobs that close',
   data_export_ready: 'Data export ready',
   account: 'Account and subscription notices',
+  application_update: 'Job application updates',
 };
 export const EMAIL_DEFAULTS: Record<NotificationType, boolean> = {
-  support_reply: true, support_status: false, job_unavailable: false, data_export_ready: false, account: false,
+  support_reply: true, support_status: false, job_unavailable: false, data_export_ready: false, account: false, application_update: false,
 };
 export const PAGE_SIZE = 20;
 export const TITLE_MAX = 120;

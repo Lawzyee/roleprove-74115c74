@@ -350,13 +350,18 @@ const ago = (days: number) => new Date(Date.now() - days * 86400000).toISOString
 export async function cleanEmployerAccounts(a: A, eraseUser: (userId: string) => Promise<unknown>) {
   const s = await accountSettings(a);
   const out = { rejectedCompanies: 0, abandonedCompanies: 0, unconfirmedSignups: 0, invites: 0 };
-  const r = await a.from('companies').delete().eq('status', 'rejected').lt('reviewed_at', ago(s.employer_rejected_days)).select('id');
+  const { retireCompanyApplications } = await import('./applications.server');
+  const rej = await a.from('companies').select('id').eq('status', 'rejected').lt('reviewed_at', ago(s.employer_rejected_days));
+  if (rej.error) throw rej.error;
+  for (const c of rej.data ?? []) await retireCompanyApplications(a, c.id);
+  const r = rej.data?.length ? await a.from('companies').delete().in('id', rej.data.map((c) => c.id)).select('id') : { data: [], error: null };
   if (r.error) throw r.error; out.rejectedCompanies = r.data?.length ?? 0;
   const { data: due, error: dErr } = await a.from('companies').select('id').lt('delete_after', new Date().toISOString());
   if (dErr) throw dErr;
   for (const c of due ?? []) {
     const { count } = await a.from('company_members').select('user_id', { count: 'exact', head: true }).eq('company_id', c.id);
     if ((count ?? 0) > 0) { await a.from('companies').update({ delete_after: null }).eq('id', c.id); continue; }
+    await retireCompanyApplications(a, c.id);
     const d = await a.from('companies').delete().eq('id', c.id); if (d.error) throw d.error; out.abandonedCompanies++;
   }
   const i = await a.from('company_invites').delete().lt('expires_at', ago(1)).select('id');
@@ -373,6 +378,7 @@ export async function cleanEmployerAccounts(a: A, eraseUser: (userId: string) =>
 /** Runs before account erasure. Blocks an owner who still has team members; starts the notice period when the last member leaves. */
 export async function prepareEmployerErasure(a: A, userId: string) {
   const m = await membershipOf(a, userId);
+  if (m) { const l = await a.from('application_access_log').update({ member_id: null }).eq('member_id', userId); if (l.error) throw new Error(`Could not anonymise the access log: ${l.error.message}`); }
   if (m) {
     const { count } = await a.from('company_members').select('user_id', { count: 'exact', head: true }).eq('company_id', m.company_id);
     const problem = deletionProblem(m.role, count ?? 0);

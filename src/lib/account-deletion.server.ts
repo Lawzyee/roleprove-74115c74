@@ -3,7 +3,7 @@ import type Stripe from 'stripe';
 
 export type StripeEnvName = 'sandbox' | 'live';
 /** Every private file store whose paths start with {userId}/. */
-export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings', 'support-attachments', 'data-exports', 'portfolio-photos'] as const;
+export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings', 'support-attachments', 'data-exports', 'portfolio-photos', 'application-cvs'] as const;
 /**
  * Rows keyed by user, deleted parent-first so child rows go with them
  * (task results, uploads, gradings, flags, prep questions/answers, ticket messages/attachments).
@@ -125,6 +125,9 @@ export async function eraseAccount(opts: {
   // Employer accounts: an owner with team members must transfer ownership first; the last member starts the company's deletion notice.
   const { prepareEmployerErasure } = await import('./employer-accounts.server');
   await prepareEmployerErasure(admin, userId);
+  // Applications: withdrawn and anonymised at once, CV copies deleted, so employers only see "Withdrawn by candidate".
+  const { eraseCandidateApplications } = await import('./applications.server');
+  await eraseCandidateApplications(admin, userId);
   const stripe: StripeOutcome[] = [];
   for (const env of ['sandbox', 'live'] as const) {
     const client = opts.stripeFor(env);

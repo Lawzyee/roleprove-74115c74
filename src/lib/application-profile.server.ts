@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { roleBestScore } from './simulations';
 import { ROLE_REGISTRY, roleKeyForId } from './role-registry';
 import { PILLARS, PILLAR_LABELS } from './scoring-config';
+import { cleanText, safeUrl } from './portfolio';
 import { CONSENT_WORDING_VERSION, DEFAULT_SETTINGS, buildShareView, type ProfileSettings, type ShareSources, type ShareView, type ShareItem } from './application-profile';
 
 type Admin = SupabaseClient;
@@ -51,8 +52,8 @@ export async function loadSources(admin: Admin, userId: string): Promise<ShareSo
 }
 
 /** What an employer would see right now (used by "Preview as an employer" and by snapshots). */
-export async function currentShare(admin: Admin, userId: string) {
-  const [settings, sources] = await Promise.all([loadSettings(admin, userId), loadSources(admin, userId)]);
+export async function currentShare(admin: Admin, userId: string, override?: ProfileSettings) {
+  const [settings, sources] = await Promise.all([override ?? loadSettings(admin, userId), loadSources(admin, userId)]);
   return { settings, sources, ...buildShareView(settings, sources) };
 }
 
@@ -60,8 +61,8 @@ export async function currentShare(admin: Admin, userId: string) {
  * Freezes the current share into an immutable snapshot plus a per-application consent record.
  * The database trigger blocks any later change to content or items. Pass replacesSnapshotId to send an updated version.
  */
-export async function createSnapshot(admin: Admin, userId: string, opts: { employerRef?: string | null; jobId?: string | null; replacesSnapshotId?: string | null } = {}) {
-  const { view, items } = await currentShare(admin, userId);
+export async function createSnapshot(admin: Admin, userId: string, opts: { employerRef?: string | null; jobId?: string | null; replacesSnapshotId?: string | null; settings?: ProfileSettings } = {}) {
+  const { view, items } = await currentShare(admin, userId, opts.settings);
   if (opts.replacesSnapshotId) {
     const { data: prev } = await admin.from('application_snapshots').select('id').eq('id', opts.replacesSnapshotId).eq('user_id', userId).maybeSingle();
     if (!prev) throw new Error('Snapshot not found.');
@@ -90,4 +91,22 @@ export async function readSnapshotForEmployer(admin: Admin, snapshotId: string):
   if (error) throw new Error('Could not load.');
   if (!data || data.withdrawn_at) return null;
   return data.content as ShareView;
+}
+
+/** Cleans chosen settings: only the candidate's own graded attempts, credentials and CVs; safe links; plain text. Throws on a bad link. */
+export function sanitizeSettings(data: ProfileSettings, src: ShareSources): ProfileSettings {
+  const links = { linkedin_url: safeUrl(data.linkedin_url), github_url: safeUrl(data.github_url), other_url: safeUrl(data.other_url) };
+  const own = (ids: string[], valid: string[]) => ids.filter((id) => valid.includes(id));
+  const c = (v: string | null, n: number) => cleanText(v, n) || null;
+  return {
+    display_name: c(data.display_name, 80), headline: c(data.headline, 160), bio: c(data.bio, 500),
+    include_headline: data.include_headline, include_bio: data.include_bio, include_target_score: data.include_target_score, include_pillars: data.include_pillars,
+    project_attempt_ids: own(data.project_attempt_ids, src.projects.map((p) => p.attemptId)),
+    credential_ids: own(data.credential_ids, src.credentials.map((x) => x.id)),
+    cv_session_id: data.cv_session_id && src.cvs.some((x) => x.sessionId === data.cv_session_id) ? data.cv_session_id : null,
+    include_links: data.include_links, ...links,
+    include_location: data.include_location, city: c(data.city, 80), country: c(data.country, 80),
+    include_work: data.include_work, work_arrangement: c(data.work_arrangement, 120), availability: c(data.availability, 120),
+    include_photo: data.include_photo, contact_mode: data.contact_mode,
+  };
 }
