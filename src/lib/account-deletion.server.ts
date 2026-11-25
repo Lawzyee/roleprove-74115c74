@@ -10,6 +10,9 @@ export const USER_BUCKETS = ['credentials', 'deliverables', 'attempt-recordings'
  * Personalised simulations are removed when the sign-in account is deleted (owner cascade).
  */
 export const USER_TABLES: Array<{ table: string; column: string }> = [
+  { table: 'company_join_requests', column: 'user_id' },
+  { table: 'company_members', column: 'user_id' },
+  { table: 'account_types', column: 'user_id' },
   { table: 'application_consents', column: 'user_id' },
   { table: 'application_snapshots', column: 'user_id' },
   { table: 'application_profiles', column: 'user_id' },
@@ -119,6 +122,9 @@ export async function eraseAccount(opts: {
   stripeFor: (env: StripeEnvName) => Stripe | null;
 }): Promise<{ stripe: StripeOutcome[] }> {
   const { admin, userId } = opts;
+  // Employer accounts: an owner with team members must transfer ownership first; the last member starts the company's deletion notice.
+  const { prepareEmployerErasure } = await import('./employer-accounts.server');
+  await prepareEmployerErasure(admin, userId);
   const stripe: StripeOutcome[] = [];
   for (const env of ['sandbox', 'live'] as const) {
     const client = opts.stripeFor(env);

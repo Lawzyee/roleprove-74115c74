@@ -19,6 +19,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedApplicationProfileRouteImport } from './routes/_authenticated/application-profile'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedEmployerRouteImport } from './routes/_authenticated/employer'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenticated/performance'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -34,6 +35,10 @@ import { Route as AuthenticatedAdminEmployersRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminJobsRouteImport } from './routes/_authenticated/admin.jobs'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedCheckoutReturnRouteImport } from './routes/_authenticated/checkout.return'
+import { Route as AuthenticatedEmployerIndexRouteImport } from './routes/_authenticated/employer.index'
+import { Route as AuthenticatedEmployerAccountRouteImport } from './routes/_authenticated/employer.account'
+import { Route as AuthenticatedEmployerCompanyRouteImport } from './routes/_authenticated/employer.company'
+import { Route as AuthenticatedEmployerTeamRouteImport } from './routes/_authenticated/employer.team'
 import { Route as AuthenticatedInterviewPrepIndexRouteImport } from './routes/_authenticated/interview-prep.index'
 import { Route as AuthenticatedInterviewPrepSessionIdRouteImport } from './routes/_authenticated/interview-prep.$sessionId'
 import { Route as AuthenticatedJobsIndexRouteImport } from './routes/_authenticated/jobs.index'
@@ -106,6 +111,11 @@ const AuthenticatedApplicationProfileRoute =
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEmployerRoute = AuthenticatedEmployerRouteImport.update({
+  id: '/employer',
+  path: '/employer',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedInboxRoute = AuthenticatedInboxRouteImport.update({
@@ -186,6 +196,30 @@ const AuthenticatedCheckoutReturnRoute =
     id: '/checkout/return',
     path: '/checkout/return',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEmployerIndexRoute =
+  AuthenticatedEmployerIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedEmployerRoute,
+  } as any)
+const AuthenticatedEmployerAccountRoute =
+  AuthenticatedEmployerAccountRouteImport.update({
+    id: '/account',
+    path: '/account',
+    getParentRoute: () => AuthenticatedEmployerRoute,
+  } as any)
+const AuthenticatedEmployerCompanyRoute =
+  AuthenticatedEmployerCompanyRouteImport.update({
+    id: '/company',
+    path: '/company',
+    getParentRoute: () => AuthenticatedEmployerRoute,
+  } as any)
+const AuthenticatedEmployerTeamRoute =
+  AuthenticatedEmployerTeamRouteImport.update({
+    id: '/team',
+    path: '/team',
+    getParentRoute: () => AuthenticatedEmployerRoute,
   } as any)
 const AuthenticatedInterviewPrepIndexRoute =
   AuthenticatedInterviewPrepIndexRouteImport.update({
@@ -329,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/application-profile': typeof AuthenticatedApplicationProfileRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/employer': typeof AuthenticatedEmployerRouteWithChildren
   '/inbox': typeof AuthenticatedInboxRoute
   '/performance': typeof AuthenticatedPerformanceRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -344,6 +379,9 @@ export interface FileRoutesByFullPath {
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
+  '/employer/account': typeof AuthenticatedEmployerAccountRoute
+  '/employer/company': typeof AuthenticatedEmployerCompanyRoute
+  '/employer/team': typeof AuthenticatedEmployerTeamRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/tracker': typeof AuthenticatedJobsTrackerRoute
@@ -353,6 +391,7 @@ export interface FileRoutesByFullPath {
   '/support/$ticketId': typeof AuthenticatedSupportTicketIdRoute
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/p/$slug/$projectId': typeof PSlugProjectIdRoute
+  '/employer/': typeof AuthenticatedEmployerIndexRoute
   '/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
   '/jobs/': typeof AuthenticatedJobsIndexRoute
   '/portfolio/': typeof AuthenticatedPortfolioIndexRoute
@@ -393,6 +432,9 @@ export interface FileRoutesByTo {
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/checkout/return': typeof AuthenticatedCheckoutReturnRoute
+  '/employer/account': typeof AuthenticatedEmployerAccountRoute
+  '/employer/company': typeof AuthenticatedEmployerCompanyRoute
+  '/employer/team': typeof AuthenticatedEmployerTeamRoute
   '/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/tracker': typeof AuthenticatedJobsTrackerRoute
@@ -402,6 +444,7 @@ export interface FileRoutesByTo {
   '/support/$ticketId': typeof AuthenticatedSupportTicketIdRoute
   '/support/new': typeof AuthenticatedSupportNewRoute
   '/p/$slug/$projectId': typeof PSlugProjectIdRoute
+  '/employer': typeof AuthenticatedEmployerIndexRoute
   '/interview-prep': typeof AuthenticatedInterviewPrepIndexRoute
   '/jobs': typeof AuthenticatedJobsIndexRoute
   '/portfolio': typeof AuthenticatedPortfolioIndexRoute
@@ -429,6 +472,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/_authenticated/application-profile': typeof AuthenticatedApplicationProfileRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/employer': typeof AuthenticatedEmployerRouteWithChildren
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/performance': typeof AuthenticatedPerformanceRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -444,6 +488,9 @@ export interface FileRoutesById {
   '/_authenticated/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/checkout/return': typeof AuthenticatedCheckoutReturnRoute
+  '/_authenticated/employer/account': typeof AuthenticatedEmployerAccountRoute
+  '/_authenticated/employer/company': typeof AuthenticatedEmployerCompanyRoute
+  '/_authenticated/employer/team': typeof AuthenticatedEmployerTeamRoute
   '/_authenticated/interview-prep/$sessionId': typeof AuthenticatedInterviewPrepSessionIdRoute
   '/_authenticated/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/_authenticated/jobs/tracker': typeof AuthenticatedJobsTrackerRoute
@@ -453,6 +500,7 @@ export interface FileRoutesById {
   '/_authenticated/support/$ticketId': typeof AuthenticatedSupportTicketIdRoute
   '/_authenticated/support/new': typeof AuthenticatedSupportNewRoute
   '/p/$slug/$projectId': typeof PSlugProjectIdRoute
+  '/_authenticated/employer/': typeof AuthenticatedEmployerIndexRoute
   '/_authenticated/interview-prep/': typeof AuthenticatedInterviewPrepIndexRoute
   '/_authenticated/jobs/': typeof AuthenticatedJobsIndexRoute
   '/_authenticated/portfolio/': typeof AuthenticatedPortfolioIndexRoute
@@ -480,6 +528,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/application-profile'
     | '/dashboard'
+    | '/employer'
     | '/inbox'
     | '/performance'
     | '/profile'
@@ -495,6 +544,9 @@ export interface FileRouteTypes {
     | '/admin/jobs'
     | '/admin/support'
     | '/checkout/return'
+    | '/employer/account'
+    | '/employer/company'
+    | '/employer/team'
     | '/interview-prep/$sessionId'
     | '/jobs/$jobId'
     | '/jobs/tracker'
@@ -504,6 +556,7 @@ export interface FileRouteTypes {
     | '/support/$ticketId'
     | '/support/new'
     | '/p/$slug/$projectId'
+    | '/employer/'
     | '/interview-prep/'
     | '/jobs/'
     | '/portfolio/'
@@ -544,6 +597,9 @@ export interface FileRouteTypes {
     | '/admin/jobs'
     | '/admin/support'
     | '/checkout/return'
+    | '/employer/account'
+    | '/employer/company'
+    | '/employer/team'
     | '/interview-prep/$sessionId'
     | '/jobs/$jobId'
     | '/jobs/tracker'
@@ -553,6 +609,7 @@ export interface FileRouteTypes {
     | '/support/$ticketId'
     | '/support/new'
     | '/p/$slug/$projectId'
+    | '/employer'
     | '/interview-prep'
     | '/jobs'
     | '/portfolio'
@@ -579,6 +636,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/_authenticated/application-profile'
     | '/_authenticated/dashboard'
+    | '/_authenticated/employer'
     | '/_authenticated/inbox'
     | '/_authenticated/performance'
     | '/_authenticated/profile'
@@ -594,6 +652,9 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/jobs'
     | '/_authenticated/admin/support'
     | '/_authenticated/checkout/return'
+    | '/_authenticated/employer/account'
+    | '/_authenticated/employer/company'
+    | '/_authenticated/employer/team'
     | '/_authenticated/interview-prep/$sessionId'
     | '/_authenticated/jobs/$jobId'
     | '/_authenticated/jobs/tracker'
@@ -603,6 +664,7 @@ export interface FileRouteTypes {
     | '/_authenticated/support/$ticketId'
     | '/_authenticated/support/new'
     | '/p/$slug/$projectId'
+    | '/_authenticated/employer/'
     | '/_authenticated/interview-prep/'
     | '/_authenticated/jobs/'
     | '/_authenticated/portfolio/'
@@ -715,6 +777,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/employer': {
+      id: '/_authenticated/employer'
+      path: '/employer'
+      fullPath: '/employer'
+      preLoaderRoute: typeof AuthenticatedEmployerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inbox': {
       id: '/_authenticated/inbox'
       path: '/inbox'
@@ -819,6 +888,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/checkout/return'
       preLoaderRoute: typeof AuthenticatedCheckoutReturnRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/employer/': {
+      id: '/_authenticated/employer/'
+      path: '/'
+      fullPath: '/employer/'
+      preLoaderRoute: typeof AuthenticatedEmployerIndexRouteImport
+      parentRoute: typeof AuthenticatedEmployerRoute
+    }
+    '/_authenticated/employer/account': {
+      id: '/_authenticated/employer/account'
+      path: '/account'
+      fullPath: '/employer/account'
+      preLoaderRoute: typeof AuthenticatedEmployerAccountRouteImport
+      parentRoute: typeof AuthenticatedEmployerRoute
+    }
+    '/_authenticated/employer/company': {
+      id: '/_authenticated/employer/company'
+      path: '/company'
+      fullPath: '/employer/company'
+      preLoaderRoute: typeof AuthenticatedEmployerCompanyRouteImport
+      parentRoute: typeof AuthenticatedEmployerRoute
+    }
+    '/_authenticated/employer/team': {
+      id: '/_authenticated/employer/team'
+      path: '/team'
+      fullPath: '/employer/team'
+      preLoaderRoute: typeof AuthenticatedEmployerTeamRouteImport
+      parentRoute: typeof AuthenticatedEmployerRoute
     }
     '/_authenticated/interview-prep/': {
       id: '/_authenticated/interview-prep/'
@@ -984,9 +1081,29 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedEmployerRouteChildren {
+  AuthenticatedEmployerAccountRoute: typeof AuthenticatedEmployerAccountRoute
+  AuthenticatedEmployerCompanyRoute: typeof AuthenticatedEmployerCompanyRoute
+  AuthenticatedEmployerTeamRoute: typeof AuthenticatedEmployerTeamRoute
+  AuthenticatedEmployerIndexRoute: typeof AuthenticatedEmployerIndexRoute
+}
+
+const AuthenticatedEmployerRouteChildren: AuthenticatedEmployerRouteChildren = {
+  AuthenticatedEmployerAccountRoute: AuthenticatedEmployerAccountRoute,
+  AuthenticatedEmployerCompanyRoute: AuthenticatedEmployerCompanyRoute,
+  AuthenticatedEmployerTeamRoute: AuthenticatedEmployerTeamRoute,
+  AuthenticatedEmployerIndexRoute: AuthenticatedEmployerIndexRoute,
+}
+
+const AuthenticatedEmployerRouteWithChildren =
+  AuthenticatedEmployerRoute._addFileChildren(
+    AuthenticatedEmployerRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedApplicationProfileRoute: typeof AuthenticatedApplicationProfileRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEmployerRoute: typeof AuthenticatedEmployerRouteWithChildren
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedPerformanceRoute: typeof AuthenticatedPerformanceRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -1017,6 +1134,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedApplicationProfileRoute: AuthenticatedApplicationProfileRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEmployerRoute: AuthenticatedEmployerRouteWithChildren,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedPerformanceRoute: AuthenticatedPerformanceRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,

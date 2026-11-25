@@ -1,11 +1,11 @@
+import { requireCandidate } from './candidate-middleware';
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { withUsage } from "./billing.server";
 import { endInterview, postAnswer, skipQuestion, startLiveInterview } from "./live-interview.server";
 
 export const startLiveInterviewFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) =>
     z
       .object({
@@ -29,18 +29,18 @@ export const startLiveInterviewFn = createServerFn({ method: "POST" })
   );
 
 export const postAnswerFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) =>
     z.object({ interviewId: z.string().uuid(), answer: z.string().min(1).max(10000) }).parse(data),
   )
   .handler(async ({ data, context }) => postAnswer(context.userId, data.interviewId, data.answer));
 
 export const skipQuestionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) => z.object({ interviewId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => skipQuestion(context.userId, data.interviewId));
 
 export const endInterviewFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) => z.object({ interviewId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => endInterview(context.userId, data.interviewId));

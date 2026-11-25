@@ -14,7 +14,7 @@ export class ExportSectionError extends Error {
 
 type Row = Record<string, unknown>;
 /** Staff-only columns never exported (see README "Not included"). */
-const STAFF_ONLY: Record<string, string[]> = { support_tickets: ['tags', 'staff_last_read_at'] };
+const STAFF_ONLY: Record<string, string[]> = { support_tickets: ['tags', 'staff_last_read_at'], company_invites_sent: ['token_hash'] };
 
 export function toCsv(rows: Row[]): string {
   if (!rows.length) return '';
@@ -42,7 +42,13 @@ const by = (table: string, column: string, key?: string) => async ({ admin, user
   return (data ?? []) as Row[];
 };
 
-export const SECTIONS: Array<{ label: string; file: string; about: string; load: (c: Ctx) => Promise<Row[]>; keep?: string }> = [
+export const SECTIONS: Array<{ label: string; file: string; about: string; load: (c: Ctx) => Promise<Row[]>; keep?: string; employerOnly?: boolean }> = [
+  { label: 'account type', file: 'account_type', about: 'Whether your account is a candidate or an employer account.', load: by('account_types', 'user_id') },
+  { label: 'company membership', file: 'company_membership', about: 'Your employer team membership and role.', load: by('company_members', 'user_id'), employerOnly: true },
+  { label: 'company profile', file: 'company', about: 'The profile and review status of the company you belong to.', load: async ({ admin, userId }) => { const { data: m, error: e } = await admin.from('company_members').select('company_id').eq('user_id', userId); if (e) throw new Error(e.message); const ids = (m ?? []).map((r) => r.company_id); if (!ids.length) return []; const { data, error } = await admin.from('companies').select('*').in('id', ids); if (error) throw new Error(error.message); return (data ?? []) as Row[]; }, employerOnly: true },
+  { label: 'company audit entries about your actions', file: 'company_audit_log', about: 'Company log entries for actions you took (for example edits, invites and team changes).', load: by('company_audit_log', 'actor_id'), employerOnly: true },
+  { label: 'company invites you sent', file: 'company_invites_sent', about: 'Invites you sent to colleagues (email, role, expiry, accepted time).', load: by('company_invites', 'invited_by'), employerOnly: true },
+  { label: 'company join requests', file: 'company_join_requests', about: 'Your requests to join a company.', load: by('company_join_requests', 'user_id'), employerOnly: true },
   { label: 'application profile', file: 'application_profile', about: 'Your application profile: what you chose to share with employers when you apply, and each item\'s include setting.', load: by('application_profiles', 'user_id') },
   { label: 'application share snapshots', file: 'application_snapshots', about: 'Frozen copies of what you shared at the moment of each application, and when you withdrew them.', load: by('application_snapshots', 'user_id') },
   { label: 'application consent records', file: 'application_consents', about: 'Each consent you gave: the exact items included, the wording version shown, when, and when withdrawn.', load: by('application_consents', 'user_id') },
@@ -86,6 +92,7 @@ export const NOT_INCLUDED = [
   'Staff-curated job descriptions, source notes and staff notes: private listing-management data, not your personal data.',
   'Suspicious-content flags on uploads: notes for our support staff when an upload seemed to try to influence grading. They are staff review notes, not data you provided.',
   'Steering-attempt flags on live interviews: notes for our support staff when a message tried to change the interviewer\'s rules or the scoring. They are staff review notes, not interview content.',
+  'Staff notes about your company and staff-only review details: internal review notes written by our team.',
   'Ticket tags and staff read times on support tickets: internal routing and workload markers for our support team.',
   'The scrambled email used to stop repeat free trials: it is a keyed one-way hash that cannot be turned back into your email or reliably linked to you.',
 ];

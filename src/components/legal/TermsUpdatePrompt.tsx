@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAccountKind } from "@/hooks/useAccountKind";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,7 @@ import { CURRENT_PRIVACY_VERSION, CURRENT_TERMS_VERSION, needsReacceptance } fro
 /** Blocking one-time prompt when the terms or privacy version changes. */
 export function TermsUpdatePrompt() {
   const { user } = useAuth();
+  const kind = useAccountKind().data;
   const [show, setShow] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -29,7 +31,8 @@ export function TermsUpdatePrompt() {
     return () => { cancelled = true; };
   }, [user]);
 
-  if (!show || !user) return null;
+  // Employer accounts accept the Employer Terms at sign-up or invite instead.
+  if (!show || !user || kind !== "candidate") return null;
 
   async function accept() {
     setSaving(true);

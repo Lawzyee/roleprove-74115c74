@@ -1,11 +1,11 @@
+import { requireCandidate } from './candidate-middleware';
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { generatePersonalisedSimulation, generateGenericSimulation } from "./jd.server";
 import { withUsage } from "./billing.server";
 
 export const generateJdSimulationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) =>
     z
       .object({ text: z.string().optional(), url: z.string().url().optional(), environment: z.enum(['sandbox', 'live']) })
@@ -17,7 +17,7 @@ export const generateJdSimulationFn = createServerFn({ method: "POST" })
   });
 
 export const generateGenericSimulationFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) =>
     z
       .object({ environment: z.enum(['sandbox', 'live']), roleKey: z.enum(['data_analyst', 'customer_support']).default('data_analyst') })
@@ -28,7 +28,7 @@ export const generateGenericSimulationFn = createServerFn({ method: "POST" })
   });
 
 export const retakeSimulationFn = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) => z.object({ attemptId: z.string().uuid(), environment: z.enum(['sandbox', 'live']) }).parse(data))
   .handler(async ({ data, context }) => {
     const { data: original, error } = await context.supabase.from('simulation_attempts').select('simulation_id, simulation_type, job_posting_id').eq('id', data.attemptId).eq('user_id', context.userId).single();

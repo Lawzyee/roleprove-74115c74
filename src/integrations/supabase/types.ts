@@ -14,15 +14,37 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_types: {
+        Row: {
+          created_at: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
+          company_delete_notice_days: number
           daily_generation_cap: number
           daily_grading_cap: number
           daily_interview_turns: number
           daily_interviews: number
+          disposable_email_domains: string[]
           employer_contact_days: number
           employer_daily_submissions: number
+          employer_invite_days: number
           employer_max_pending: number
+          employer_max_seats: number
           employer_pending_days: number
           employer_rejected_days: number
           employer_unconfirmed_days: number
@@ -41,19 +63,24 @@ export type Database = {
           notifications_per_hour: number
           paywall_enforced: boolean
           paywall_enforced_since: string | null
+          personal_email_domains: string[]
           recruiter_visibility_enabled: boolean
           report_open_retention_days: number
           report_resolved_retention_days: number
           trial_days: number
         }
         Insert: {
+          company_delete_notice_days?: number
           daily_generation_cap?: number
           daily_grading_cap?: number
           daily_interview_turns?: number
           daily_interviews?: number
+          disposable_email_domains?: string[]
           employer_contact_days?: number
           employer_daily_submissions?: number
+          employer_invite_days?: number
           employer_max_pending?: number
+          employer_max_seats?: number
           employer_pending_days?: number
           employer_rejected_days?: number
           employer_unconfirmed_days?: number
@@ -72,19 +99,24 @@ export type Database = {
           notifications_per_hour?: number
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
+          personal_email_domains?: string[]
           recruiter_visibility_enabled?: boolean
           report_open_retention_days?: number
           report_resolved_retention_days?: number
           trial_days?: number
         }
         Update: {
+          company_delete_notice_days?: number
           daily_generation_cap?: number
           daily_grading_cap?: number
           daily_interview_turns?: number
           daily_interviews?: number
+          disposable_email_domains?: string[]
           employer_contact_days?: number
           employer_daily_submissions?: number
+          employer_invite_days?: number
           employer_max_pending?: number
+          employer_max_seats?: number
           employer_pending_days?: number
           employer_rejected_days?: number
           employer_unconfirmed_days?: number
@@ -103,6 +135,7 @@ export type Database = {
           notifications_per_hour?: number
           paywall_enforced?: boolean
           paywall_enforced_since?: string | null
+          personal_email_domains?: string[]
           recruiter_visibility_enabled?: boolean
           report_open_retention_days?: number
           report_resolved_retention_days?: number
@@ -466,6 +499,229 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      companies: {
+        Row: {
+          country: string
+          created_at: string
+          delete_after: string | null
+          description: string
+          email_domain: string
+          id: string
+          industry: string
+          name: string
+          public_page_url: string
+          registration_number: string
+          reviewed_at: string | null
+          size_band: string
+          status: string
+          status_reason: string
+          updated_at: string
+          website: string
+        }
+        Insert: {
+          country?: string
+          created_at?: string
+          delete_after?: string | null
+          description?: string
+          email_domain: string
+          id?: string
+          industry: string
+          name: string
+          public_page_url?: string
+          registration_number?: string
+          reviewed_at?: string | null
+          size_band: string
+          status?: string
+          status_reason?: string
+          updated_at?: string
+          website: string
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          delete_after?: string | null
+          description?: string
+          email_domain?: string
+          id?: string
+          industry?: string
+          name?: string
+          public_page_url?: string
+          registration_number?: string
+          reviewed_at?: string | null
+          size_band?: string
+          status?: string
+          status_reason?: string
+          updated_at?: string
+          website?: string
+        }
+        Relationships: []
+      }
+      company_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_kind: string
+          company_id: string
+          created_at: string
+          id: string
+          reason: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_kind: string
+          company_id: string
+          created_at?: string
+          id?: string
+          reason?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_kind?: string
+          company_id?: string
+          created_at?: string
+          id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_audit_log_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_invites: {
+        Row: {
+          accepted_at: string | null
+          company_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          role: string
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          company_id: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by?: string | null
+          role: string
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          company_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          role?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_invites_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_join_requests: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_join_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_members: {
+        Row: {
+          company_id: string
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_staff_notes: {
+        Row: {
+          company_id: string
+          notes: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          notes?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          notes?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_staff_notes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       credentials: {
         Row: {
@@ -1143,6 +1399,7 @@ export type Database = {
       legal_acceptances: {
         Row: {
           accepted_at: string
+          employer_terms_version: string | null
           id: string
           privacy_version: string
           source: string
@@ -1151,6 +1408,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string
+          employer_terms_version?: string | null
           id?: string
           privacy_version: string
           source?: string
@@ -1159,6 +1417,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string
+          employer_terms_version?: string | null
           id?: string
           privacy_version?: string
           source?: string
@@ -1990,6 +2249,7 @@ export type Database = {
       }
       billing_email_hash: { Args: { p_email: string }; Returns: string }
       billing_hmac_of_md5: { Args: { p_md5: string }; Returns: string }
+      company_of: { Args: { _user_id: string }; Returns: string }
       create_notification: {
         Args: {
           p_body: string
@@ -2004,6 +2264,7 @@ export type Database = {
       }
       get_billing_access: { Args: { p_env: string }; Returns: Json }
       increment_job_apply: { Args: { p_job: string }; Returns: undefined }
+      is_employer: { Args: { _user_id: string }; Returns: boolean }
       is_support_staff: { Args: { _user_id: string }; Returns: boolean }
       normalized_job_apply_url: { Args: { value: string }; Returns: string }
       portfolio_rate_hit: {

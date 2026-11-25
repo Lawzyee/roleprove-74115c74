@@ -1,10 +1,10 @@
+import { requireCandidate } from './candidate-middleware';
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { DeliverableError, gradeAttemptDeliverables, recordDeliverable } from "./deliverables.server";
 
 export const recordDeliverableFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) =>
     z
       .object({
@@ -25,6 +25,6 @@ export const recordDeliverableFn = createServerFn({ method: "POST" })
   });
 
 export const gradeDeliverablesFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) => z.object({ attemptId: z.string().uuid(), includeLegacy: z.boolean().optional() }).parse(data))
   .handler(async ({ data, context }) => gradeAttemptDeliverables(context.supabase, context.userId, data.attemptId, data.includeLegacy ?? false));

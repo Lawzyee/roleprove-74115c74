@@ -123,6 +123,7 @@ describe.skipIf(!ready)('account deletion removes everything', () => {
       const names = Object.keys(files);
       // Every data section is present and holds this account's rows.
       for (const s of SECTIONS) {
+        if (s.employerOnly) continue; // covered by employer-accounts.integration.test.ts
         expect(counts[s.file], s.label).toBeGreaterThan(0);
         expect(strFromU8(files[`data/${s.file}.csv`]).split('\n').length, s.file).toBeGreaterThan(2);
       }

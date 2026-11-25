@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyTickets } from "@/components/support/SupportParts";
 import { Button } from "@/components/ui/button";
 import { InboxBell } from "@/components/inbox/InboxBell";
+import { useAccountKind } from "@/hooks/useAccountKind";
+import { Building2, Users } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,8 @@ export function SiteHeader() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const unread = (useMyTickets().data ?? []).filter((t) => t.unread).length;
+  const kind = useAccountKind().data;
+  const employer = kind === "employer";
 
   const name =
     (user?.user_metadata?.name as string | undefined)?.trim() || user?.email?.split("@")[0] || "Account";
@@ -34,7 +38,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-        <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2">
+        <Link to={user ? (employer ? "/employer" : "/dashboard") : "/"} className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary font-display text-sm font-bold text-primary-foreground">
             R
           </span>
@@ -42,7 +46,34 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-1 sm:gap-2">
-          {loading ? null : user ? (
+          {loading || (user && !kind) ? null : user && employer ? (
+            <>
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link to="/employer">Employer area</Link></Button>
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link to="/employer/company">Company</Link></Button>
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex"><Link to="/employer/team">Team</Link></Button>
+              <InboxBell />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button type="button" aria-label="Open account menu" className="flex items-center gap-2 rounded-full border border-border py-1 pl-1 pr-3 transition-colors hover:bg-accent">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">{initial}</span>
+                    <span className="max-w-[10rem] truncate text-sm font-medium">{name}</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuLabel className="truncate">{user.email}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="sm:hidden"><Link to="/employer"><LayoutDashboard className="mr-2 h-4 w-4" /> Employer area</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild className="sm:hidden"><Link to="/employer/company"><Building2 className="mr-2 h-4 w-4" /> Company</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild className="sm:hidden"><Link to="/employer/team"><Users className="mr-2 h-4 w-4" /> Team</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link to="/employer/account"><Settings className="mr-2 h-4 w-4" /> Account and data</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link to="/support"><LifeBuoy className="mr-2 h-4 w-4" /> Contact support</Link></DropdownMenuItem>
+                  <DropdownMenuItem asChild><Link to="/help"><HelpCircle className="mr-2 h-4 w-4" /> Help</Link></DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={handleSignOut}><LogOut className="mr-2 h-4 w-4" /> Log out</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : user ? (
             <>
               <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
                 <Link to="/dashboard">Dashboard</Link>

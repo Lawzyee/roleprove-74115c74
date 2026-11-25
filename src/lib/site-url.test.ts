@@ -89,6 +89,9 @@ describe('every link token is built by the shared function', () => {
     uses('lib/employer.functions.ts', "absoluteUrl('/employers/submit', { token })");
     uses('lib/employer.server.ts', "absoluteUrl('/employers/remove', { token })");
     uses('lib/notifications.server.ts', "absoluteUrl('/inbox')");
+    uses('lib/employer-accounts.server.ts', "absoluteUrl('/employers/invite', { token })");
+    uses('lib/employer-accounts.server.ts', "absoluteUrl('/employer')");
+    uses('lib/employer-accounts.functions.ts', "absoluteUrl('/auth/confirm')");
     uses('routes/lovable/email/auth/webhook.ts', 'authActionLink(data.url)');
   });
 });

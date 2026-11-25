@@ -6,6 +6,8 @@ import { template as employerSubmitLink } from './employer-submit-link'
 import { template as employerJobApproved } from './employer-job-approved'
 import { template as employerJobRejected } from './employer-job-rejected'
 import { template as newNotification } from './new-notification'
+import { template as companyStatus } from './company-status'
+import { template as companyInvite } from './company-invite'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -32,6 +34,8 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'employer-job-approved': employerJobApproved,
   'employer-job-rejected': employerJobRejected,
   'new-notification': newNotification,
+  'company-status': companyStatus,
+  'company-invite': companyInvite,
   // Add templates here as they are created, e.g.:
   // 'welcome': welcomeTemplate,
 }

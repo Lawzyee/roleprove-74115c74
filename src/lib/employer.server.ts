@@ -19,7 +19,7 @@ export async function visitorHash(admin: SupabaseClient): Promise<string> {
   if (error || typeof data !== 'string') throw new Error('Something went wrong. Please try again.');
   return data;
 }
-export const RATE_LIMITS = { waitlist: 5, link: 5, submit: 10, remove: 20 } as const;
+export const RATE_LIMITS = { waitlist: 5, link: 5, submit: 10, remove: 20, employer_signup: 5 } as const;
 /** Per-address hourly limit. Returns false when the limit is reached (and records nothing). */
 export async function rateHit(admin: SupabaseClient, kind: keyof typeof RATE_LIMITS): Promise<boolean> {
   const h = await visitorHash(admin);

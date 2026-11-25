@@ -1,11 +1,11 @@
+import { requireCandidate } from './candidate-middleware';
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { cleanText, safeUrl } from './portfolio';
 
 const admin = async () => (await import('@/integrations/supabase/client.server')).supabaseAdmin;
 
-export const getApplicationProfileFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const getApplicationProfileFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .handler(async ({ context }) => {
     const { currentShare } = await import('./application-profile.server');
     const a = await admin();
@@ -26,7 +26,7 @@ export const getApplicationProfileFn = createServerFn({ method: 'POST' }).middle
   });
 
 const t = (n: number) => z.string().max(n * 2).nullable();
-export const saveApplicationProfileFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const saveApplicationProfileFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({
     display_name: t(80), headline: t(160), bio: t(500),
     include_headline: z.boolean(), include_bio: z.boolean(), include_target_score: z.boolean(), include_pillars: z.boolean(),
@@ -62,7 +62,7 @@ export const saveApplicationProfileFn = createServerFn({ method: 'POST' }).middl
     return { ok: true as const };
   });
 
-export const withdrawSnapshotFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const withdrawSnapshotFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ snapshotId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { withdrawSnapshot } = await import('./application-profile.server');

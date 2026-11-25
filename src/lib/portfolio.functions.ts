@@ -1,7 +1,7 @@
+import { requireCandidate } from './candidate-middleware';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { z } from 'zod';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { BIO_MAX, INSIGHT_MAX, MAX_INSIGHT_GENERATIONS, PHOTO_MAX_BYTES, cleanText, ctaCopy, safeUrl, slugProblem, validatePublicReport, PUBLIC_REPORTS_PER_HOUR } from './portfolio';
 import {
   PHOTO_BUCKET, buildPublicPortfolio, groupFolders, loadOwnPortfolioRow, loadProject, loadPublicPortfolioRow, ownerName, rateOk, shapeProject, writeInsight,
@@ -53,7 +53,7 @@ export const getPublicProjectFn = createServerFn({ method: 'GET' })
   });
 
 // ---------- Owner ----------
-export const getMyPortfolioFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const getMyPortfolioFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .handler(async ({ context }) => {
     const a = await ensurePortfolio(context.userId);
     const { data: p, error } = await a.from('portfolios').select('*').eq('user_id', context.userId).single();
@@ -73,7 +73,7 @@ export const getMyPortfolioFn = createServerFn({ method: 'POST' }).middleware([r
   });
 
 const optText = (max: number) => z.string().max(max * 2).nullable().optional();
-export const savePortfolioFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const savePortfolioFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({
     display_name: optText(80), bio: optText(BIO_MAX), city: optText(80), country: optText(80), headline: optText(160),
     credly_url: optText(300), linkedin_url: optText(300), github_url: optText(300), portfolio_url: optText(300),
@@ -100,7 +100,7 @@ export const savePortfolioFn = createServerFn({ method: 'POST' }).middleware([re
     return { ok: true };
   });
 
-export const setSlugFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const setSlugFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ slug: z.string().max(60) }).parse(d))
   .handler(async ({ data, context }) => {
     const slug = data.slug.trim();
@@ -112,7 +112,7 @@ export const setSlugFn = createServerFn({ method: 'POST' }).middleware([requireS
     return { ok: true, slug };
   });
 
-export const setVisibilityFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const setVisibilityFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ isPublic: z.boolean(), consent: z.boolean().optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const a = await ensurePortfolio(context.userId);
@@ -128,7 +128,7 @@ export const setVisibilityFn = createServerFn({ method: 'POST' }).middleware([re
     return { ok: true };
   });
 
-export const uploadPhotoFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const uploadPhotoFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ base64: z.string().max(Math.ceil(PHOTO_MAX_BYTES * 1.4)) }).parse(d))
   .handler(async ({ data, context }) => {
     let bytes: Uint8Array;
@@ -151,7 +151,7 @@ export const uploadPhotoFn = createServerFn({ method: 'POST' }).middleware([requ
     return { ok: true };
   });
 
-export const deletePhotoFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const deletePhotoFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .handler(async ({ context }) => {
     const a = await admin();
     const { data: p } = await a.from('portfolios').select('photo_path, photo_version').eq('user_id', context.userId).maybeSingle();
@@ -174,7 +174,7 @@ async function generateFor(userId: string, projectId: string) {
   return insight;
 }
 
-export const addProjectFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const addProjectFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ attemptId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const a = await ensurePortfolio(context.userId);
@@ -187,7 +187,7 @@ export const addProjectFn = createServerFn({ method: 'POST' }).middleware([requi
     return { ok: true, projectId: row.id, insightError };
   });
 
-export const removeProjectFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const removeProjectFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     // Removes only the portfolio card; the attempt and its score are untouched.
@@ -196,7 +196,7 @@ export const removeProjectFn = createServerFn({ method: 'POST' }).middleware([re
     return { ok: true };
   });
 
-export const getMyProjectFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const getMyProjectFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const a = await admin();
@@ -207,7 +207,7 @@ export const getMyProjectFn = createServerFn({ method: 'POST' }).middleware([req
   });
 
 const vis = z.object({ summary: z.boolean(), replies: z.boolean(), data: z.boolean() });
-export const updateProjectFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const updateProjectFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid(), insight: z.string().max(INSIGHT_MAX * 2).optional(), stageSettings: z.record(z.string().uuid(), vis).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -221,14 +221,14 @@ export const updateProjectFn = createServerFn({ method: 'POST' }).middleware([re
     return { ok: true };
   });
 
-export const regenerateInsightFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const regenerateInsightFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     try { return { ok: true, insight: await generateFor(context.userId, data.projectId) }; } catch (e) { return { error: (e as Error).message }; }
   });
 
 /** Owner-only "preview as visitor": same public builder, ignoring the public switch. */
-export const previewPortfolioFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const previewPortfolioFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .handler(async ({ context }) => {
     const a = await ensurePortfolio(context.userId);
     const row = await loadOwnPortfolioRow(a, context.userId);
@@ -237,7 +237,7 @@ export const previewPortfolioFn = createServerFn({ method: 'POST' }).middleware(
     if (row?.photo_path) photo = (await a.storage.from(PHOTO_BUCKET).createSignedUrl(row.photo_path, 600)).data?.signedUrl ?? null;
     return { portfolio: { ...p, photoUrl: photo } };
   });
-export const previewProjectFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const previewProjectFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ projectId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const a = await admin();
@@ -247,7 +247,7 @@ export const previewProjectFn = createServerFn({ method: 'POST' }).middleware([r
     return { found: true as const, project: { ...shapeProject(l, row, origin(), ownerName(await profileName(context.userId), row), 'public'), photoUrl: null } };
   });
 
-export const reportPortfolioFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const reportPortfolioFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ slug: slugInput, reason: z.string().trim().min(10, 'Please describe the problem (at least 10 characters).').max(1000) }).parse(d))
   .handler(async ({ data, context }) => {
     const a = await admin();
@@ -290,7 +290,7 @@ export const reportPortfolioPublicFn = createServerFn({ method: 'POST' })
     return { ok: true as const };
   });
 
-export const staffUnpublishFn = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+export const staffUnpublishFn = createServerFn({ method: 'POST' }).middleware([requireCandidate])
   .inputValidator((d: unknown) => z.object({ slug: slugInput }).parse(d))
   .handler(async ({ data, context }) => {
     const { data: staff } = await context.supabase.rpc('is_support_staff', { _user_id: context.userId });

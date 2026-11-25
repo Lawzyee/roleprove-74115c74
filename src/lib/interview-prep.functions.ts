@@ -1,11 +1,11 @@
+import { requireCandidate } from './candidate-middleware';
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createPrepSession, gradePrepAnswer } from "./interview-prep.server";
 import { withUsage } from './billing.server';
 
 export const createPrepSessionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) =>
     z
       .object({
@@ -21,7 +21,7 @@ export const createPrepSessionFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => withUsage(context.userId, data.environment, 'interview_prep', () => createPrepSession(context.userId, data), (result) => result.outcome === 'ready' ? result.sessionId : undefined));
 
 export const gradePrepAnswerFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireCandidate])
   .inputValidator((data: unknown) =>
     z.object({ questionId: z.string().uuid(), responseText: z.string() }).parse(data),
   )
