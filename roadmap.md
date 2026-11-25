@@ -33,3 +33,6 @@
 - [x] Existing capped/paywalled simulation and interview practice integration
 - [x] Deletion/export coverage, legal placeholders and tests
 - [ ] Full suite passes; authenticated desktop/mobile browse and simulation verified. Staff publication, Other interview prep and real generation-limit exhaustion remain unverified.
+
+## For employers page
+- [x] Public /employers page, waitlist with double opt-in, work-email job submission with 24h session, staff flags/reject reasons, decision emails with removal links, staff waitlist page, hourly cleanup, legal placeholders, tests
